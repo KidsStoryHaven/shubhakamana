@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { FestivalsPortal } from './components/FestivalsPortal';
 import { FestivalWishPage } from './components/FestivalWishPage';
-import { FESTIVALS, Festival } from './data/festivals';
+import { FESTIVALS, Festival, FestivalCategory, FESTIVAL_CATEGORIES } from './data/festivals';
 import { parseWishUrl } from './utils/shortUrl';
 
 export default function App() {
@@ -36,7 +36,7 @@ export default function App() {
     return null;
   });
 
-  const [activeCategory, setActiveCategory] = useState<'all' | 'festival' | 'god' | 'celebration' | 'daily'>('all');
+  const [activeCategory, setActiveCategory] = useState<FestivalCategory | 'all'>('all');
 
   if (selectedFestival) {
     return (
@@ -55,9 +55,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
-      {/* Top Navbar */}
+      {/* Top Navbar with Dropdown Menus */}
       <Navbar
         onSelectCategory={(cat) => setActiveCategory(cat)}
+        onSelectFestival={(fest) => setSelectedFestival(fest)}
         onGoHome={() => {
           setSelectedFestival(null);
           setActiveCategory('all');
@@ -82,31 +83,20 @@ export default function App() {
               <span className="text-xs text-stone-400 font-sans">· भारत का आधिकारिक शुभकामना द्वार</span>
             </span>
             <p className="text-xs text-stone-400 max-w-xl">
-              सभी भारतीय त्योहारों, पावन जयंतियों एवं जन्मदिन पर अपने नाम व फोटो की जादुई विशिंग लिंक बनाएँ और 1-क्लिक में WhatsApp पर भेजें।
+              सभी धर्मों, समुदायों के पावन त्योहारों, जयंतियों एवं व्यक्तिगत उत्सवों पर अपने नाम व फोटो की जादुई विशिंग लिंक बनाएँ और 1-क्लिक में WhatsApp पर भेजें।
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-stone-400">
-            <button
-              onClick={() => setActiveCategory('festival')}
-              className="hover:text-amber-300 transition-colors cursor-pointer"
-            >
-              महापर्व
-            </button>
-            <span aria-hidden="true">·</span>
-            <button
-              onClick={() => setActiveCategory('celebration')}
-              className="hover:text-purple-300 transition-colors cursor-pointer"
-            >
-              जन्मदिन विशेज
-            </button>
-            <span aria-hidden="true">·</span>
-            <button
-              onClick={() => setActiveCategory('daily')}
-              className="hover:text-yellow-300 transition-colors cursor-pointer"
-            >
-              दैनिक सुप्रभात
-            </button>
+            {FESTIVAL_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className="hover:text-amber-300 transition-colors cursor-pointer"
+              >
+                {cat.nameHi}
+              </button>
+            ))}
             <span aria-hidden="true">·</span>
             <span className="text-amber-400/90 font-medium">
               © 2026 Shubhakamna.in

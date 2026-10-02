@@ -5,7 +5,9 @@ import { festiveAudio } from '../utils/festiveAudio';
 import { SurpriseUnbox } from './SurpriseUnbox';
 import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
-import { createShortWishUrl, parseWishUrl } from '../utils/shortUrl';
+import { FestivalImageSlider } from './FestivalImageSlider';
+import { getFestivalDeitySlides } from '../data/divineGodsData';
+import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
 import { generateStatusCardBlob } from '../utils/generateStatusCard';
 import { 
   SUPPORTED_LANGUAGES, 
@@ -95,6 +97,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [isGenerating8K, setIsGenerating8K] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusModalImage, setStatusModalImage] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const deitySlides = getFestivalDeitySlides(festival.id);
+  const activeHeroImage = (deitySlides[activeImageIndex] || deitySlides[0]).imageUrl;
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [festival.id]);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [copiedWishIndex, setCopiedWishIndex] = useState<number | null>(null);
@@ -209,7 +219,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const handleWhatsAppShare = () => {
     festiveAudio.playSoundForFestival(festival.soundType);
     const url = getShareUrl();
-    const text = activeTranslation.whatsappMessage(senderName, url, !!userPhoto);
+    const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
+    const text = activeTranslation.whatsappMessage(displayName, url, !!userPhoto);
     
     const waUrl = `whatsapp://send?text=${encodeURIComponent(text)}`;
     const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
@@ -227,7 +238,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     festiveAudio.playSoundForFestival(festival.soundType);
 
     const url = getShareUrl();
-    const caption = `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
+    const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
+    const caption = `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${displayName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
 
     try {
       // 1. Generate 8K / 4K Ultra-HD status card
@@ -236,7 +248,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         senderName,
         userPhoto,
         poem: activeTranslation.greetingPoem || festival.defaultPoem,
-        greetingTitle: activeTranslation.greetingTitle || festival.nameHi
+        greetingTitle: activeTranslation.greetingTitle || festival.nameHi,
+        heroImageOverride: activeHeroImage
       });
 
       const fileName = `Shubhakamna-8K-Status-${senderName}.jpg`;
@@ -307,7 +320,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         senderName,
         userPhoto,
         poem: activeTranslation.greetingPoem || festival.defaultPoem,
-        greetingTitle: activeTranslation.greetingTitle || festival.nameHi
+        greetingTitle: activeTranslation.greetingTitle || festival.nameHi,
+        heroImageOverride: activeHeroImage
       });
 
       const url = URL.createObjectURL(blob);
@@ -422,18 +436,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               </button>
             </div>
 
-            {/* 1. Grand Festival Darshan Artwork Image (त्योहार की मुख्य दिव्य छवि) */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/10] border-2 border-amber-400/50 shadow-2xl my-3 group">
-              <img
-                src={festival.heroImage}
-                alt={festival.nameHi}
-                className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
+            {/* 1. Grand Festival Darshan Artwork Slideshow (Auto-slides every 6s, 100% authentic Deities) */}
+            <div className="my-3">
+              <FestivalImageSlider
+                slides={deitySlides}
+                currentIndex={activeImageIndex}
+                onSelectIndex={(idx) => setActiveImageIndex(idx)}
+                festivalName={festival.nameHi}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end justify-center p-3">
-                <span className="text-xs text-amber-200 font-serif tracking-wide bg-black/60 px-3 py-1 rounded-full border border-amber-500/30">
-                  {festival.taglineHi}
-                </span>
-              </div>
             </div>
 
             {/* 2. Sender Photo Frame (अगर यूज़र ने फोटो लगाई है) */}

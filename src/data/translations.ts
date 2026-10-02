@@ -1,3 +1,5 @@
+import { FESTIVALS } from './festivals';
+
 export type LanguageCode = 'hi' | 'en' | 'mr' | 'gu' | 'bn' | 'te' | 'ta' | 'kn' | 'pa';
 
 export interface LanguageOption {
@@ -403,7 +405,7 @@ export const FESTIVAL_TRANSLATIONS: Record<string, Partial<Record<LanguageCode, 
 };
 
 /**
- * Helper to get the translated festival content with fallback to Hindi
+ * Helper to get the translated festival content with fallback to Hindi or festival dataset
  */
 export function getFestivalTranslation(festivalId: string, lang: LanguageCode): FestivalLanguageContent {
   const fest = FESTIVAL_TRANSLATIONS[festivalId];
@@ -414,11 +416,18 @@ export function getFestivalTranslation(festivalId: string, lang: LanguageCode): 
   if (fest && fest['hi']) {
     return fest['hi']!;
   }
-  // Generic fallback
+
+  // Dynamic fallback from FESTIVALS dataset
+  const targetFestival = FESTIVALS.find(f => f.id === festivalId || f.slug === festivalId);
+  const title = targetFestival ? targetFestival.greetingTitle : 'पावन शुभकामनाएँ';
+  const poem = targetFestival ? targetFestival.defaultPoem : 'सुख, शांति और समृद्धि से परिपूर्ण हो आपका हर दिन।';
+  const festName = targetFestival ? targetFestival.nameHi : 'पावन पर्व';
+
   return {
-    greetingTitle: 'पावन शुभकामनाएँ',
-    greetingPoem: 'सुख, शांति और समृद्धि से परिपूर्ण हो आपका हर दिन।',
-    whatsappMessage: (sender, url) => `🎁 *${sender}* ने आपके लिए एक खास शुभकामना भेजी है!\n\n${url}`,
-    wishes: ['शुभकामनाएँ!']
+    greetingTitle: title,
+    greetingPoem: poem,
+    whatsappMessage: (sender, url, hasPhoto) =>
+      `🎁 *${sender}* ने आपके और आपके पूरे परिवार के लिए एक खास जादुई ${festName} शुभकामना${hasPhoto ? ' और फोटो' : ''} भेजी है! ✨\n\nनीचे नीले लिंक पर टच करके अपना सरप्राइज देखें 👇\n${url}`,
+    wishes: [poem]
   };
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Festival, FESTIVALS } from '../data/festivals';
+import { Festival, FESTIVALS, FestivalCategory, FESTIVAL_CATEGORIES } from '../data/festivals';
 import { PanchangWidget } from './PanchangWidget';
 import { 
   Sparkles, 
@@ -19,8 +19,8 @@ import {
 interface FestivalsPortalProps {
   onSelectFestival: (festival: Festival) => void;
   onOpenDomainGuide?: () => void;
-  currentCategory?: 'all' | 'festival' | 'god' | 'celebration' | 'daily';
-  onCategoryChange?: (category: 'all' | 'festival' | 'god' | 'celebration' | 'daily') => void;
+  currentCategory?: FestivalCategory | 'all';
+  onCategoryChange?: (category: FestivalCategory | 'all') => void;
 }
 
 export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
@@ -28,12 +28,12 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
   currentCategory = 'all',
   onCategoryChange
 }) => {
-  const [internalCategory, setInternalCategory] = useState<'all' | 'festival' | 'god' | 'celebration' | 'daily'>('all');
+  const [internalCategory, setInternalCategory] = useState<FestivalCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const selectedCategory = currentCategory !== 'all' ? currentCategory : internalCategory;
 
-  const handleSelectCategory = (cat: 'all' | 'festival' | 'god' | 'celebration' | 'daily') => {
+  const handleSelectCategory = (cat: FestivalCategory | 'all') => {
     setInternalCategory(cat);
     onCategoryChange?.(cat);
   };
@@ -155,46 +155,27 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
           >
             सभी त्योहार ({FESTIVALS.length})
           </button>
-          <button
-            onClick={() => handleSelectCategory('festival')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
-              selectedCategory === 'festival'
-                ? 'bg-amber-500 text-stone-950 font-bold'
-                : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/30'
-            }`}
-          >
-            🪔 महापर्व
-          </button>
-          <button
-            onClick={() => handleSelectCategory('god')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
-              selectedCategory === 'god'
-                ? 'bg-amber-500 text-stone-950 font-bold'
-                : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/30'
-            }`}
-          >
-            🕉️ देव आराधना
-          </button>
-          <button
-            onClick={() => handleSelectCategory('celebration')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
-              selectedCategory === 'celebration'
-                ? 'bg-amber-500 text-stone-950 font-bold'
-                : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/30'
-            }`}
-          >
-            🎂 जन्मदिन व न्यू ईयर
-          </button>
-          <button
-            onClick={() => handleSelectCategory('daily')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
-              selectedCategory === 'daily'
-                ? 'bg-amber-500 text-stone-950 font-bold'
-                : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/30'
-            }`}
-          >
-            ☀️ दैनिक सुप्रभात
-          </button>
+          {FESTIVAL_CATEGORIES.map(cat => {
+            const isSelected = selectedCategory === cat.id;
+            const count = FESTIVALS.filter(f => f.category === cat.id).length;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => handleSelectCategory(cat.id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20'
+                    : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/30'
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.nameHi}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-black/30 text-stone-950' : 'bg-stone-800 text-stone-400'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Search Input */}

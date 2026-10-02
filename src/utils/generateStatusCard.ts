@@ -6,13 +6,14 @@ export interface StatusCardOptions {
   userPhoto: string | null;
   poem: string;
   greetingTitle: string;
+  heroImageOverride?: string;
 }
 
 /**
  * Generates an Ultra-HD (2160 x 3840, 4K/8K resolution) vertical status card.
  */
 export async function generateStatusCardBlob(options: StatusCardOptions): Promise<Blob> {
-  const { festival, senderName, userPhoto, poem, greetingTitle } = options;
+  const { festival, senderName, userPhoto, poem, greetingTitle, heroImageOverride } = options;
 
   const canvas = document.createElement('canvas');
   canvas.width = 2160;
@@ -120,7 +121,7 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
       resolve();
     };
     img.onerror = () => resolve(); // Proceed even if image fails
-    img.src = festival.heroImage;
+    img.src = heroImageOverride || festival.heroImage;
   });
 
   // 7. Blessing / Poetic Box
