@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Festival, FESTIVALS } from '../data/festivals';
+import { PanchangWidget } from './PanchangWidget';
 import { 
   Sparkles, 
   Calendar, 
@@ -17,14 +18,13 @@ import {
 
 interface FestivalsPortalProps {
   onSelectFestival: (festival: Festival) => void;
-  onOpenDomainGuide: () => void;
+  onOpenDomainGuide?: () => void;
   currentCategory?: 'all' | 'festival' | 'god' | 'celebration' | 'daily';
   onCategoryChange?: (category: 'all' | 'festival' | 'god' | 'celebration' | 'daily') => void;
 }
 
 export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
   onSelectFestival,
-  onOpenDomainGuide,
   currentCategory = 'all',
   onCategoryChange
 }) => {
@@ -57,27 +57,31 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30 mb-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>GoDaddy Domain: Shubhakamna.in बुक हो चुका है! 🎉</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>शुभकामना पोर्टल • आधिकारिक पोर्टल Live 🪔</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-white font-serif">
-              शुभकामना पोर्टल • All Indian Festivals & Celebrations
+              सभी भारतीय पर्वों एवं उत्सवों की जादुई विशिंग
             </h2>
             <p className="text-xs sm:text-sm text-stone-300 mt-1 max-w-2xl leading-relaxed">
-              यहाँ से कोई भी व्यक्ति अपने नाम की जादुई विशिंग लिंक बनाकर 1-क्लिक में WhatsApp पर शेयर कर सकता है। हर त्योहार का अलग पेज, काउंटडाउन, आतिशबाजी और AdSense रेवेन्यू तैयार है।
+              यहाँ से कोई भी व्यक्ति अपने नाम व फोटो की जादुई विशिंग लिंक बनाकर 1-क्लिक में WhatsApp पर शेयर कर सकता है। हर त्योहार का अलग पेज, काउंटडाउन और मनमोहक आतिशबाजी तैयार है।
             </p>
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-2.5 border-t border-amber-500/20 text-xs">
+              <span className="text-amber-400 font-semibold flex items-center gap-1">
+                <span>🌐</span>
+                <span>विश भाषाएँ (9 Languages):</span>
+              </span>
+              <span className="text-amber-200/80 text-[11px] font-medium">
+                हिंदी • मराठी • English • ગુજરાતી • বাংলা • తెలుగు • தமிழ் • ಕನ್ನಡ • ਪੰਜਾਬੀ
+              </span>
+            </div>
           </div>
-
-          <button
-            onClick={onOpenDomainGuide}
-            className="shrink-0 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-lg shadow-amber-950/40 cursor-pointer"
-          >
-            <Globe className="w-4 h-4" />
-            <span>GoDaddy डोमेन सेटअप गाइड (2 Min)</span>
-          </button>
         </div>
       </div>
+
+      {/* Daily Hindu Panchang & Shubh Muhurat Widget */}
+      <PanchangWidget />
 
       {/* Featured Upcoming Grand Festival Spotlight */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-950 via-stone-900 to-stone-950 p-6 sm:p-8 shadow-2xl">

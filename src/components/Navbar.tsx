@@ -1,16 +1,16 @@
 import React from 'react';
 import { Bell, Sparkles, Globe, Flame, Calendar, Gift, Sun } from 'lucide-react';
 import { festiveAudio } from '../utils/festiveAudio';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   onSelectCategory?: (category: 'all' | 'festival' | 'god' | 'celebration' | 'daily') => void;
-  onOpenDomainGuide: () => void;
   onGoHome: () => void;
+  onOpenDomainGuide?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onSelectCategory,
-  onOpenDomainGuide,
   onGoHome
 }) => {
   const handleBellRing = () => {
@@ -98,14 +98,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {/* GoDaddy Setup Guide Link */}
-          <button
-            onClick={onOpenDomainGuide}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs font-semibold transition cursor-pointer shadow-sm"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>GoDaddy सेटअप</span>
-          </button>
+          {/* PWA App Install Button */}
+          <PWAInstallButton />
 
           {/* Temple Bell */}
           <button
@@ -157,10 +151,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           🕉️ शिव/राम
         </button>
         <button
-          onClick={onOpenDomainGuide}
-          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-bold"
+          onClick={() => {
+            onGoHome();
+            onSelectCategory?.('daily');
+          }}
+          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-stone-900 border border-stone-800 text-yellow-300"
         >
-          🌐 GoDaddy
+          ☀️ सुप्रभात
         </button>
       </div>
     </header>

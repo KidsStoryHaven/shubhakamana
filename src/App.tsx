@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { FestivalsPortal } from './components/FestivalsPortal';
 import { FestivalWishPage } from './components/FestivalWishPage';
-import { DomainSetupGuideModal } from './components/DomainSetupGuideModal';
 import { FESTIVALS, Festival } from './data/festivals';
 
 export default function App() {
@@ -25,7 +24,6 @@ export default function App() {
   });
 
   const [activeCategory, setActiveCategory] = useState<'all' | 'festival' | 'god' | 'celebration' | 'daily'>('all');
-  const [isDomainGuideOpen, setIsDomainGuideOpen] = useState(false);
 
   if (selectedFestival) {
     return (
@@ -36,10 +34,6 @@ export default function App() {
           onSelectAnotherFestival={(f) => setSelectedFestival(f)}
           allFestivals={FESTIVALS}
         />
-        <DomainSetupGuideModal
-          isOpen={isDomainGuideOpen}
-          onClose={() => setIsDomainGuideOpen(false)}
-        />
       </div>
     );
   }
@@ -49,7 +43,6 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         onSelectCategory={(cat) => setActiveCategory(cat)}
-        onOpenDomainGuide={() => setIsDomainGuideOpen(true)}
         onGoHome={() => {
           setSelectedFestival(null);
           setActiveCategory('all');
@@ -60,7 +53,6 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <FestivalsPortal
           onSelectFestival={(fest) => setSelectedFestival(fest)}
-          onOpenDomainGuide={() => setIsDomainGuideOpen(true)}
           currentCategory={activeCategory}
           onCategoryChange={(cat) => setActiveCategory(cat)}
         />
@@ -101,21 +93,12 @@ export default function App() {
               दैनिक सुप्रभात
             </button>
             <span aria-hidden="true">·</span>
-            <button
-              onClick={() => setIsDomainGuideOpen(true)}
-              className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors cursor-pointer"
-            >
-              🌐 GoDaddy Setup
-            </button>
+            <span className="text-amber-400/90 font-medium">
+              © 2026 Shubhakamna.in
+            </span>
           </div>
         </div>
       </footer>
-
-      {/* Domain Setup Guide Modal */}
-      <DomainSetupGuideModal
-        isOpen={isDomainGuideOpen}
-        onClose={() => setIsDomainGuideOpen(false)}
-      />
     </div>
   );
 }

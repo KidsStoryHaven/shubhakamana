@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Festival } from '../data/festivals';
 import { FestiveCanvas } from './FestiveCanvas';
 import { festiveAudio } from '../utils/festiveAudio';
+import { SurpriseUnbox } from './SurpriseUnbox';
+import { StickyViralBar } from './StickyViralBar';
+import { 
+  SUPPORTED_LANGUAGES, 
+  LanguageCode, 
+  getFestivalTranslation 
+} from '../data/translations';
 import { 
   Share2, 
   Copy, 
@@ -22,7 +29,11 @@ import {
   Camera,
   Image as ImageIcon,
   X,
-  Download
+  Download,
+  Languages,
+  Globe,
+  Eye,
+  Gift
 } from 'lucide-react';
 
 interface FestivalWishPageProps {
@@ -41,6 +52,17 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   allFestivals
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Surprise Unbox Overlay (Auto-triggers if opened from shared WhatsApp link ?from=...)
+  const [isSurpriseOpen, setIsSurpriseOpen] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      return !!(urlParams.get('from') || urlParams.get('name') || urlParams.get('surprise'));
+    } catch {
+      return false;
+    }
+  });
 
   const [senderName, setSenderName] = useState(() => {
     if (initialSenderName) return initialSenderName;
@@ -69,6 +91,32 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [copiedWishIndex, setCopiedWishIndex] = useState<number | null>(null);
 
+  // Multilingual Wish Language State
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get('lang') as LanguageCode;
+      if (langParam && SUPPORTED_LANGUAGES.some(l => l.code === langParam)) {
+        return langParam;
+      }
+      return (localStorage.getItem('shubhakamna_wish_lang') as LanguageCode) || 'hi';
+    } catch {
+      return 'hi';
+    }
+  });
+
+  const activeTranslation = getFestivalTranslation(festival.id, selectedLanguage);
+
+  const handleLanguageChange = (code: LanguageCode) => {
+    setSelectedLanguage(code);
+    try {
+      localStorage.setItem('shubhakamna_wish_lang', code);
+    } catch {
+      // Ignored
+    }
+    festiveAudio.playSoundForFestival(festival.soundType);
+  };
+
   useEffect(() => {
     festiveAudio.setMuted(isSoundMuted);
   }, [isSoundMuted]);
@@ -76,13 +124,13 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   // Dynamic SEO Title & Meta tags for Google ranking
   useEffect(() => {
     const originalTitle = document.title;
-    document.title = `${festival.nameHi} - नाम व फोटो वाली विशिंग लिंक बनाएँ | Shubhakamna.in`;
+    document.title = `${activeTranslation.greetingTitle} (${festival.nameHi}) - नाम व फोटो वाली विशिंग लिंक | Shubhakamna.in`;
 
     // Update meta description
     let metaDesc = document.querySelector('meta[name="description"]');
     const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
     if (metaDesc) {
-      metaDesc.setAttribute('content', `${festival.nameHi} की पावन शुभकामनाएँ। ${festival.defaultPoem} अपने नाम और फोटो के साथ 1-क्लिक में WhatsApp पर शेयर करें।`);
+      metaDesc.setAttribute('content', `${activeTranslation.greetingTitle} - ${activeTranslation.greetingPoem} अपने नाम और फोटो के साथ 1-क्लिक में WhatsApp पर शेयर करें।`);
     }
 
     return () => {
@@ -91,7 +139,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         metaDesc.setAttribute('content', prevDesc);
       }
     };
-  }, [festival]);
+  }, [festival, activeTranslation]);
 
   const handleSoundToggle = () => {
     const nextMuted = !isSoundMuted;
@@ -143,18 +191,17 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     }
   };
 
-  // Generate the viral share link
+  // Generate the viral share link with language preservation
   const getShareUrl = () => {
     const origin = window.location.origin;
     const nameEnc = encodeURIComponent(senderName || 'मित्र');
-    return `${origin}/?f=${festival.id}&from=${nameEnc}`;
+    return `${origin}/?f=${festival.id}&from=${nameEnc}&lang=${selectedLanguage}`;
   };
 
   const handleWhatsAppShare = () => {
     festiveAudio.playSoundForFestival(festival.soundType);
     const url = getShareUrl();
-    const photoNote = userPhoto ? " और फोटो" : "";
-    const text = `🎁 *${senderName}* ने आपके और आपके पूरे परिवार के लिए एक खास जादुई शुभकामना${photoNote} भेजी है! 🪔✨\n\nनीचे नीले रंग के लिंक पर टच करके अपना सरप्राइज देखें 👇\n${url}`;
+    const text = activeTranslation.whatsappMessage(senderName, url, !!userPhoto);
     
     const waUrl = `whatsapp://send?text=${encodeURIComponent(text)}`;
     const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
@@ -164,6 +211,26 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     } else {
       window.open(webWaUrl, '_blank');
     }
+  };
+
+  const handleWhatsAppStatusShare = () => {
+    festiveAudio.playSoundForFestival(festival.soundType);
+    const url = getShareUrl();
+    const statusText = `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
+
+    const waUrl = `whatsapp://send?text=${encodeURIComponent(statusText)}`;
+    const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(statusText)}`;
+
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = waUrl;
+    } else {
+      window.open(webWaUrl, '_blank');
+    }
+  };
+
+  const handleScrollToNameInput = () => {
+    nameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    nameInputRef.current?.focus();
   };
 
   const handleCopyLink = () => {
@@ -262,7 +329,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       ctx.textAlign = 'center';
       
       // Multi-line wrap poem
-      const words = festival.defaultPoem.split(' ');
+      const poemToDraw = activeTranslation.greetingPoem || festival.defaultPoem;
+      const words = poemToDraw.split(' ');
       let line = '';
       let y = 980;
       for (let n = 0; n < words.length; n++) {
@@ -367,6 +435,19 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           </button>
 
           <div className="flex items-center gap-2">
+            {/* Surprise Gift Unbox Replay Button */}
+            <button
+              onClick={() => {
+                setIsSurpriseOpen(true);
+                festiveAudio.playTempleBell();
+              }}
+              className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+              title="जादुई गिफ्ट बॉक्स देखें"
+            >
+              <Gift className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">गिफ्ट बॉक्स</span>
+            </button>
+
             <span className="text-xs bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30 flex items-center gap-1 font-mono">
               <Sparkles className="w-3 h-3 text-amber-400 animate-spin" />
               <span>Shubhakamna.in</span>
@@ -485,6 +566,37 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               </div>
             )}
 
+            {/* Multilingual Language Switcher Bar */}
+            <div className="my-3 p-2.5 rounded-2xl bg-black/60 border border-amber-500/30 backdrop-blur-sm">
+              <div className="flex items-center justify-between gap-1 mb-2 px-1 text-xs text-amber-300 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Languages className="w-3.5 h-3.5 text-amber-400" />
+                  <span>अपनी भाषा में विश भेजें (Select Language):</span>
+                </span>
+                <span className="text-[10px] text-stone-400 font-mono">9 भाषाएँ</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {SUPPORTED_LANGUAGES.map((lang) => {
+                  const isSelected = selectedLanguage === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => handleLanguageChange(lang.code)}
+                      className={`px-2.5 py-1 rounded-xl text-xs transition cursor-pointer flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-bold shadow-md shadow-amber-500/30 scale-105'
+                          : 'bg-stone-900/90 text-stone-300 hover:text-white hover:bg-stone-800 border border-stone-800'
+                      }`}
+                    >
+                      <span>{lang.flag}</span>
+                      <span>{lang.nativeLabel}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Sender Royal Plate */}
             <div className="my-2 py-3 px-4 rounded-2xl bg-black/50 border border-amber-500/30 backdrop-blur-sm shadow-inner">
               <p className="text-xs text-amber-200/80 tracking-wide font-medium">✨ स्नेह एवं सम्मान सहित प्रेषित ✨</p>
@@ -496,12 +608,12 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
             {/* Festival Grand Title */}
             <h1 className="text-2xl sm:text-4xl font-extrabold text-white mt-3 font-serif leading-tight drop-shadow-lg">
-              {festival.greetingTitle}
+              {activeTranslation.greetingTitle}
             </h1>
 
             {/* Poetic Message */}
             <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-stone-100 text-sm sm:text-base leading-relaxed font-sans text-center">
-              "{festival.defaultPoem}"
+              "{activeTranslation.greetingPoem}"
             </div>
 
             {/* Sacred Mantra / Shloka if available */}
@@ -531,12 +643,13 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               {/* Name input */}
               <form onSubmit={handleApplyName} className="flex gap-2">
                 <input
+                  ref={nameInputRef}
                   type="text"
                   value={inputName}
                   onChange={(e) => setInputName(e.target.value)}
                   placeholder="अपना नाम यहाँ लिखें (उदा. राहुल, सुधा)..."
                   maxLength={40}
-                  className="flex-1 bg-stone-900 border border-amber-500/40 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+                  className="flex-1 bg-stone-900 border border-amber-500/40 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/50"
                 />
                 <button
                   type="submit"
@@ -583,7 +696,16 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                 className="w-full bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 hover:from-emerald-500 hover:to-green-400 text-white font-bold py-3.5 px-6 rounded-2xl text-base sm:text-lg shadow-xl shadow-green-900/40 flex items-center justify-center gap-2 transform active:scale-98 transition cursor-pointer animate-bounce"
               >
                 <Share2 className="w-5 h-5 text-white" />
-                <span>WhatsApp पर सबको भेजें 🚀</span>
+                <span>WhatsApp चैट पर सबको भेजें 🚀</span>
+              </button>
+
+              {/* Direct WhatsApp Status Share Button */}
+              <button
+                onClick={handleWhatsAppStatusShare}
+                className="w-full bg-gradient-to-r from-teal-700 via-emerald-600 to-teal-700 hover:from-teal-600 hover:to-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-300" />
+                <span>🟢 WhatsApp Status पर लगाएँ (Direct Status)</span>
               </button>
 
               {/* Download Combined Photo Card Button */}
@@ -659,14 +781,19 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           </p>
         </div>
 
-        {/* Top 5 Copy-Paste Wishes */}
+        {/* Top Copy-Paste Wishes */}
         <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-5 shadow-lg">
-          <h3 className="text-amber-400 font-bold text-base mb-3 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <span>शीर्ष 5 शुभकामना संदेश (Copy & Paste Wishes)</span>
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-amber-400 font-bold text-base flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <span>शीर्ष शुभकामना संदेश (Copy & Paste Wishes)</span>
+            </h3>
+            <span className="text-xs bg-amber-500/10 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30 font-medium">
+              {SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.nativeLabel || 'हिंदी'}
+            </span>
+          </div>
           <div className="space-y-3">
-            {festival.seoTopWishes.map((wish, idx) => (
+            {(activeTranslation.wishes && activeTranslation.wishes.length > 0 ? activeTranslation.wishes : festival.seoTopWishes).map((wish, idx) => (
               <div 
                 key={idx} 
                 className="p-3 rounded-xl bg-stone-950/70 border border-stone-800 flex items-center justify-between gap-3 text-stone-200 text-xs sm:text-sm"
@@ -754,6 +881,21 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         </div>
 
       </div>
+
+      {/* Surprise Gift Box Unboxing Overlay */}
+      <SurpriseUnbox
+        senderName={senderName}
+        festivalName={festival.nameHi}
+        isOpen={isSurpriseOpen}
+        onOpen={() => setIsSurpriseOpen(false)}
+      />
+
+      {/* Sticky Bottom Viral Loop Action Bar */}
+      <StickyViralBar
+        senderName={senderName}
+        onFocusInput={handleScrollToNameInput}
+        onDirectShare={handleWhatsAppShare}
+      />
 
     </div>
   );
