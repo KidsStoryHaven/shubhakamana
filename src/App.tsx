@@ -8,14 +8,27 @@ import { Navbar } from './components/Navbar';
 import { FestivalsPortal } from './components/FestivalsPortal';
 import { FestivalWishPage } from './components/FestivalWishPage';
 import { FESTIVALS, Festival } from './data/festivals';
+import { parseWishUrl } from './utils/shortUrl';
 
 export default function App() {
+  const [urlData] = useState(() => {
+    try {
+      return parseWishUrl(window.location.search, window.location.pathname);
+    } catch {
+      return {};
+    }
+  });
+
   const [selectedFestival, setSelectedFestival] = useState<Festival | null>(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      const festKey = params.get('f') || params.get('festival');
-      if (festKey) {
-        return FESTIVALS.find(f => f.id === festKey || f.slug === festKey) || null;
+      const parsed = parseWishUrl(window.location.search, window.location.pathname);
+      if (parsed.festivalId) {
+        const match = FESTIVALS.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
+        if (match) return match;
+      }
+      // If a sender shared a short wish link without festivalId (e.g. ?w=Sudha), default to Diwali
+      if (parsed.senderName) {
+        return FESTIVALS[0];
       }
     } catch {
       // Ignored
@@ -30,6 +43,8 @@ export default function App() {
       <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
         <FestivalWishPage
           festival={selectedFestival}
+          initialSenderName={urlData.senderName}
+          initialLang={urlData.lang}
           onBackToPortal={() => setSelectedFestival(null)}
           onSelectAnotherFestival={(f) => setSelectedFestival(f)}
           allFestivals={FESTIVALS}

@@ -4,6 +4,9 @@ import { FestiveCanvas } from './FestiveCanvas';
 import { festiveAudio } from '../utils/festiveAudio';
 import { SurpriseUnbox } from './SurpriseUnbox';
 import { StickyViralBar } from './StickyViralBar';
+import { StatusShareModal } from './StatusShareModal';
+import { createShortWishUrl, parseWishUrl } from '../utils/shortUrl';
+import { generateStatusCardBlob } from '../utils/generateStatusCard';
 import { 
   SUPPORTED_LANGUAGES, 
   LanguageCode, 
@@ -33,12 +36,14 @@ import {
   Languages,
   Globe,
   Eye,
-  Gift
+  Gift,
+  Loader2
 } from 'lucide-react';
 
 interface FestivalWishPageProps {
   festival: Festival;
   initialSenderName?: string;
+  initialLang?: string;
   onBackToPortal: () => void;
   onSelectAnotherFestival: (f: Festival) => void;
   allFestivals: Festival[];
@@ -47,6 +52,7 @@ interface FestivalWishPageProps {
 export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   festival,
   initialSenderName = '',
+  initialLang = '',
   onBackToPortal,
   onSelectAnotherFestival,
   allFestivals
@@ -67,9 +73,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [senderName, setSenderName] = useState(() => {
     if (initialSenderName) return initialSenderName;
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const fromParam = urlParams.get('from') || urlParams.get('name');
-      if (fromParam) return fromParam;
+      const parsed = parseWishUrl(window.location.search);
+      if (parsed.senderName) return parsed.senderName;
       return localStorage.getItem('shubhakamna_my_name') || 'आपका शुभचिंतक';
     } catch {
       return 'आपका शुभचिंतक';
@@ -87,17 +92,22 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [inputName, setInputName] = useState(senderName);
   const [isCopied, setIsCopied] = useState(false);
   const [isDownloadingCard, setIsDownloadingCard] = useState(false);
+  const [isGenerating8K, setIsGenerating8K] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusModalImage, setStatusModalImage] = useState<string | null>(null);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [copiedWishIndex, setCopiedWishIndex] = useState<number | null>(null);
 
   // Multilingual Wish Language State
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(() => {
+    if (initialLang && SUPPORTED_LANGUAGES.some(l => l.code === initialLang)) {
+      return initialLang as LanguageCode;
+    }
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const langParam = urlParams.get('lang') as LanguageCode;
-      if (langParam && SUPPORTED_LANGUAGES.some(l => l.code === langParam)) {
-        return langParam;
+      const parsed = parseWishUrl(window.location.search);
+      if (parsed.lang && SUPPORTED_LANGUAGES.some(l => l.code === parsed.lang)) {
+        return parsed.lang as LanguageCode;
       }
       return (localStorage.getItem('shubhakamna_wish_lang') as LanguageCode) || 'hi';
     } catch {
@@ -191,11 +201,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     }
   };
 
-  // Generate the viral share link with language preservation
+  // Generate the clean, short viral share link
   const getShareUrl = () => {
-    const origin = window.location.origin;
-    const nameEnc = encodeURIComponent(senderName || 'मित्र');
-    return `${origin}/?f=${festival.id}&from=${nameEnc}&lang=${selectedLanguage}`;
+    return createShortWishUrl(senderName, festival.id, selectedLanguage);
   };
 
   const handleWhatsAppShare = () => {
@@ -213,18 +221,58 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     }
   };
 
-  const handleWhatsAppStatusShare = () => {
+  // Direct WhatsApp Status Share with 8K Ultra-HD Photo Card
+  const handleWhatsAppStatusShare = async () => {
+    setIsGenerating8K(true);
     festiveAudio.playSoundForFestival(festival.soundType);
+
     const url = getShareUrl();
-    const statusText = `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
+    const caption = `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
 
-    const waUrl = `whatsapp://send?text=${encodeURIComponent(statusText)}`;
-    const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(statusText)}`;
+    try {
+      // 1. Generate 8K / 4K Ultra-HD status card
+      const blob = await generateStatusCardBlob({
+        festival,
+        senderName,
+        userPhoto,
+        poem: activeTranslation.greetingPoem || festival.defaultPoem,
+        greetingTitle: activeTranslation.greetingTitle || festival.nameHi
+      });
 
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = waUrl;
-    } else {
-      window.open(webWaUrl, '_blank');
+      const fileName = `Shubhakamna-8K-Status-${senderName}.jpg`;
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+      // 2. Direct Mobile Web Share (Native WhatsApp Status attachment)
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: activeTranslation.greetingTitle,
+          text: caption
+        });
+        setIsGenerating8K(false);
+        return;
+      }
+
+      // 3. Fallback for Desktop / non-file WebShare: Auto download & show Status modal
+      const dataUrl = URL.createObjectURL(blob);
+      setStatusModalImage(dataUrl);
+
+      const downloadLink = document.createElement('a');
+      downloadLink.download = fileName;
+      downloadLink.href = dataUrl;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      try {
+        await navigator.clipboard.writeText(caption);
+      } catch {}
+
+      setIsStatusModalOpen(true);
+    } catch (err) {
+      console.warn('Status card generation notice:', err);
+    } finally {
+      setIsGenerating8K(false);
     }
   };
 
@@ -248,168 +296,32 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     });
   };
 
-  // 1-Click Generate and Download Combined Photo Card for WhatsApp Status
-  const handleDownloadPhotoCard = () => {
+  // 1-Click Generate and Download Combined 8K Photo Card
+  const handleDownloadPhotoCard = async () => {
     setIsDownloadingCard(true);
     festiveAudio.playSoundForFestival(festival.soundType);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1920; // 9:16 vertical full HD
-    const ctx = canvas.getContext('2d');
+    try {
+      const blob = await generateStatusCardBlob({
+        festival,
+        senderName,
+        userPhoto,
+        poem: activeTranslation.greetingPoem || festival.defaultPoem,
+        greetingTitle: activeTranslation.greetingTitle || festival.nameHi
+      });
 
-    if (!ctx) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `Shubhakamna-8K-Card-${festival.id}-${senderName}.jpg`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Canvas export error:', err);
+    } finally {
       setIsDownloadingCard(false);
-      return;
     }
-
-    // Background gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
-    bgGrad.addColorStop(0, '#1c1917');
-    bgGrad.addColorStop(0.3, '#292524');
-    bgGrad.addColorStop(0.7, '#1c1917');
-    bgGrad.addColorStop(1, '#0c0a09');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // Golden ornate borders
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 14;
-    ctx.strokeRect(30, 30, 1020, 1860);
-
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(50, 50, 980, 1820);
-
-    // Header branding
-    ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 36px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('✨ Shubhakamna.in • पावन शुभकामना ✨', 540, 110);
-
-    // Festival Title
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 58px serif';
-    ctx.fillText(festival.nameHi, 540, 190);
-
-    // Festival Tagline
-    ctx.fillStyle = '#fde68a';
-    ctx.font = '32px sans-serif';
-    ctx.fillText(festival.taglineHi, 540, 245);
-
-    // Load festival image
-    const festImg = new Image();
-    festImg.crossOrigin = 'anonymous';
-    festImg.onload = () => {
-      // Draw festival image inside ornate box
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(100, 300, 880, 560, 30);
-      ctx.clip();
-      ctx.drawImage(festImg, 100, 300, 880, 560);
-      ctx.restore();
-
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 8;
-      ctx.beginPath();
-      ctx.roundRect(100, 300, 880, 560, 30);
-      ctx.stroke();
-
-      // Poem / Blessing Box
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.beginPath();
-      ctx.roundRect(100, 900, 880, 300, 24);
-      ctx.fill();
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      ctx.fillStyle = '#fef3c7';
-      ctx.font = 'italic 34px serif';
-      ctx.textAlign = 'center';
-      
-      // Multi-line wrap poem
-      const poemToDraw = activeTranslation.greetingPoem || festival.defaultPoem;
-      const words = poemToDraw.split(' ');
-      let line = '';
-      let y = 980;
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > 800 && n > 0) {
-          ctx.fillText(line, 540, y);
-          line = words[n] + ' ';
-          y += 50;
-        } else {
-          line = testLine;
-        }
-      }
-      ctx.fillText(line, 540, y);
-
-      // Draw User Photo if present
-      if (userPhoto) {
-        const userImg = new Image();
-        userImg.onload = () => {
-          // Circular user photo
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(540, 1370, 120, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.drawImage(userImg, 420, 1250, 240, 240);
-          ctx.restore();
-
-          // Golden circle border
-          ctx.strokeStyle = '#fbbf24';
-          ctx.lineWidth = 10;
-          ctx.beginPath();
-          ctx.arc(540, 1370, 120, 0, Math.PI * 2);
-          ctx.stroke();
-
-          finishCanvasAndDownload();
-        };
-        userImg.src = userPhoto;
-      } else {
-        finishCanvasAndDownload();
-      }
-    };
-
-    const finishCanvasAndDownload = () => {
-      // Sender Name plate at bottom
-      const nameY = userPhoto ? 1560 : 1380;
-      ctx.fillStyle = '#fef08a';
-      ctx.font = '28px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('✨ स्नेह एवं सम्मान सहित प्रेषित ✨', 540, nameY);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 54px serif';
-      ctx.fillText(senderName, 540, nameY + 65);
-
-      ctx.fillStyle = '#fde68a';
-      ctx.font = '30px sans-serif';
-      ctx.fillText('की ओर से आपको एवं आपके परिवार को हार्दिक शुभकामनाएँ', 540, nameY + 120);
-
-      // Watermark
-      ctx.fillStyle = '#a8a29e';
-      ctx.font = '24px sans-serif';
-      ctx.fillText('Create your own wish link free at: https://shubhakamna.in', 540, 1830);
-
-      // Trigger download
-      try {
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-        const link = document.createElement('a');
-        link.download = `Shubhakamna-${festival.id}-${senderName}.jpg`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (err) {
-        console.error('Canvas export error:', err);
-      }
-      setIsDownloadingCard(false);
-    };
-
-    festImg.src = festival.heroImage;
   };
 
   return (
@@ -699,13 +611,23 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                 <span>WhatsApp चैट पर सबको भेजें 🚀</span>
               </button>
 
-              {/* Direct WhatsApp Status Share Button */}
+              {/* Direct WhatsApp Status Share Button with 8K Photo */}
               <button
                 onClick={handleWhatsAppStatusShare}
-                className="w-full bg-gradient-to-r from-teal-700 via-emerald-600 to-teal-700 hover:from-teal-600 hover:to-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition cursor-pointer"
+                disabled={isGenerating8K}
+                className="w-full bg-gradient-to-r from-teal-700 via-emerald-600 to-teal-700 hover:from-teal-600 hover:to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
               >
-                <Sparkles className="w-4 h-4 text-emerald-300" />
-                <span>🟢 WhatsApp Status पर लगाएँ (Direct Status)</span>
+                {isGenerating8K ? (
+                  <>
+                    <Loader2 className="w-4 h-4 text-emerald-300 animate-spin" />
+                    <span>8K फोटो स्टेटस तैयार हो रहा है...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-emerald-300" />
+                    <span>🟢 WhatsApp Status लगाएँ (8K HD फोटो कार्ड) 📸</span>
+                  </>
+                )}
               </button>
 
               {/* Download Combined Photo Card Button */}
@@ -716,7 +638,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               >
                 <Download className="w-4 h-4" />
                 <span>
-                  {isDownloadingCard ? 'फोटो कार्ड तैयार हो रहा है...' : '🖼️ फोटो स्टेटस कार्ड डाउनलोड करें (.JPG)'}
+                  {isDownloadingCard ? '8K फोटो कार्ड डाउनलोड हो रहा है...' : '🖼️ 8K फोटो स्टेटस कार्ड डाउनलोड करें (.JPG)'}
                 </span>
               </button>
 
@@ -895,6 +817,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         senderName={senderName}
         onFocusInput={handleScrollToNameInput}
         onDirectShare={handleWhatsAppShare}
+      />
+
+      {/* WhatsApp Status Guide Modal */}
+      <StatusShareModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        imageUrl={statusModalImage}
+        captionText={`🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${getShareUrl()}`}
       />
 
     </div>
