@@ -1,6 +1,6 @@
 {
-  "name": "दिव्य दर्शन - हिन्दू वॉलपेपर एवं सुविचार",
-  "description": "उच्च-गुणवत्ता हिन्दू भगवान वॉलपेपर, अनमोल सुविचार, प्रेरक श्लोक, मंत्र जाप एवं स्टेटस मेकर - Lord Shiva, Ram, Krishna, Hanuman & Ganesha Wallpapers and Quotes in Hindi.",
+  "name": "Shubhakamna.in - भारत का पावन शुभकामना पोर्टल",
+  "description": "सभी भारतीय महापर्वों (दीपावली, नव वर्ष, होली, रक्षाबंधन) व जन्मदिन पर अपने नाम और फोटो की जादुई विशिंग लिंक बनाएँ और 1-क्लिक में WhatsApp पर भेजें।",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
