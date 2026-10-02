@@ -10,32 +10,67 @@ import {
   Menu, 
   X, 
   ArrowRight,
-  Heart
+  Heart,
+  Lock
 } from 'lucide-react';
 import { festiveAudio } from '../utils/festiveAudio';
 import { PWAInstallButton } from './PWAInstallButton';
 import { 
-  FESTIVALS, 
   Festival, 
   FestivalCategory, 
-  FESTIVAL_CATEGORIES 
+  CategoryInfo 
 } from '../data/festivals';
+import { getStoredFestivals, getStoredCategories } from '../data/festivalStore';
 
 interface NavbarProps {
   onSelectCategory?: (category: FestivalCategory | 'all') => void;
   onSelectFestival?: (festival: Festival) => void;
   onGoHome: () => void;
+  onSecretAdminTrigger?: () => void;
+  onOpenAdmin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onSelectCategory,
   onSelectFestival,
-  onGoHome
+  onGoHome,
+  onSecretAdminTrigger,
+  onOpenAdmin
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<FestivalCategory | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileExpandedCat, setMobileExpandedCat] = useState<FestivalCategory | null>('hindu');
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
+  const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
+
+  // Stealth 3-tap on logo to open WP-Admin
+  const [logoTapCount, setLogoTapCount] = useState(0);
+  const logoTapTimer = useRef<number | null>(null);
+
+  const handleLogoTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLogoTapCount(prev => {
+      const next = prev + 1;
+      if (next >= 3) {
+        onSecretAdminTrigger?.();
+        return 0;
+      }
+      if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
+      logoTapTimer.current = window.setTimeout(() => setLogoTapCount(0), 1800);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const handleDataChanged = () => {
+      setFestivals(getStoredFestivals());
+      setCategories(getStoredCategories());
+    };
+    window.addEventListener('shubhakamna_data_changed', handleDataChanged);
+    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+  }, []);
 
   const handleBellRing = () => {
     festiveAudio.playTempleBell();
@@ -82,7 +117,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
           className="group flex items-center gap-2.5 text-left focus-visible:outline-none cursor-pointer shrink-0"
         >
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300">
+          <div 
+            onClick={handleLogoTap} 
+            className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300 active:scale-95 transition-transform"
+          >
             <span className="text-xl">🪔</span>
           </div>
           <div className="flex flex-col">
@@ -115,9 +153,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             होम
           </button>
 
-          {/* 5 Distinct Categories with Floating Dropdown */}
-          {FESTIVAL_CATEGORIES.map((cat) => {
-            const catFestivals = FESTIVALS.filter(f => f.category === cat.id);
+          {/* Dynamic Categories with Floating Dropdown */}
+          {categories.map((cat) => {
+            const catFestivals = festivals.filter(f => f.category === cat.id);
             const isOpen = activeDropdown === cat.id;
 
             return (
@@ -210,6 +248,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* PWA App Install Button */}
           <PWAInstallButton />
 
+          {/* Admin Login Button */}
+          <button
+            onClick={onOpenAdmin}
+            title="एडमिन लॉगिन (Admin Login)"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-stone-900 text-amber-400 hover:bg-amber-500/20 active:scale-95 transition cursor-pointer"
+          >
+            <Lock className="h-4 w-4" />
+          </button>
+
           {/* Temple Bell */}
           <button
             onClick={handleBellRing}
@@ -241,7 +288,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           सभी
         </button>
-        {FESTIVAL_CATEGORIES.map(cat => (
+        {categories.map(cat => (
           <button
             key={cat.id}
             onClick={() => {
@@ -272,8 +319,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {FESTIVAL_CATEGORIES.map(cat => {
-              const catFestivals = FESTIVALS.filter(f => f.category === cat.id);
+            {categories.map(cat => {
+              const catFestivals = festivals.filter(f => f.category === cat.id);
               const isExpanded = mobileExpandedCat === cat.id;
 
               return (
@@ -318,6 +365,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               );
             })}
+
+            {/* Mobile Admin Login Button */}
+            <div className="pt-2 border-t border-stone-800">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenAdmin?.();
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Lock className="w-4 h-4 text-amber-400" />
+                <span>🔐 एडमिन लॉगिन (Admin Login)</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

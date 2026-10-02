@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Festival, FESTIVALS, FestivalCategory, FESTIVAL_CATEGORIES } from '../data/festivals';
+import React, { useState, useEffect } from 'react';
+import { Festival, FestivalCategory, CategoryInfo } from '../data/festivals';
+import { getStoredFestivals, getStoredCategories } from '../data/festivalStore';
 import { PanchangWidget } from './PanchangWidget';
 import { 
   Sparkles, 
@@ -28,8 +29,19 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
   currentCategory = 'all',
   onCategoryChange
 }) => {
+  const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
+  const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
   const [internalCategory, setInternalCategory] = useState<FestivalCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const handleDataChanged = () => {
+      setFestivals(getStoredFestivals());
+      setCategories(getStoredCategories());
+    };
+    window.addEventListener('shubhakamna_data_changed', handleDataChanged);
+    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+  }, []);
 
   const selectedCategory = currentCategory !== 'all' ? currentCategory : internalCategory;
 
@@ -38,7 +50,7 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
     onCategoryChange?.(cat);
   };
 
-  const filteredFestivals = FESTIVALS.filter(f => {
+  const filteredFestivals = festivals.filter(f => {
     const matchesCategory = selectedCategory === 'all' || f.category === selectedCategory;
     const matchesSearch = 
       f.nameHi.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -47,7 +59,7 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
     return matchesCategory && matchesSearch;
   });
 
-  const featuredFestival = FESTIVALS[0]; // Diwali or top upcoming
+  const featuredFestival = festivals[0]; // Top upcoming festival
 
   return (
     <div className="space-y-8 pb-12">
@@ -153,11 +165,11 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
                 : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/30'
             }`}
           >
-            सभी त्योहार ({FESTIVALS.length})
+            सभी त्योहार ({festivals.length})
           </button>
-          {FESTIVAL_CATEGORIES.map(cat => {
+          {categories.map(cat => {
             const isSelected = selectedCategory === cat.id;
-            const count = FESTIVALS.filter(f => f.category === cat.id).length;
+            const count = festivals.filter(f => f.category === cat.id).length;
             return (
               <button
                 key={cat.id}

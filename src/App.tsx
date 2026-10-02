@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { FestivalsPortal } from './components/FestivalsPortal';
 import { FestivalWishPage } from './components/FestivalWishPage';
-import { FESTIVALS, Festival, FestivalCategory, FESTIVAL_CATEGORIES } from './data/festivals';
+import { AdminPanel } from './components/AdminPanel';
+import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
+import { getStoredFestivals, getStoredCategories } from './data/festivalStore';
 import { parseWishUrl } from './utils/shortUrl';
 
 export default function App() {
@@ -19,16 +21,75 @@ export default function App() {
     }
   });
 
+  const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
+  const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
+  const checkIsAdminRoute = () => {
+    try {
+      const path = (window.location.pathname || '').toLowerCase();
+      const search = (window.location.search || '').toLowerCase();
+      const hash = (window.location.hash || '').toLowerCase();
+      return (
+        path.includes('wp-admin') ||
+        path.includes('admin') ||
+        search.includes('admin') ||
+        search.includes('wp-admin') ||
+        hash.includes('admin') ||
+        hash.includes('wp-admin')
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const [isAdminOpen, setIsAdminOpen] = useState(() => checkIsAdminRoute());
+
+  // Listen to popstate and hashchange so changing the URL bar immediately opens admin
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (checkIsAdminRoute()) {
+        setIsAdminOpen(true);
+      }
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
+  // Secret shortcut: Ctrl + Shift + A (or Cmd + Shift + A) to toggle Admin Panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handleDataChanged = () => {
+      setFestivals(getStoredFestivals());
+      setCategories(getStoredCategories());
+    };
+    window.addEventListener('shubhakamna_data_changed', handleDataChanged);
+    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+  }, []);
+
   const [selectedFestival, setSelectedFestival] = useState<Festival | null>(() => {
     try {
       const parsed = parseWishUrl(window.location.search, window.location.pathname);
+      const allFests = getStoredFestivals();
       if (parsed.festivalId) {
-        const match = FESTIVALS.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
+        const match = allFests.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
         if (match) return match;
       }
-      // If a sender shared a short wish link without festivalId (e.g. ?w=Sudha), default to Diwali
-      if (parsed.senderName) {
-        return FESTIVALS[0];
+      // If a sender shared a short wish link without festivalId (e.g. ?w=Sudha), default to first festival
+      if (parsed.senderName && allFests.length > 0) {
+        return allFests[0];
       }
     } catch {
       // Ignored
@@ -37,6 +98,28 @@ export default function App() {
   });
 
   const [activeCategory, setActiveCategory] = useState<FestivalCategory | 'all'>('all');
+
+  if (isAdminOpen) {
+    return (
+      <AdminPanel
+        onClose={() => {
+          setIsAdminOpen(false);
+          try {
+            if (window.location.pathname.toLowerCase().includes('admin') || window.location.search.includes('admin')) {
+              window.history.pushState({}, '', '/');
+            }
+          } catch {}
+        }}
+        onPreviewFestival={(f) => {
+          setSelectedFestival(f);
+          setIsAdminOpen(false);
+          try {
+            window.history.pushState({}, '', `/?festival=${f.slug}`);
+          } catch {}
+        }}
+      />
+    );
+  }
 
   if (selectedFestival) {
     return (
@@ -47,7 +130,7 @@ export default function App() {
           initialLang={urlData.lang}
           onBackToPortal={() => setSelectedFestival(null)}
           onSelectAnotherFestival={(f) => setSelectedFestival(f)}
-          allFestivals={FESTIVALS}
+          allFestivals={festivals}
         />
       </div>
     );
@@ -63,6 +146,8 @@ export default function App() {
           setSelectedFestival(null);
           setActiveCategory('all');
         }}
+        onSecretAdminTrigger={() => setIsAdminOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
       {/* Main Festive Portal */}
@@ -88,7 +173,7 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-stone-400">
-            {FESTIVAL_CATEGORIES.map(cat => (
+            {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
@@ -97,6 +182,14 @@ export default function App() {
                 {cat.nameHi}
               </button>
             ))}
+            <span aria-hidden="true">·</span>
+            {/* Direct Easy Admin Login Button */}
+            <button
+              onClick={() => setIsAdminOpen(true)}
+              className="text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-1.5 cursor-pointer bg-stone-900 hover:bg-stone-800 px-3 py-1.5 rounded-xl border border-amber-500/40 text-xs transition active:scale-95 shadow-sm"
+            >
+              <span>🔐 एडमिन लॉगिन</span>
+            </button>
             <span aria-hidden="true">·</span>
             <span className="text-amber-400/90 font-medium">
               © 2026 Shubhakamna.in
