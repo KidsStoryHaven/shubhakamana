@@ -35,6 +35,9 @@ export interface PointRules {
   shareCooldownSeconds: number; // Cooldown in seconds between share clicks
   monthlyRewardTitle: string;
   monthlyRewardAmount: string;
+  firstPrize: number; // ₹100 for 1st
+  secondPrize: number; // ₹50 for 2nd
+  thirdPrize: number; // ₹20 for 3rd
   rewardDistributionNotice: string; // e.g. "हर महीने की 1 तारीख को नकद पुरस्कार UPI पर भेजा जाता है"
 }
 
@@ -43,7 +46,7 @@ export interface WinnerPaymentProof {
   monthYear: string; // e.g. "सितंबर 2026", "अगस्त 2026"
   winnerName: string;
   upiId: string;
-  amountPaid: string; // e.g. "₹5,100"
+  amountPaid: string; // e.g. "₹100", "₹50", "₹20"
   screenshotUrl: string; // Image base64 or URL
   paidDate: string; // e.g. "01 अक्टूबर 2026"
   rank: number; // 1, 2, or 3
@@ -65,9 +68,12 @@ export const DEFAULT_POINT_RULES: PointRules = {
   signupBonus: 50,
   maxDailyPoints: 200, // Anti-abuse limit: 200 points max per day
   shareCooldownSeconds: 8, // 8-second cooldown between share clicks
-  monthlyRewardTitle: 'मासिक महा-पुरस्कार (Monthly Grand Prize)',
-  monthlyRewardAmount: '₹5,100 + विशेष सम्मान प्रमाणपत्र',
-  rewardDistributionNotice: 'हर महीने की 1 तारीख को विजेताओं को नकद पुरस्कार सीधा उनके UPI खाते पर भेजा जाता है।'
+  monthlyRewardTitle: 'मासिक नकद पुरस्कार (Monthly Cash Prizes)',
+  monthlyRewardAmount: '1st: ₹100 | 2nd: ₹50 | 3rd: ₹20 (सीधा UPI भुगतान)',
+  firstPrize: 100,
+  secondPrize: 50,
+  thirdPrize: 20,
+  rewardDistributionNotice: 'हर महीने की 1 तारीख को शीर्ष 3 विजेताओं को सीधा उनके UPI खाते पर इनाम (1st: ₹100, 2nd: ₹50, 3rd: ₹20) भेजा जाता है।'
 };
 
 // Realistic pre-seeded community leaderboard participants
@@ -152,10 +158,10 @@ const INITIAL_WINNER_PROOFS: WinnerPaymentProof[] = [
     monthYear: 'सितंबर 2026',
     winnerName: 'राजेश कुमार शर्मा',
     upiId: '9823412345@paytm',
-    amountPaid: '₹5,100',
+    amountPaid: '₹100',
     paidDate: '01 अक्टूबर 2026',
     rank: 1,
-    notes: 'PhonePe UPI सफलता पूर्वक ट्रांसफर - Ref #TXN982349120',
+    notes: 'PhonePe UPI सफलता पूर्वक ट्रांसफर - 1st Winner Prize Ref #TXN982349120',
     screenshotUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80'
   },
   {
@@ -163,10 +169,10 @@ const INITIAL_WINNER_PROOFS: WinnerPaymentProof[] = [
     monthYear: 'सितंबर 2026',
     winnerName: 'पूजा वर्मा',
     upiId: 'pooja.verma@oksbi',
-    amountPaid: '₹2,100',
+    amountPaid: '₹50',
     paidDate: '01 अक्टूबर 2026',
     rank: 2,
-    notes: 'Google Pay UPI ट्रांसफर सफल - Ref #GPay58921849',
+    notes: 'Google Pay UPI ट्रांसफर सफल - 2nd Winner Prize Ref #GPay58921849',
     screenshotUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80'
   },
   {
@@ -174,10 +180,10 @@ const INITIAL_WINNER_PROOFS: WinnerPaymentProof[] = [
     monthYear: 'सितंबर 2026',
     winnerName: 'अमित कुमार सिंह',
     upiId: 'amit.singh@icici',
-    amountPaid: '₹1,100',
+    amountPaid: '₹20',
     paidDate: '01 अक्टूबर 2026',
     rank: 3,
-    notes: 'Paytm UPI ट्रांसफर सफल - Ref #PTM38472910',
+    notes: 'Paytm UPI ट्रांसफर सफल - 3rd Winner Prize Ref #PTM38472910',
     screenshotUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=600&q=80'
   }
 ];
@@ -362,7 +368,7 @@ export function awardUserPoints(
       awarded: false, 
       points: 0, 
       newTotal: 0, 
-      message: 'पॉइंट्स कमाने व ₹5,100 नकद इनाम जीतने के लिए कृपया लॉग इन करें!' 
+      message: 'पॉइंट्स कमाने व नकद इनाम (1st: ₹100, 2nd: ₹50, 3rd: ₹20) जीतने के लिए कृपया लॉग इन करें!' 
     };
   }
 

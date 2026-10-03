@@ -29,27 +29,31 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
   const SLIDE_INTERVAL_MS = 6000; // 6 seconds auto-slide
   const TICK_MS = 100;
 
-  // Auto-slide effect with progress tracking
+  // Auto-advance slide on timer (clean, non-nested callback)
   useEffect(() => {
     if (!isPlaying || slides.length <= 1) return;
 
+    const timer = setInterval(() => {
+      onSelectIndex((currentIndex + 1) % slides.length);
+    }, SLIDE_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [isPlaying, currentIndex, slides.length, onSelectIndex]);
+
+  // Progress bar tracking based on elapsed time
+  useEffect(() => {
+    setProgress(0);
+    if (!isPlaying || slides.length <= 1) return;
+
+    const startTime = Date.now();
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          onSelectIndex((currentIndex + 1) % slides.length);
-          return 0;
-        }
-        return prev + (TICK_MS / SLIDE_INTERVAL_MS) * 100;
-      });
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(100, (elapsed / SLIDE_INTERVAL_MS) * 100);
+      setProgress(pct);
     }, TICK_MS);
 
     return () => clearInterval(interval);
-  }, [isPlaying, currentIndex, slides.length, onSelectIndex]);
-
-  // Reset progress when index changes manually
-  useEffect(() => {
-    setProgress(0);
-  }, [currentIndex]);
+  }, [currentIndex, isPlaying, slides.length]);
 
   // Auto-scroll thumbnail container to keep active thumbnail centered
   useEffect(() => {
@@ -61,14 +65,16 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
     }
   }, [currentIndex]);
 
+  const safeIndex = (currentIndex >= 0 && currentIndex < slides.length) ? currentIndex : 0;
+
   const handlePrev = () => {
-    const nextIdx = (currentIndex - 1 + slides.length) % slides.length;
+    const nextIdx = (safeIndex - 1 + slides.length) % slides.length;
     onSelectIndex(nextIdx);
     setProgress(0);
   };
 
   const handleNext = () => {
-    const nextIdx = (currentIndex + 1) % slides.length;
+    const nextIdx = (safeIndex + 1) % slides.length;
     onSelectIndex(nextIdx);
     setProgress(0);
   };
@@ -79,7 +85,7 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
 
   if (!slides || slides.length === 0) return null;
 
-  const currentSlide = slides[currentIndex] || slides[0];
+  const currentSlide = slides[safeIndex] || slides[0];
 
   return (
     <div className="w-full space-y-3">

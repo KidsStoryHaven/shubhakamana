@@ -78,6 +78,11 @@ import {
   FESTIVE_SOUND_OPTIONS, 
   FestiveSoundType 
 } from '../utils/festiveAudio';
+import {
+  saveUploadedAudioFile,
+  getUploadedAudioFileName,
+  deleteUploadedAudioFile
+} from '../utils/audioStorage';
 import { 
   WishCategory, 
   HindiWish, 
@@ -147,8 +152,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Active Tab: 'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'
   const [activeTab, setActiveTab] = useState<'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'>('festivals');
 
-  // Audio Testing State
+  // Audio Testing & Upload State
   const [testingAudioKey, setTestingAudioKey] = useState<string | null>(null);
+  const [uploadingAudioKey, setUploadingAudioKey] = useState<string | null>(null);
   const [audioSectionFilter, setAudioSectionFilter] = useState<'all' | 'festivals' | 'categories' | 'seo_pages'>('all');
   const [audioSearchQuery, setAudioSearchQuery] = useState('');
 
@@ -511,6 +517,115 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setCategories(updated);
     saveStoredCategories(updated);
     showToast('नेविगेशन श्रेणी का ऑडियो अपडेट हो गया!');
+  };
+
+  const handleAudioFileUploadForFestival = (festId: string, file: File) => {
+    setUploadingAudioKey(`fest_${festId}`);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const dataUrl = e.target?.result as string;
+        if (!dataUrl) return;
+        await saveUploadedAudioFile(`fest_${festId}`, dataUrl, file.name, file.type);
+        handleUpdateFestivalAudio(festId, 'custom_url', dataUrl);
+        setUploadingAudioKey(null);
+        showToast(`'${file.name}' ऑडियो फ़ाइल सफलतापूर्वक अपलोड हो गई! 🎵`);
+      } catch (err) {
+        setUploadingAudioKey(null);
+        showToast('ऑडियो अपलोड में समस्या आई।');
+      }
+    };
+    reader.onerror = () => {
+      setUploadingAudioKey(null);
+      showToast('फ़ाइल पढ़ने में त्रुटि!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveUploadedAudioForFestival = async (festId: string) => {
+    await deleteUploadedAudioFile(`fest_${festId}`);
+    const updated = festivals.map(f => {
+      if (f.id === festId) {
+        return { ...f, soundType: 'aarti' as FestiveSoundType, customAudioUrl: undefined };
+      }
+      return f;
+    });
+    setFestivals(updated);
+    saveStoredFestivals(updated);
+    showToast('कस्टम ऑडियो हटा दिया गया, डिफ़ॉल्ट आरती धुन सेट हो गई!');
+  };
+
+  const handleAudioFileUploadForWishCategory = (slug: string, file: File) => {
+    setUploadingAudioKey(`wish_${slug}`);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const dataUrl = e.target?.result as string;
+        if (!dataUrl) return;
+        await saveUploadedAudioFile(`wish_${slug}`, dataUrl, file.name, file.type);
+        handleUpdateWishCategoryAudio(slug, 'custom_url', dataUrl);
+        setUploadingAudioKey(null);
+        showToast(`'${file.name}' ऑडियो फ़ाइल सफलतापूर्वक अपलोड हो गई! 🎵`);
+      } catch (err) {
+        setUploadingAudioKey(null);
+        showToast('ऑडियो अपलोड में समस्या आई।');
+      }
+    };
+    reader.onerror = () => {
+      setUploadingAudioKey(null);
+      showToast('फ़ाइल पढ़ने में त्रुटि!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveUploadedAudioForWishCategory = async (slug: string) => {
+    await deleteUploadedAudioFile(`wish_${slug}`);
+    const defaultSound: FestiveSoundType = slug.includes('birthday') ? 'birthday' : 'flute';
+    const updated = wishCategories.map(c => {
+      if (c.slug === slug) {
+        return { ...c, soundType: defaultSound, customAudioUrl: undefined };
+      }
+      return c;
+    });
+    setWishCategories(updated);
+    saveStoredWishCategories(updated);
+    showToast('कस्टम ऑडियो हटा दिया गया!');
+  };
+
+  const handleModalFestivalAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingFestival) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      if (!dataUrl) return;
+      await saveUploadedAudioFile(`fest_${editingFestival.id}`, dataUrl, file.name, file.type);
+      setEditingFestival({
+        ...editingFestival,
+        soundType: 'custom_url',
+        customAudioUrl: dataUrl
+      });
+      showToast(`'${file.name}' ऑडियो लोड हो गया! सहेजने के लिए "सेव करें" दबाएँ।`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleModalWishCategoryAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingWishCategory) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      if (!dataUrl) return;
+      await saveUploadedAudioFile(`wish_${editingWishCategory.slug}`, dataUrl, file.name, file.type);
+      setEditingWishCategory({
+        ...editingWishCategory,
+        soundType: 'custom_url',
+        customAudioUrl: dataUrl
+      });
+      showToast(`'${file.name}' ऑडियो लोड हो गया! सहेजने के लिए "पेज सहेजें" दबाएँ।`);
+    };
+    reader.readAsDataURL(file);
   };
 
   // ==========================================
@@ -1030,15 +1145,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </div>
 
                     <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between text-xs">
-                      <button
-                        onClick={() => {
-                          setSelectedFestivalForPhotos(fest.id);
-                          setActiveTab('photos');
-                        }}
-                        className="text-amber-400 hover:text-amber-300 flex items-center gap-1 text-[11px] font-semibold"
-                      >
-                        <span>📸 फ़ोटो मैनेज करें</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedFestivalForPhotos(fest.id);
+                            setActiveTab('photos');
+                          }}
+                          className="text-amber-400 hover:text-amber-300 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+                        >
+                          <span>📸 फ़ोटो</span>
+                        </button>
+                        <span className="text-stone-700">·</span>
+                        <button
+                          onClick={() => {
+                            setAudioSearchQuery(fest.nameHi);
+                            setActiveTab('audio');
+                          }}
+                          className="text-purple-400 hover:text-purple-300 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+                        >
+                          <span>🎵 ऑडियो</span>
+                        </button>
+                      </div>
 
                       <div className="flex items-center gap-1">
                         <button
@@ -1446,21 +1573,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               </select>
                             </div>
 
-                            {/* Optional Custom Audio URL Input */}
-                            {(currentSound === 'custom_url' || fest.customAudioUrl) && (
-                              <div className="mt-2 space-y-1">
-                                <label className="block text-[10px] font-bold text-stone-400">
-                                  कस्टम MP3 लिंक (Custom Audio URL):
-                                </label>
-                                <input
-                                  type="url"
-                                  value={fest.customAudioUrl || ''}
-                                  onChange={(e) => handleUpdateFestivalAudio(fest.id, currentSound, e.target.value)}
-                                  placeholder="https://.../song.mp3"
-                                  className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
-                                />
+                            {/* Direct Audio File Upload Button (MP3 / Audio) */}
+                            <div className="pt-2 border-t border-stone-800/80 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>अपना गाना / ऑडियो अपलोड करें (Upload MP3):</span>
+                                </span>
+                                {fest.customAudioUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveUploadedAudioForFestival(fest.id)}
+                                    className="text-[10px] text-red-400 hover:text-red-300 underline font-semibold cursor-pointer"
+                                  >
+                                    हटाएं
+                                  </button>
+                                )}
                               </div>
-                            )}
+
+                              <div className="flex items-center gap-2">
+                                <label className="flex-1 px-3 py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md">
+                                  <Upload className="w-3.5 h-3.5 text-purple-400" />
+                                  <span>
+                                    {uploadingAudioKey === `fest_${fest.id}`
+                                      ? 'ऑडियो अपलोड हो रहा है...'
+                                      : '📂 फोन/कंप्यूटर से गाना चुनें (Upload Audio File)'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) handleAudioFileUploadForFestival(fest.id, f);
+                                    }}
+                                  />
+                                </label>
+                              </div>
+
+                              {/* Display if audio file is loaded */}
+                              {fest.customAudioUrl && (
+                                <div className="p-2 rounded-xl bg-black/60 border border-emerald-500/40 flex items-center justify-between gap-1 text-[11px]">
+                                  <span className="text-emerald-300 font-mono truncate flex items-center gap-1.5">
+                                    <span className="text-sm">🎵</span>
+                                    <span className="font-bold truncate">
+                                      {getUploadedAudioFileName(`fest_${fest.id}`) || 'कस्टम ऑडियो संलग्न है'}
+                                    </span>
+                                  </span>
+                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30 shrink-0">
+                                    सक्रिय
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Optional Custom Audio URL Input */}
+                            <div className="mt-2 space-y-1">
+                              <label className="block text-[10px] font-bold text-stone-400">
+                                या ऑनलाइन MP3 लिंक डालें (Optional Audio URL):
+                              </label>
+                              <input
+                                type="url"
+                                value={fest.customAudioUrl || ''}
+                                onChange={(e) => handleUpdateFestivalAudio(fest.id, 'custom_url', e.target.value)}
+                                placeholder="https://.../song.mp3"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
+                              />
+                            </div>
                           </div>
 
                           {/* Action Buttons: Test Sound & Save */}
@@ -1575,21 +1754,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               </select>
                             </div>
 
-                            {/* Optional Custom Audio URL Input */}
-                            {(currentSound === 'custom_url' || cat.customAudioUrl) && (
-                              <div className="mt-2 space-y-1">
-                                <label className="block text-[10px] font-bold text-stone-400">
-                                  कस्टम MP3 लिंक (Custom Audio URL):
-                                </label>
-                                <input
-                                  type="url"
-                                  value={cat.customAudioUrl || ''}
-                                  onChange={(e) => handleUpdateWishCategoryAudio(cat.slug, currentSound, e.target.value)}
-                                  placeholder="https://.../song.mp3"
-                                  className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
-                                />
+                            {/* Direct Audio File Upload Button (MP3 / Audio) */}
+                            <div className="pt-2 border-t border-stone-800/80 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>अपना गाना / ऑडियो अपलोड करें (Upload MP3):</span>
+                                </span>
+                                {cat.customAudioUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveUploadedAudioForWishCategory(cat.slug)}
+                                    className="text-[10px] text-red-400 hover:text-red-300 underline font-semibold cursor-pointer"
+                                  >
+                                    हटाएं
+                                  </button>
+                                )}
                               </div>
-                            )}
+
+                              <div className="flex items-center gap-2">
+                                <label className="flex-1 px-3 py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md">
+                                  <Upload className="w-3.5 h-3.5 text-purple-400" />
+                                  <span>
+                                    {uploadingAudioKey === `wish_${cat.slug}`
+                                      ? 'ऑडियो अपलोड हो रहा है...'
+                                      : '📂 फोन/कंप्यूटर से गाना चुनें (Upload Audio File)'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) handleAudioFileUploadForWishCategory(cat.slug, f);
+                                    }}
+                                  />
+                                </label>
+                              </div>
+
+                              {/* Display if audio file is loaded */}
+                              {cat.customAudioUrl && (
+                                <div className="p-2 rounded-xl bg-black/60 border border-emerald-500/40 flex items-center justify-between gap-1 text-[11px]">
+                                  <span className="text-emerald-300 font-mono truncate flex items-center gap-1.5">
+                                    <span className="text-sm">🎵</span>
+                                    <span className="font-bold truncate">
+                                      {getUploadedAudioFileName(`wish_${cat.slug}`) || 'कस्टम ऑडियो संलग्न है'}
+                                    </span>
+                                  </span>
+                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30 shrink-0">
+                                    सक्रिय
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Optional Custom Audio URL Input */}
+                            <div className="mt-2 space-y-1">
+                              <label className="block text-[10px] font-bold text-stone-400">
+                                या ऑनलाइन MP3 लिंक डालें (Optional Audio URL):
+                              </label>
+                              <input
+                                type="url"
+                                value={cat.customAudioUrl || ''}
+                                onChange={(e) => handleUpdateWishCategoryAudio(cat.slug, 'custom_url', e.target.value)}
+                                placeholder="https://.../song.mp3"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
+                              />
+                            </div>
                           </div>
 
                           {/* Action Buttons: Test Sound & Edit */}
@@ -1710,7 +1941,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div key={w.id} className={`p-4 rounded-2xl border-2 ${borders[idx]} space-y-2`}>
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-extrabold text-amber-300">{medals[idx]}</span>
-                        <span className="text-sm font-extrabold text-amber-400 font-serif">{w.points} pts</span>
+                        <span className="text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
+                          {idx === 0 ? `₹${pointRules.firstPrize || 100} नकद` : idx === 1 ? `₹${pointRules.secondPrize || 50} नकद` : `₹${pointRules.thirdPrize || 20} नकद`}
+                        </span>
                       </div>
                       
                       <div className="flex items-center gap-2.5">
@@ -1793,6 +2026,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     value={pointRules.signupBonus}
                     onChange={(e) => setPointRules({ ...pointRules, signupBonus: parseInt(e.target.value) || 0 })}
                     className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">🥇 1st पुरस्कार (₹)</label>
+                  <input
+                    type="number"
+                    value={pointRules.firstPrize ?? 100}
+                    onChange={(e) => setPointRules({ ...pointRules, firstPrize: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-amber-300 font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">🥈 2nd पुरस्कार (₹)</label>
+                  <input
+                    type="number"
+                    value={pointRules.secondPrize ?? 50}
+                    onChange={(e) => setPointRules({ ...pointRules, secondPrize: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-amber-300 font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">🥉 3rd पुरस्कार (₹)</label>
+                  <input
+                    type="number"
+                    value={pointRules.thirdPrize ?? 20}
+                    onChange={(e) => setPointRules({ ...pointRules, thirdPrize: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-amber-300 font-mono font-bold"
                   />
                 </div>
 
@@ -2680,6 +2943,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 />
               </div>
 
+              <div className="sm:col-span-2">
+                <label className="block text-stone-300 font-bold mb-1">
+                  ✨ विज़ुअल एनीमेशन इफ़ेक्ट (Festive Animation FX)
+                </label>
+                <select
+                  value={editingFestival.particlesType || 'diyas'}
+                  onChange={(e) => setEditingFestival({ ...editingFestival, particlesType: e.target.value as any })}
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-amber-300 font-bold"
+                >
+                  <option value="fireworks">🎆 आतिशबाजी व पटाखे (Diwali Fireworks & Crackers)</option>
+                  <option value="colors">🎨 रंग व गुलाल ब्लास्ट (Holi Color Blast & Pichkari)</option>
+                  <option value="diyas">🪔 पावन दीये व दिव्य ज्योति (Holy Diyas & Embers)</option>
+                  <option value="flowers">🌸 फूलों की वर्षा व पंखुड़ियाँ (Flower Petals)</option>
+                  <option value="stars">✨ दिव्य सितारे व चाँदनी (Twinkling Stars)</option>
+                  <option value="confetti">🎉 रंग-बिरंगी कन्फेटी व रिबन (Confetti Celebration)</option>
+                </select>
+              </div>
+
               {/* FESTIVE AUDIO & SOUND CONFIGURATION */}
               <div className="sm:col-span-2 p-3.5 rounded-2xl bg-black/50 border border-purple-500/30 space-y-3">
                 <div className="flex items-center justify-between">
@@ -2739,6 +3020,50 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-purple-400"
                     />
                   </div>
+                </div>
+
+                {/* Direct Audio File Upload Control */}
+                <div className="pt-2 border-t border-stone-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5 text-amber-400" />
+                      <span>फोन या कंप्यूटर से गाना अपलोड करें (Upload MP3 File):</span>
+                    </span>
+                    {editingFestival.customAudioUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingFestival({ ...editingFestival, customAudioUrl: undefined, soundType: 'aarti' })}
+                        className="text-[10px] text-red-400 hover:text-red-300 underline font-semibold cursor-pointer"
+                      >
+                        हटाएं
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="w-full px-3 py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md">
+                    <Upload className="w-3.5 h-3.5 text-purple-400" />
+                    <span>📂 डिवाइस से ऑडियो फ़ाइल चुनें (Choose MP3 / Audio File)</span>
+                    <input
+                      type="file"
+                      accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                      className="hidden"
+                      onChange={handleModalFestivalAudioUpload}
+                    />
+                  </label>
+
+                  {editingFestival.customAudioUrl && (
+                    <div className="p-2 rounded-xl bg-black/60 border border-emerald-500/40 flex items-center justify-between gap-1 text-[11px]">
+                      <span className="text-emerald-300 font-mono truncate flex items-center gap-1.5">
+                        <span className="text-sm">🎵</span>
+                        <span className="font-bold truncate">
+                          {getUploadedAudioFileName(`fest_${editingFestival.id}`) || 'कस्टम ऑडियो फ़ाइल लोड है'}
+                        </span>
+                      </span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30 shrink-0">
+                        सक्रिय
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -3246,6 +3571,53 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-purple-400"
                     />
                   </div>
+                </div>
+
+                {/* Direct Audio File Upload Control */}
+                <div className="pt-2 border-t border-stone-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5 text-amber-400" />
+                      <span>फोन या कंप्यूटर से गाना अपलोड करें (Upload MP3 File):</span>
+                    </span>
+                    {editingWishCategory.customAudioUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const defaultSound: FestiveSoundType = editingWishCategory.slug.includes('birthday') ? 'birthday' : 'flute';
+                          setEditingWishCategory({ ...editingWishCategory, customAudioUrl: undefined, soundType: defaultSound });
+                        }}
+                        className="text-[10px] text-red-400 hover:text-red-300 underline font-semibold cursor-pointer"
+                      >
+                        हटाएं
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="w-full px-3 py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md">
+                    <Upload className="w-3.5 h-3.5 text-purple-400" />
+                    <span>📂 डिवाइस से ऑडियो फ़ाइल चुनें (Choose MP3 / Audio File)</span>
+                    <input
+                      type="file"
+                      accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                      className="hidden"
+                      onChange={handleModalWishCategoryAudioUpload}
+                    />
+                  </label>
+
+                  {editingWishCategory.customAudioUrl && (
+                    <div className="p-2 rounded-xl bg-black/60 border border-emerald-500/40 flex items-center justify-between gap-1 text-[11px]">
+                      <span className="text-emerald-300 font-mono truncate flex items-center gap-1.5">
+                        <span className="text-sm">🎵</span>
+                        <span className="font-bold truncate">
+                          {getUploadedAudioFileName(`wish_${editingWishCategory.slug}`) || 'कस्टम ऑडियो फ़ाइल लोड है'}
+                        </span>
+                      </span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30 shrink-0">
+                        सक्रिय
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

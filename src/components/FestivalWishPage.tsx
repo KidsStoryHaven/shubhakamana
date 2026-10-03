@@ -48,6 +48,7 @@ import {
   Pause,
   PartyPopper
 } from 'lucide-react';
+import { getUploadedAudioFile } from '../utils/audioStorage';
 
 interface FestivalWishPageProps {
   festival: Festival;
@@ -143,7 +144,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const deitySlides = getFestivalDeitySlides(festival.id);
-  const activeHeroImage = (deitySlides[activeImageIndex] || deitySlides[0]).imageUrl;
+  const safeActiveIndex = (activeImageIndex >= 0 && activeImageIndex < deitySlides.length) ? activeImageIndex : 0;
+  const activeHeroImage = deitySlides[safeActiveIndex]?.imageUrl || festival.heroImage;
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -171,13 +173,57 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
   const activeTranslation = getFestivalTranslation(festival.id, selectedLanguage);
 
+  const [effectiveAudioUrl, setEffectiveAudioUrl] = useState<string | undefined>(festival.customAudioUrl);
+
+  useEffect(() => {
+    let active = true;
+    if (festival.customAudioUrl) {
+      setEffectiveAudioUrl(festival.customAudioUrl);
+    } else {
+      getUploadedAudioFile(`fest_${festival.id}`).then((stored) => {
+        if (active && stored) {
+          setEffectiveAudioUrl(stored);
+        }
+      });
+    }
+    return () => { active = false; };
+  }, [festival.id, festival.customAudioUrl]);
+
+  const getFestiveSoundButtonLabel = () => {
+    if (isBirthday) {
+      return `🎵 ${birthdayPerson} का स्पेशल बर्थडे गाना सुनें`;
+    }
+    if (festival.soundType === 'fireworks' || festival.particlesType === 'fireworks' || festival.id.includes('diwali')) {
+      return '🎆 आतिशबाजी व पटाखे फोड़ें (Fireworks & Sound)';
+    }
+    if (festival.soundType === 'colors' || festival.particlesType === 'colors' || festival.id.includes('holi')) {
+      return '🎨 रंग व गुलाल ब्लास्ट करें (Holi Color Blast & Sound)';
+    }
+    if (festival.soundType === 'damru') {
+      return '🔱 महादेव का डमरू व ॐ नाद (Tap for Damru Beats)';
+    }
+    if (festival.soundType === 'flute') {
+      return '🪈 कान्हा की पावन बांसुरी (Divine Flute)';
+    }
+    if (festival.soundType === 'dhol') {
+      return '🥁 उत्सव ढोल-ताशा व नगाड़ा (Festive Dhol)';
+    }
+    if (festival.soundType === 'shehnai') {
+      return '🎺 मंगल शहनाई की मधुर धुन (Mangal Shehnai)';
+    }
+    if (festival.soundType === 'shankh') {
+      return '🐚 पावन शंखनाद (Holy Shankh)';
+    }
+    return '🪔 पावन घंटी व आरती की गूंज (Temple Bells)';
+  };
+
   const triggerFestivalSound = (sampleName?: string) => {
     if (isBirthday) {
       festiveAudio.playPersonalizedBirthdaySong(sampleName || birthdayPerson);
     } else {
       festiveAudio.playSoundForFestival(
         festival.soundType, 
-        festival.customAudioUrl, 
+        effectiveAudioUrl || festival.customAudioUrl, 
         sampleName || senderName
       );
     }
@@ -577,11 +623,12 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
             {/* Tap for sound prompt */}
             <div className="mb-2">
               <button
+                type="button"
                 onClick={() => triggerFestivalSound()}
-                className="text-[11px] text-amber-200/80 hover:text-amber-200 bg-black/40 hover:bg-black/60 px-3 py-1 rounded-full border border-amber-500/20 inline-flex items-center gap-1.5 transition cursor-pointer"
+                className="text-xs text-amber-200 hover:text-white bg-black/60 hover:bg-black/80 px-4 py-1.5 rounded-full border border-amber-500/40 hover:border-amber-400 inline-flex items-center gap-2 transition cursor-pointer shadow-lg shadow-amber-500/20 active:scale-95"
               >
-                <Music className="w-3 h-3 text-amber-400" />
-                <span>{isBirthday ? `🎵 ${birthdayPerson} का बर्थडे गाना सुनें` : 'स्क्रीन पर टच करें या ध्वनि सुनें'}</span>
+                <Music className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span className="font-bold">{getFestiveSoundButtonLabel()}</span>
               </button>
             </div>
 
@@ -640,7 +687,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                 <div className="my-3">
                   <FestivalImageSlider
                     slides={deitySlides}
-                    currentIndex={activeImageIndex}
+                    currentIndex={safeActiveIndex}
                     onSelectIndex={(idx) => setActiveImageIndex(idx)}
                     festivalName={festival.nameHi}
                   />

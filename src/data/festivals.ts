@@ -12,7 +12,7 @@ export interface CategoryInfo {
   icon: string;
   badge: string;
   description: string;
-  defaultSoundType?: 'aarti' | 'fireworks' | 'flute' | 'birthday' | 'damru' | 'shankh' | 'shehnai' | 'dhol' | 'custom_url';
+  defaultSoundType?: 'aarti' | 'fireworks' | 'colors' | 'flute' | 'birthday' | 'damru' | 'shankh' | 'shehnai' | 'dhol' | 'custom_url';
   customAudioUrl?: string;
 }
 
@@ -85,7 +85,7 @@ export interface Festival {
     glow: string;
   };
   particlesType: 'fireworks' | 'diyas' | 'confetti' | 'colors' | 'flowers' | 'stars';
-  soundType: 'aarti' | 'fireworks' | 'flute' | 'birthday' | 'damru' | 'shankh' | 'shehnai' | 'dhol' | 'custom_url';
+  soundType: 'aarti' | 'fireworks' | 'colors' | 'flute' | 'birthday' | 'damru' | 'shankh' | 'shehnai' | 'dhol' | 'custom_url';
   customAudioUrl?: string;
   greetingTitle: string;
   defaultPoem: string;
@@ -225,7 +225,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-pink-500/20'
     },
     particlesType: 'colors',
-    soundType: 'fireworks',
+    soundType: 'colors',
     greetingTitle: 'होली के पावन रंगों की सप्रेम शुभकामनाएँ',
     defaultPoem: 'गुलाल का टीका, खुशियों की बौछार, अपनों का स्नेह और राधा-कृष्ण का दुलार। मुबारक हो आपको होली का पावन त्योहार!',
     mantraOrShloka: 'ॐ नमो भगवते वासुदेवाय नमः ॥',
@@ -333,7 +333,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-amber-500/20'
     },
     particlesType: 'flowers',
-    soundType: 'shankh',
+    soundType: 'dhol',
     greetingTitle: 'गणेश चतुर्थी की मंगलमय बधाई',
     defaultPoem: 'वक्रतुंड महाकाय, सूर्यकोटि समप्रभ। निर्विघ्नं कुरु मे देव, सर्वकार्येषु सर्वदा॥ बाप्पा आपके जीवन में सुख, समृद्धि और बुद्धि का वरदान दें।',
     mantraOrShloka: 'ॐ गं गणपतये नमः ॥',
@@ -387,7 +387,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-red-500/20'
     },
     particlesType: 'confetti',
-    soundType: 'aarti',
+    soundType: 'shehnai',
     greetingTitle: 'रक्षाबंधन की असीम शुभकामनाएँ',
     defaultPoem: 'कच्चे धागों से बनी पक्की डोर है राखी, प्यार और मीठी शरारतों की होड़ है राखी। भाई की लम्बी उम्र की दुआ है राखी, बहन के पवित्र प्यार की पहचान है राखी।',
     mantraOrShloka: 'येन बद्धो बली राजा दानवेन्द्रो महाबलः। तेन त्वामपि बध्नामि रक्षे मा चल मा चल॥',
@@ -470,7 +470,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-emerald-500/20'
     },
     particlesType: 'stars',
-    soundType: 'shankh',
+    soundType: 'shehnai',
     greetingTitle: 'ईद-उल-फितर मुबारक • दिल से मुबारकबाद',
     defaultPoem: 'दीपक में अगर नूर न होता, तन्हा दिल यूँ मजबूर न होता। हम आपको खुद ईद मुबारक कहने आते, अगर आपका आशियाना हमसे इतना दूर न होता। ईद मुबारक!',
     significance: 'माहे रमजान के 30 दिनों के रोजों और इबादत के मुकम्मल होने पर अल्लाह की तरफ से बंदों को तोहफा है।',
@@ -496,7 +496,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-teal-500/20'
     },
     particlesType: 'stars',
-    soundType: 'shankh',
+    soundType: 'shehnai',
     greetingTitle: 'ईद-उल-अजहा (बकरीद) मुबारक',
     defaultPoem: 'अल्लाह की राह में कुर्बानी का जज़्बा सलामत रहे, हर दिल में मोहब्बत और अमन की इनायत रहे। मुबारक हो आपको ईद-उल-अजहा की ये पुरनूर घड़ी!',
     significance: 'हजरत इब्राहिम अलैहिस्सलाम की अल्लाह के हुक्म पर बेमिसाल कुर्बानी की याद में मनाया जाता है।',
@@ -522,7 +522,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-emerald-500/10'
     },
     particlesType: 'stars',
-    soundType: 'shankh',
+    soundType: 'shehnai',
     greetingTitle: 'मुहर्रम • आशूरा का पावन संदेश',
     defaultPoem: 'इंसान को बेदार तो हो लेने दो, हर कौम पुकारेगी हमारे हैं हुसैन। हक और इंसाफ के लिए सब कुछ कुर्बान करने वाले कर्बला के शहीदों को सलाम।',
     significance: 'हजरत इमाम हुसैन रजि. और उनके साथियों द्वारा जालिम के आगे न झुकने की अमर शहादत।',
@@ -548,7 +548,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-green-500/20'
     },
     particlesType: 'flowers',
-    soundType: 'shankh',
+    soundType: 'shehnai',
     greetingTitle: 'ईद-ए-मिलाद-उन-नबी मुबारक',
     defaultPoem: 'निसार तेरी चहल-पहल पर हजारों ईदें रबी-उल-अव्वल, सिवाए इब्लीस के जहाँ में सभी तो खुशियाँ मना रहे हैं। मिलाद मुबारक!',
     significance: 'रहमतुल लिल आलमीन हजरत मुहम्मद (सल्ल.) का इस दुनिया में आगमन का मुबारक दिन।',
@@ -574,7 +574,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-emerald-500/20'
     },
     particlesType: 'stars',
-    soundType: 'shankh',
+    soundType: 'shehnai',
     greetingTitle: 'रमजान मुबारक • बरकतों का पावन महीना',
     defaultPoem: 'रहमतों की बारिश, मगफिरत का पैगाम, आ गया माहे रमजान मुकद्दस मुकाम। आपकी हर दुआ कुबूल हो, मुबारक हो आपको रमजान का पावन महीना!',
     significance: 'इस मुकद्दस महीने में पवित्र कुरान नाजिल हुआ और इसमें रोजा रखना हर बालिग पर फर्ज है।',
@@ -739,7 +739,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-yellow-500/20'
     },
     particlesType: 'confetti',
-    soundType: 'shankh',
+    soundType: 'dhol',
     greetingTitle: 'बैसाखी की लख-लख वधाइयाँ • Happy Baisakhi',
     defaultPoem: 'नाचो गाओ, खुशी मनाओ, आई है बैसाखी! फसलों की खुशहाली और खालसा साजना दिवस की आप सभी को ढ़ेरों शुभकामनाएँ!',
     significance: '1699 में आनंदपुर साहिब में श्री गुरु गोबिंद सिंह जी द्वारा खालसा पंथ की स्थापना और पंजाब में नई फसल का स्वागत।',
@@ -1037,7 +1037,7 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-amber-500/20'
     },
     particlesType: 'flowers',
-    soundType: 'shankh',
+    soundType: 'shehnai',
     greetingTitle: 'शुभ विवाह की हार्दिक शुभकामनाएँ',
     defaultPoem: 'मंगलयं तन्तुनानेन लोकधारणहेतुना। कंठे बध्नामि शुभगे त्वं जीव शरदः शतम्॥ नव दंपति को सुखी, संपन्न और प्रेमपूर्ण वैवाहिक जीवन का मंगल आशीष!',
     significance: 'विवाह दो आत्माओं का पवित्र मिलन और गृहस्थ आश्रम का पावन शुभारंभ है।',

@@ -7,6 +7,7 @@
 export type FestiveSoundType = 
   | 'aarti' 
   | 'fireworks' 
+  | 'colors'
   | 'flute' 
   | 'birthday' 
   | 'damru' 
@@ -111,7 +112,7 @@ class FestiveAudioEngine {
   }
 
   /**
-   * Fireworks Pop and Sparkle
+   * Diwali Fireworks, Rocket Launch & Firecrackers (पटाखे व आतिशबाजी)
    */
   public playFirework() {
     if (this.isMuted) return;
@@ -119,40 +120,150 @@ class FestiveAudioEngine {
       this.initContext();
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(200, now);
-      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.25);
-      gain.gain.setValueAtTime(0.12, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.26);
 
+      // 1. Rocket Whistle Ascent (300Hz -> 1800Hz)
+      const whistleOsc = this.ctx.createOscillator();
+      const whistleGain = this.ctx.createGain();
+      whistleOsc.type = 'sawtooth';
+      whistleOsc.frequency.setValueAtTime(320, now);
+      whistleOsc.frequency.exponentialRampToValueAtTime(1900, now + 0.32);
+      whistleGain.gain.setValueAtTime(0.08, now);
+      whistleGain.gain.linearRampToValueAtTime(0.18, now + 0.22);
+      whistleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+      whistleOsc.connect(whistleGain);
+      whistleGain.connect(this.ctx.destination);
+      whistleOsc.start(now);
+      whistleOsc.stop(now + 0.35);
+
+      // 2. Thunderous Explosion Boom (Dhamaka)
       setTimeout(() => {
         if (!this.ctx || this.isMuted) return;
-        const burstTime = this.ctx.currentTime;
-        const bufferSize = this.ctx.sampleRate * 0.4;
+        const blastTime = this.ctx.currentTime;
+
+        // Sub Bass Thump (120Hz -> 30Hz)
+        const boomOsc = this.ctx.createOscillator();
+        const boomGain = this.ctx.createGain();
+        boomOsc.type = 'sine';
+        boomOsc.frequency.setValueAtTime(140, blastTime);
+        boomOsc.frequency.exponentialRampToValueAtTime(28, blastTime + 0.5);
+        boomGain.gain.setValueAtTime(0.45, blastTime);
+        boomGain.gain.exponentialRampToValueAtTime(0.001, blastTime + 0.55);
+        boomOsc.connect(boomGain);
+        boomGain.connect(this.ctx.destination);
+        boomOsc.start(blastTime);
+        boomOsc.stop(blastTime + 0.6);
+
+        // Explosion Noise Burst
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.12));
         }
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
         const filter = this.ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(800, burstTime);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, blastTime);
+        filter.frequency.exponentialRampToValueAtTime(200, blastTime + 0.45);
         const burstGain = this.ctx.createGain();
-        burstGain.gain.setValueAtTime(0.3, burstTime);
-        burstGain.gain.exponentialRampToValueAtTime(0.0001, burstTime + 0.4);
+        burstGain.gain.setValueAtTime(0.5, blastTime);
+        burstGain.gain.exponentialRampToValueAtTime(0.0001, blastTime + 0.45);
         noise.connect(filter);
         filter.connect(burstGain);
         burstGain.connect(this.ctx.destination);
-        noise.start(burstTime);
-      }, 250);
+        noise.start(blastTime);
+
+        // 3. Crackling Firecracker String (Ladi / Phuljhari Sparkles)
+        const crackerPops = 14;
+        for (let p = 0; p < crackerPops; p++) {
+          const popDelay = 0.08 + Math.random() * 0.55;
+          setTimeout(() => {
+            if (!this.ctx || this.isMuted) return;
+            const popTime = this.ctx.currentTime;
+            const popOsc = this.ctx.createOscillator();
+            const popGain = this.ctx.createGain();
+            popOsc.type = 'triangle';
+            popOsc.frequency.setValueAtTime(600 + Math.random() * 1200, popTime);
+            popOsc.frequency.exponentialRampToValueAtTime(80, popTime + 0.04);
+            popGain.gain.setValueAtTime(0.25, popTime);
+            popGain.gain.exponentialRampToValueAtTime(0.001, popTime + 0.04);
+            popOsc.connect(popGain);
+            popGain.connect(this.ctx.destination);
+            popOsc.start(popTime);
+            popOsc.stop(popTime + 0.05);
+          }, popDelay * 1000);
+        }
+      }, 300);
+    } catch {}
+  }
+
+  /**
+   * Holi Color Blast & Pichkari Water Splash (होली कलर ब्लास्ट व पिचकारी)
+   */
+  public playHoliColorBlast() {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // 1. Pichkari Water Jet / Swoosh (Liquid filter sweep)
+      const bufferLen = Math.floor(this.ctx.sampleRate * 0.35);
+      const splashBuf = this.ctx.createBuffer(1, bufferLen, this.ctx.sampleRate);
+      const splashData = splashBuf.getChannelData(0);
+      for (let i = 0; i < bufferLen; i++) {
+        splashData[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferLen) * Math.PI);
+      }
+      const splashSrc = this.ctx.createBufferSource();
+      splashSrc.buffer = splashBuf;
+      const splashFilter = this.ctx.createBiquadFilter();
+      splashFilter.type = 'bandpass';
+      splashFilter.frequency.setValueAtTime(450, now);
+      splashFilter.frequency.exponentialRampToValueAtTime(2200, now + 0.18);
+      splashFilter.frequency.exponentialRampToValueAtTime(500, now + 0.35);
+      splashFilter.Q.setValueAtTime(4.0, now);
+      const splashGain = this.ctx.createGain();
+      splashGain.gain.setValueAtTime(0.35, now);
+      splashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      splashSrc.connect(splashFilter);
+      splashFilter.connect(splashGain);
+      splashGain.connect(this.ctx.destination);
+      splashSrc.start(now);
+
+      // 2. Gulal Powder Pop Burst ("Phufff!" resonance)
+      const popOsc = this.ctx.createOscillator();
+      const popGain = this.ctx.createGain();
+      popOsc.type = 'sine';
+      popOsc.frequency.setValueAtTime(260, now + 0.05);
+      popOsc.frequency.exponentialRampToValueAtTime(70, now + 0.28);
+      popGain.gain.setValueAtTime(0.3, now + 0.05);
+      popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      popOsc.connect(popGain);
+      popGain.connect(this.ctx.destination);
+      popOsc.start(now + 0.05);
+      popOsc.stop(now + 0.32);
+
+      // 3. Celebratory Rangotsav Festive Dhol Roll (Dha - Tin - Dhin - Na)
+      const dholBeats = [0.22, 0.38, 0.52, 0.70];
+      const dholFreqs = [120, 220, 110, 240];
+      dholBeats.forEach((bTime, i) => {
+        setTimeout(() => {
+          if (!this.ctx || this.isMuted) return;
+          const hitTime = this.ctx.currentTime;
+          const dholOsc = this.ctx.createOscillator();
+          const dholGain = this.ctx.createGain();
+          dholOsc.type = i % 2 === 0 ? 'sine' : 'triangle';
+          dholOsc.frequency.setValueAtTime(dholFreqs[i], hitTime);
+          dholOsc.frequency.exponentialRampToValueAtTime(55, hitTime + 0.14);
+          dholGain.gain.setValueAtTime(0.35, hitTime);
+          dholGain.gain.exponentialRampToValueAtTime(0.001, hitTime + 0.15);
+          dholOsc.connect(dholGain);
+          dholGain.connect(this.ctx.destination);
+          dholOsc.start(hitTime);
+          dholOsc.stop(hitTime + 0.16);
+        }, bTime * 1000);
+      });
     } catch {}
   }
 
@@ -482,7 +593,7 @@ class FestiveAudioEngine {
   ) {
     if (this.isMuted) return;
 
-    if (soundType === 'custom_url' && customUrl) {
+    if (customUrl && (soundType === 'custom_url' || customUrl.startsWith('data:audio') || customUrl.startsWith('blob:') || !soundType)) {
       this.playAudioUrl(customUrl);
       return;
     }
@@ -493,6 +604,9 @@ class FestiveAudioEngine {
         break;
       case 'fireworks':
         this.playFirework();
+        break;
+      case 'colors':
+        this.playHoliColorBlast();
         break;
       case 'aarti':
         this.playTempleBell();
@@ -537,9 +651,10 @@ export interface FestiveSoundOption {
 }
 
 export const FESTIVE_SOUND_OPTIONS: FestiveSoundOption[] = [
+  { id: 'fireworks', labelHi: 'दिवाली आतिशबाजी व पटाखे (Fireworks & Crackers)', labelEn: 'Diwali Fireworks & Crackers', icon: '🎆', description: 'रोमांचक पटाखों व आतिशबाजी की गूंज' },
+  { id: 'colors', labelHi: 'होली कलर ब्लास्ट व पिचकारी (Holi Color Blast & Pichkari)', labelEn: 'Holi Color Blast & Pichkari', icon: '🎨', description: 'गुलाल ब्लास्ट, पिचकारी की बौछार व होली ढोल' },
   { id: 'birthday', labelHi: 'हैप्पी बर्थडे सॉन्ग (नाम के साथ)', labelEn: 'Birthday Song (with Name)', icon: '🎂', description: 'पर्सनलाइज़्ड बर्थडे धुन व नाम का गायन' },
   { id: 'aarti', labelHi: 'मंदिर की पावन घंटी व आरती (Temple Bell)', labelEn: 'Temple Bell / Aarti Chime', icon: '🪔', description: 'दिव्य मंदिर घंटा व घंटियाँ' },
-  { id: 'fireworks', labelHi: 'दिवाली आतिशबाजी व पटाखे (Fireworks)', labelEn: 'Celebration Fireworks', icon: '🎆', description: 'रोमांचक पटाखों की गूंज' },
   { id: 'flute', labelHi: 'श्री कृष्ण बांसुरी धुन (Divine Flute)', labelEn: 'Divine Flute Raga', icon: '🪈', description: 'मधुर शास्त्रीय बांसुरी राग' },
   { id: 'shehnai', labelHi: 'मंगल शहनाई (Mangal Shehnai)', labelEn: 'Mangal Shehnai', icon: '🎺', description: 'शुभ विवाह व उत्सव शहनाई' },
   { id: 'shankh', labelHi: 'पावन शंख ध्वनि (Holy Shankh)', labelEn: 'Holy Shankh', icon: '🐚', description: 'शुभ शुभारंभ शंखनाद' },

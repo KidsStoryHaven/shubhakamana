@@ -155,13 +155,23 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
               const medals = ['🥇', '🥈', '🥉'];
               const borders = ['border-yellow-400/60 bg-yellow-950/20', 'border-stone-400/40 bg-stone-900/60', 'border-amber-700/50 bg-amber-950/20'];
               const rankLabels = ['प्रथम विजेता (1st)', 'द्वितीय विजेता (2nd)', 'तृतीय विजेता (3rd)'];
+              const prizeAmounts = [
+                `₹${rules.firstPrize || 100} नकद`,
+                `₹${rules.secondPrize || 50} नकद`,
+                `₹${rules.thirdPrize || 20} नकद`
+              ];
 
               return (
                 <div
                   key={u.id}
                   className={`rounded-2xl border-2 ${borders[idx]} p-4 text-center space-y-2 relative shadow-lg`}
                 >
-                  <div className="text-2xl">{medals[idx]}</div>
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-2xl">{medals[idx]}</span>
+                    <span className="text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      {prizeAmounts[idx]}
+                    </span>
+                  </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 block">
                     {rankLabels[idx]}
                   </span>

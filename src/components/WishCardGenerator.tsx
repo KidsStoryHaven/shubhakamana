@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { WishCategory, HindiWish } from '../data/wishesData';
 import { generateWishCardBlob } from '../utils/canvasCardGenerator';
 import { festiveAudio } from '../utils/festiveAudio';
+import { getUploadedAudioFile } from '../utils/audioStorage';
 import { 
   Sparkles, 
   Download, 
@@ -139,15 +140,34 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
     }
   };
 
-  // General Festive Audio Toggle (Flute, Shehnai, Aarti, Fireworks, Custom MP3)
+  const [effectiveCategoryAudio, setEffectiveCategoryAudio] = useState<string | undefined>(category.customAudioUrl);
+
+  useEffect(() => {
+    let active = true;
+    if (category.customAudioUrl) {
+      setEffectiveCategoryAudio(category.customAudioUrl);
+    } else {
+      getUploadedAudioFile(`wish_${category.slug}`).then((stored) => {
+        if (active && stored) {
+          setEffectiveCategoryAudio(stored);
+        }
+      });
+    }
+    return () => { active = false; };
+  }, [category.slug, category.customAudioUrl]);
+
+  // General Festive Audio Toggle (Flute, Shehnai, Aarti, Fireworks, Colors, Custom MP3)
   const handleToggleCategorySound = () => {
     if (isPlayingSong) {
       festiveAudio.stopAll();
       setIsPlayingSong(false);
     } else {
       setIsPlayingSong(true);
-      const soundType = category.soundType || 'flute';
-      festiveAudio.playSoundForFestival(soundType, category.customAudioUrl, senderName || 'आप');
+      const isHoli = category.slug.includes('holi');
+      const isDiwali = category.slug.includes('diwali');
+      const isNewYear = category.slug.includes('newyear') || category.slug.includes('new-year');
+      const soundType = category.soundType || (isHoli ? 'colors' : (isDiwali || isNewYear) ? 'fireworks' : isBirthday ? 'birthday' : 'flute');
+      festiveAudio.playSoundForFestival(soundType, effectiveCategoryAudio || category.customAudioUrl, senderName || 'आप');
     }
   };
 
@@ -507,12 +527,18 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
                 {isPlayingSong ? (
                   <>
                     <Square className="w-3.5 h-3.5 fill-white" />
-                    <span>⏹️ संगीत बंद करें (Playing {category.nameHi} Music...)</span>
+                    <span>⏹️ संगीत बंद करें (Playing...)</span>
                   </>
                 ) : (
                   <>
                     <Volume2 className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span>🎵 इस पर्व की पावन धुन / संगीत सुनें (Play Festive Audio)</span>
+                    <span>
+                      {category.slug.includes('diwali')
+                        ? '🎆 आतिशबाजी व पटाखे फोड़ें (Diwali Fireworks & Crackers)'
+                        : category.slug.includes('holi')
+                        ? '🎨 रंग व गुलाल ब्लास्ट करें (Holi Color Blast & Pichkari)'
+                        : `🎵 ${category.nameHi} की पावन धुन / संगीत सुनें`}
+                    </span>
                   </>
                 )}
               </button>
