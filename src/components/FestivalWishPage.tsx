@@ -11,6 +11,7 @@ import { AdBanner } from './AdBanner';
 import { awardUserPoints } from '../data/userStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
 import { generateStatusCardBlob } from '../utils/generateStatusCard';
+import { updatePageSEO, getFestivalSEOMetadata } from '../utils/seoManager';
 import { 
   SUPPORTED_LANGUAGES, 
   LanguageCode, 
@@ -139,31 +140,17 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       // Ignored
     }
     festiveAudio.playSoundForFestival(festival.soundType);
+    updatePageSEO(getFestivalSEOMetadata(festival, senderName, code));
   };
 
   useEffect(() => {
     festiveAudio.setMuted(isSoundMuted);
   }, [isSoundMuted]);
 
-  // Dynamic SEO Title & Meta tags for Google ranking
+  // Full Dynamic SEO, OpenGraph, Twitter Cards & JSON-LD
   useEffect(() => {
-    const originalTitle = document.title;
-    document.title = `${activeTranslation.greetingTitle} (${festival.nameHi}) - नाम व फोटो वाली विशिंग लिंक | Shubhakamna.in`;
-
-    // Update meta description
-    let metaDesc = document.querySelector('meta[name="description"]');
-    const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
-    if (metaDesc) {
-      metaDesc.setAttribute('content', `${activeTranslation.greetingTitle} - ${activeTranslation.greetingPoem} अपने नाम और फोटो के साथ 1-क्लिक में WhatsApp पर शेयर करें।`);
-    }
-
-    return () => {
-      document.title = originalTitle;
-      if (metaDesc && prevDesc) {
-        metaDesc.setAttribute('content', prevDesc);
-      }
-    };
-  }, [festival, activeTranslation]);
+    updatePageSEO(getFestivalSEOMetadata(festival, senderName, selectedLanguage));
+  }, [festival, senderName, selectedLanguage]);
 
   const handleSoundToggle = () => {
     const nextMuted = !isSoundMuted;
@@ -185,6 +172,13 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         // Ignored
       }
       festiveAudio.playSoundForFestival(festival.soundType);
+      
+      // Update dynamic SEO & URL with new sender name
+      updatePageSEO(getFestivalSEOMetadata(festival, clean, selectedLanguage));
+      const cleanUrl = createShortWishUrl(clean, festival.id, selectedLanguage);
+      try {
+        window.history.replaceState({ festivalId: festival.id, senderName: clean }, '', cleanUrl);
+      } catch {}
     }
   };
 

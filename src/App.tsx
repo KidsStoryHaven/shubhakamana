@@ -15,6 +15,7 @@ import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
 import { getStoredFestivals, getStoredCategories } from './data/festivalStore';
 import { getStoredAdSettings } from './data/adStore';
 import { parseWishUrl } from './utils/shortUrl';
+import { updatePageSEO, getFestivalSEOMetadata, resetPortalSEO } from './utils/seoManager';
 
 export default function App() {
   const [urlData] = useState(() => {
@@ -115,7 +116,6 @@ export default function App() {
         const match = allFests.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
         if (match) return match;
       }
-      // If a sender shared a short wish link without festivalId (e.g. ?w=Sudha), default to first festival
       if (parsed.senderName && allFests.length > 0) {
         return allFests[0];
       }
@@ -129,6 +129,82 @@ export default function App() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  // 1. Initial Load & Direct Link SEO Injection
+  useEffect(() => {
+    if (selectedFestival) {
+      updatePageSEO(getFestivalSEOMetadata(selectedFestival, urlData.senderName, urlData.lang));
+    } else if (!isAdminOpen) {
+      resetPortalSEO();
+    }
+  }, []);
+
+  // 2. Browser Back / Forward Sync (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      // Check admin route first
+      if (checkIsAdminRoute()) {
+        setIsAdminOpen(true);
+        return;
+      }
+      setIsAdminOpen(false);
+
+      const parsed = parseWishUrl(window.location.search, window.location.pathname);
+      const allFests = getStoredFestivals();
+
+      if (parsed.festivalId) {
+        const match = allFests.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
+        if (match) {
+          setSelectedFestival(match);
+          updatePageSEO(getFestivalSEOMetadata(match, parsed.senderName, parsed.lang));
+          return;
+        }
+      }
+
+      // If at root or no festival in URL, return to home portal
+      setSelectedFestival(null);
+      resetPortalSEO();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // 3. Centralized Navigation Handler: Updates View, URL (via pushState) & Dynamic SEO
+  const handleSelectFestival = (fest: Festival, senderName?: string, lang?: string, updateUrl: boolean = true) => {
+    setSelectedFestival(fest);
+    
+    // Update Dynamic SEO & Social Tags (Title, Description, OG, Twitter, JSON-LD)
+    updatePageSEO(getFestivalSEOMetadata(fest, senderName, lang));
+
+    if (updateUrl) {
+      const cleanPath = `/${fest.slug || fest.id}`;
+      try {
+        window.history.pushState({ festivalId: fest.id }, '', cleanPath);
+      } catch {
+        // Fallback for restricted iframe environments
+        window.history.pushState({ festivalId: fest.id }, '', `/?festival=${fest.slug || fest.id}`);
+      }
+    }
+
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 4. Centralized Go Home Handler
+  const handleGoHome = (updateUrl: boolean = true) => {
+    setSelectedFestival(null);
+    setActiveCategory('all');
+    resetPortalSEO();
+
+    if (updateUrl) {
+      try {
+        window.history.pushState({}, '', '/');
+      } catch {}
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (isAdminOpen) {
     return (
       <AdminPanel
@@ -141,11 +217,8 @@ export default function App() {
           } catch {}
         }}
         onPreviewFestival={(f) => {
-          setSelectedFestival(f);
           setIsAdminOpen(false);
-          try {
-            window.history.pushState({}, '', `/?festival=${f.slug}`);
-          } catch {}
+          handleSelectFestival(f);
         }}
       />
     );
@@ -163,8 +236,8 @@ export default function App() {
           festival={selectedFestival}
           initialSenderName={urlData.senderName}
           initialLang={urlData.lang}
-          onBackToPortal={() => setSelectedFestival(null)}
-          onSelectAnotherFestival={(f) => setSelectedFestival(f)}
+          onBackToPortal={() => handleGoHome()}
+          onSelectAnotherFestival={(f) => handleSelectFestival(f)}
           allFestivals={festivals}
         />
 
@@ -195,11 +268,8 @@ export default function App() {
       {/* Top Navbar with Dropdown Menus */}
       <Navbar
         onSelectCategory={(cat) => setActiveCategory(cat)}
-        onSelectFestival={(fest) => setSelectedFestival(fest)}
-        onGoHome={() => {
-          setSelectedFestival(null);
-          setActiveCategory('all');
-        }}
+        onSelectFestival={(fest) => handleSelectFestival(fest)}
+        onGoHome={() => handleGoHome()}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
@@ -212,7 +282,7 @@ export default function App() {
       {/* Main Festive Portal */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <FestivalsPortal
-          onSelectFestival={(fest) => setSelectedFestival(fest)}
+          onSelectFestival={(fest) => handleSelectFestival(fest)}
           currentCategory={activeCategory}
           onCategoryChange={(cat) => setActiveCategory(cat)}
         />

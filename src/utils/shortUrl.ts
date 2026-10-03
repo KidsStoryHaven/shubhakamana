@@ -111,6 +111,10 @@ export interface ParsedWishData {
 
 /**
  * Parses wish parameters from search query or pathname.
+ * Supports:
+ * - Clean paths: /diwali, /holi, /festival/diwali, /new-year-2026
+ * - Short query: ?w=diwali, ?w=Rahul_diwali, ?w=Sudha_diwali_en
+ * - Standard query: ?festival=diwali&from=Rahul&lang=hi
  */
 export function parseWishUrl(search: string = '', pathname: string = ''): ParsedWishData {
   let decodedSearch = search;
@@ -119,6 +123,24 @@ export function parseWishUrl(search: string = '', pathname: string = ''): Parsed
   } catch {}
 
   const params = new URLSearchParams(decodedSearch);
+
+  // 0. Check clean pathname (e.g. /diwali, /holi, /new-year, /festival/diwali)
+  let cleanPath = (pathname || '').replace(/^\/+|\/+$/g, '').trim();
+  if (cleanPath && cleanPath !== 'admin') {
+    if (cleanPath.startsWith('festival/')) cleanPath = cleanPath.replace('festival/', '');
+    if (cleanPath.startsWith('w/')) cleanPath = cleanPath.replace('w/', '');
+    if (cleanPath.startsWith('wish/')) cleanPath = cleanPath.replace('wish/', '');
+
+    const festMatch = FESTIVALS.find(
+      f => f.id.toLowerCase() === cleanPath.toLowerCase() || f.slug.toLowerCase() === cleanPath.toLowerCase()
+    );
+    if (festMatch) {
+      const rawSender = (params.get('from') || params.get('name') || params.get('n') || '').replace(/_/g, ' ').trim();
+      const senderName = rawSender ? (isDefaultSenderName(rawSender) ? 'आपका शुभचिंतक' : rawSender) : undefined;
+      const lang = params.get('lang') || params.get('l') || undefined;
+      return { festivalId: festMatch.id, senderName, lang };
+    }
+  }
 
   // 1. Check short parameter ?w= or ?wish= or ?to=
   let shortParam = params.get('w') || params.get('wish') || params.get('to');
