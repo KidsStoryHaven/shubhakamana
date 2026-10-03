@@ -12,6 +12,8 @@ export interface CategoryInfo {
   icon: string;
   badge: string;
   description: string;
+  defaultSoundType?: 'aarti' | 'fireworks' | 'flute' | 'birthday' | 'damru' | 'shankh' | 'shehnai' | 'dhol' | 'custom_url';
+  customAudioUrl?: string;
 }
 
 export const FESTIVAL_CATEGORIES: CategoryInfo[] = [
@@ -83,7 +85,8 @@ export interface Festival {
     glow: string;
   };
   particlesType: 'fireworks' | 'diyas' | 'confetti' | 'colors' | 'flowers' | 'stars';
-  soundType: 'aarti' | 'fireworks' | 'flute' | 'birthday' | 'damru' | 'shankh';
+  soundType: 'aarti' | 'fireworks' | 'flute' | 'birthday' | 'damru' | 'shankh' | 'shehnai' | 'dhol' | 'custom_url';
+  customAudioUrl?: string;
   greetingTitle: string;
   defaultPoem: string;
   mantraOrShloka?: string;

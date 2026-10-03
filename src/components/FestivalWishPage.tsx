@@ -43,7 +43,10 @@ import {
   Eye,
   Gift,
   Loader2,
-  Trophy
+  Trophy,
+  Play,
+  Pause,
+  PartyPopper
 } from 'lucide-react';
 
 interface FestivalWishPageProps {
@@ -64,7 +67,10 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   allFestivals
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const birthdayFileInputRef = useRef<HTMLInputElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+
+  const isBirthday = festival.id === 'birthday' || festival.soundType === 'birthday' || festival.slug.includes('birthday');
 
   // Surprise Unbox Overlay (Auto-triggers if opened from shared WhatsApp link ?from=...)
   const [isSurpriseOpen, setIsSurpriseOpen] = useState(() => {
@@ -86,6 +92,39 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       return 'आपका शुभचिंतक';
     }
   });
+
+  // Birthday Person State (जिसका जन्मदिन है उसका नाम - e.g. आकाश)
+  const [birthdayPerson, setBirthdayPerson] = useState<string>(() => {
+    try {
+      const parsed = parseWishUrl(window.location.search);
+      if (parsed.birthdayPerson) return parsed.birthdayPerson;
+      return localStorage.getItem('shubhakamna_birthday_person') || 'आकाश';
+    } catch {
+      return 'आकाश';
+    }
+  });
+
+  const [inputBirthdayPerson, setInputBirthdayPerson] = useState(birthdayPerson);
+
+  // Birthday Person Photo (जिसका जन्मदिन है उसकी फोटो)
+  const [birthdayPhoto, setBirthdayPhoto] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('shubhakamna_birthday_photo') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isPlayingBirthdaySong, setIsPlayingBirthdaySong] = useState(false);
+  const [candlesLit, setCandlesLit] = useState(true);
+
+  // Subscribe to song playback changes
+  useEffect(() => {
+    const unsub = festiveAudio.onBirthdaySongStatusChange((playing) => {
+      setIsPlayingBirthdaySong(playing);
+    });
+    return unsub;
+  }, []);
 
   const [userPhoto, setUserPhoto] = useState<string | null>(() => {
     try {
@@ -132,6 +171,18 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
   const activeTranslation = getFestivalTranslation(festival.id, selectedLanguage);
 
+  const triggerFestivalSound = (sampleName?: string) => {
+    if (isBirthday) {
+      festiveAudio.playPersonalizedBirthdaySong(sampleName || birthdayPerson);
+    } else {
+      festiveAudio.playSoundForFestival(
+        festival.soundType, 
+        festival.customAudioUrl, 
+        sampleName || senderName
+      );
+    }
+  };
+
   const handleLanguageChange = (code: LanguageCode) => {
     setSelectedLanguage(code);
     try {
@@ -139,7 +190,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     } catch {
       // Ignored
     }
-    festiveAudio.playSoundForFestival(festival.soundType);
+    triggerFestivalSound();
     updatePageSEO(getFestivalSEOMetadata(festival, senderName, code));
   };
 
@@ -157,7 +208,25 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     setIsSoundMuted(nextMuted);
     festiveAudio.setMuted(nextMuted);
     if (!nextMuted) {
-      festiveAudio.playSoundForFestival(festival.soundType);
+      triggerFestivalSound();
+    }
+  };
+
+  const handleToggleBirthdaySong = () => {
+    if (isPlayingBirthdaySong) {
+      festiveAudio.stopBirthdaySong();
+    } else {
+      festiveAudio.playPersonalizedBirthdaySong(birthdayPerson);
+    }
+  };
+
+  const handleBlowCandles = () => {
+    const nextState = !candlesLit;
+    setCandlesLit(nextState);
+    if (candlesLit) {
+      festiveAudio.playPartyCheer();
+    } else {
+      festiveAudio.playTempleBell();
     }
   };
 
@@ -171,15 +240,37 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       } catch {
         // Ignored
       }
-      festiveAudio.playSoundForFestival(festival.soundType);
+      triggerFestivalSound();
       
       // Update dynamic SEO & URL with new sender name
       updatePageSEO(getFestivalSEOMetadata(festival, clean, selectedLanguage));
-      const cleanUrl = createShortWishUrl(clean, festival.id, selectedLanguage);
+      const cleanUrl = createShortWishUrl(clean, festival.id, selectedLanguage, isBirthday ? birthdayPerson : undefined);
       try {
-        window.history.replaceState({ festivalId: festival.id, senderName: clean }, '', cleanUrl);
+        window.history.replaceState({ festivalId: festival.id, senderName: clean, birthdayPerson: isBirthday ? birthdayPerson : undefined }, '', cleanUrl);
       } catch {}
     }
+  };
+
+  const handleApplyBirthdayDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanBday = inputBirthdayPerson.trim() || 'आकाश';
+    const cleanSender = inputName.trim() || senderName;
+    setBirthdayPerson(cleanBday);
+    setSenderName(cleanSender);
+    try {
+      localStorage.setItem('shubhakamna_birthday_person', cleanBday);
+      localStorage.setItem('shubhakamna_my_name', cleanSender);
+    } catch {}
+
+    // Immediately play the personalized birthday song with their name!
+    festiveAudio.playPersonalizedBirthdaySong(cleanBday);
+
+    // Update dynamic SEO & URL
+    updatePageSEO(getFestivalSEOMetadata(festival, cleanSender, selectedLanguage));
+    const cleanUrl = createShortWishUrl(cleanSender, festival.id, selectedLanguage, cleanBday);
+    try {
+      window.history.replaceState({ festivalId: festival.id, senderName: cleanSender, birthdayPerson: cleanBday }, '', cleanUrl);
+    } catch {}
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,6 +291,22 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleBirthdayPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setBirthdayPhoto(dataUrl);
+      try {
+        localStorage.setItem('shubhakamna_birthday_photo', dataUrl);
+      } catch {}
+      festiveAudio.playPartyCheer();
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleRemovePhoto = () => {
     setUserPhoto(null);
     try {
@@ -209,16 +316,25 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     }
   };
 
+  const handleRemoveBirthdayPhoto = () => {
+    setBirthdayPhoto(null);
+    try {
+      localStorage.removeItem('shubhakamna_birthday_photo');
+    } catch {}
+  };
+
   // Generate the clean, short viral share link
   const getShareUrl = () => {
-    return createShortWishUrl(senderName, festival.id, selectedLanguage);
+    return createShortWishUrl(senderName, festival.id, selectedLanguage, isBirthday ? birthdayPerson : undefined);
   };
 
   const handleWhatsAppShare = () => {
-    festiveAudio.playSoundForFestival(festival.soundType);
+    triggerFestivalSound();
     const url = getShareUrl();
     const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
-    const text = activeTranslation.whatsappMessage(displayName, url, !!userPhoto);
+    const text = isBirthday
+      ? `🎂 *Happy Birthday ${birthdayPerson}!* 🎈🎉\n\n"${activeTranslation.greetingPoem || festival.defaultPoem}"\n\n— *${displayName}* की ओर से जन्मदिन की हार्दिक शुभकामनाएँ ✨\n\n👇 आपके नाम का बर्थडे स्पेशल सॉन्ग व कार्ड यहाँ देखें:\n${url}`
+      : activeTranslation.whatsappMessage(displayName, url, !!userPhoto);
     
     // Award loyalty reward points
     const res = awardUserPoints('whatsapp_share', festival.nameHi);
@@ -240,7 +356,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   // Direct WhatsApp Status Share with 8K Ultra-HD Photo Card
   const handleWhatsAppStatusShare = async () => {
     setIsGenerating8K(true);
-    festiveAudio.playSoundForFestival(festival.soundType);
+    triggerFestivalSound();
 
     // Award loyalty reward points for status
     const res = awardUserPoints('status_share', festival.nameHi);
@@ -251,7 +367,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
     const url = getShareUrl();
     const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
-    const caption = `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${displayName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
+    const caption = isBirthday
+      ? `🎂 *Happy Birthday ${birthdayPerson}!* 🎈🎉\n\n"${activeTranslation.greetingPoem || festival.defaultPoem}"\n\n— *${displayName}* की ओर से जन्मदिन की हार्दिक शुभकामनाएँ ✨\n\n👇 आपके नाम का बर्थडे स्पेशल सॉन्ग व कार्ड यहाँ देखें:\n${url}`
+      : `🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${displayName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${url}`;
 
     try {
       // 1. Generate 8K / 4K Ultra-HD status card
@@ -259,19 +377,21 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         festival,
         senderName,
         userPhoto,
+        birthdayPerson: isBirthday ? birthdayPerson : undefined,
+        birthdayPhoto: isBirthday ? birthdayPhoto : undefined,
         poem: activeTranslation.greetingPoem || festival.defaultPoem,
         greetingTitle: activeTranslation.greetingTitle || festival.nameHi,
         heroImageOverride: activeHeroImage
       });
 
-      const fileName = `Shubhakamna-8K-Status-${senderName}.jpg`;
+      const fileName = isBirthday ? `Happy-Birthday-${birthdayPerson}-8K.jpg` : `Shubhakamna-8K-Status-${senderName}.jpg`;
       const file = new File([blob], fileName, { type: 'image/jpeg' });
 
       // 2. Direct Mobile Web Share (Native WhatsApp Status attachment)
       if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: activeTranslation.greetingTitle,
+          title: isBirthday ? `Happy Birthday ${birthdayPerson}` : activeTranslation.greetingTitle,
           text: caption
         });
         setIsGenerating8K(false);
@@ -330,13 +450,15 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   // 1-Click Generate and Download Combined 8K Photo Card
   const handleDownloadPhotoCard = async () => {
     setIsDownloadingCard(true);
-    festiveAudio.playSoundForFestival(festival.soundType);
+    triggerFestivalSound();
 
     try {
       const blob = await generateStatusCardBlob({
         festival,
         senderName,
         userPhoto,
+        birthdayPerson: isBirthday ? birthdayPerson : undefined,
+        birthdayPhoto: isBirthday ? birthdayPhoto : undefined,
         poem: activeTranslation.greetingPoem || festival.defaultPoem,
         greetingTitle: activeTranslation.greetingTitle || festival.nameHi,
         heroImageOverride: activeHeroImage
@@ -344,7 +466,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `Shubhakamna-8K-Card-${festival.id}-${senderName}.jpg`;
+      link.download = isBirthday ? `Happy-Birthday-${birthdayPerson}-8K.jpg` : `Shubhakamna-8K-Card-${festival.id}-${senderName}.jpg`;
       link.href = url;
       document.body.appendChild(link);
       link.click();
@@ -364,6 +486,15 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         ref={fileInputRef}
         accept="image/*"
         onChange={handlePhotoUpload}
+        className="hidden"
+      />
+
+      {/* Hidden File Input for Birthday Celebrant Photo */}
+      <input
+        type="file"
+        ref={birthdayFileInputRef}
+        accept="image/*"
+        onChange={handleBirthdayPhotoUpload}
         className="hidden"
       />
 
@@ -433,76 +564,192 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           <FestiveCanvas 
             type={festival.particlesType} 
             interactive={true} 
-            onTap={() => festiveAudio.playSoundForFestival(festival.soundType)} 
+            onTap={() => triggerFestivalSound()} 
           />
 
           <div className="relative z-20 pointer-events-auto">
             {/* Top Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2 animate-pulse">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2 animate-pulse">
               <Flame className="w-3.5 h-3.5 text-amber-400" />
-              <span>{festival.badge}</span>
+              <span>{isBirthday ? `🎂 Happy Birthday ${birthdayPerson}` : festival.badge}</span>
             </div>
 
             {/* Tap for sound prompt */}
             <div className="mb-2">
               <button
-                onClick={() => festiveAudio.playSoundForFestival(festival.soundType)}
+                onClick={() => triggerFestivalSound()}
                 className="text-[11px] text-amber-200/80 hover:text-amber-200 bg-black/40 hover:bg-black/60 px-3 py-1 rounded-full border border-amber-500/20 inline-flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Music className="w-3 h-3 text-amber-400" />
-                <span>स्क्रीन पर टच करें या ध्वनि सुनें</span>
+                <span>{isBirthday ? `🎵 ${birthdayPerson} का बर्थडे गाना सुनें` : 'स्क्रीन पर टच करें या ध्वनि सुनें'}</span>
               </button>
             </div>
 
-            {/* 1. Grand Festival Darshan Artwork Slideshow (Auto-slides every 6s, 100% authentic Deities) */}
-            <div className="my-3">
-              <FestivalImageSlider
-                slides={deitySlides}
-                currentIndex={activeImageIndex}
-                onSelectIndex={(idx) => setActiveImageIndex(idx)}
-                festivalName={festival.nameHi}
-              />
-            </div>
+            {/* 1. If BIRTHDAY: Dedicated Celebrant Photo Frame with Golden Crown */}
+            {isBirthday ? (
+              <div className="my-3 flex flex-col items-center justify-center">
+                <div className="relative">
+                  {/* Golden Birthday Crown */}
+                  <div className="text-3xl sm:text-4xl text-center -mb-2 select-none animate-bounce">
+                    👑
+                  </div>
+                  <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1.5 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl shadow-amber-500/40">
+                    {birthdayPhoto ? (
+                      <img
+                        src={birthdayPhoto}
+                        alt={birthdayPerson}
+                        className="w-full h-full rounded-full object-cover border-4 border-stone-950"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-stone-900 border-4 border-stone-950 flex flex-col items-center justify-center text-amber-300 p-2">
+                        <span className="text-3xl">🎂</span>
+                        <span className="text-[9px] text-stone-400 text-center font-bold mt-1">फोटो जोड़ें</span>
+                      </div>
+                    )}
 
-            {/* 2. Sender Photo Frame (अगर यूज़र ने फोटो लगाई है) */}
-            {userPhoto ? (
-              <div className="flex flex-col items-center justify-center my-3">
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-xl shadow-amber-500/30 animate-pulse">
-                  <img
-                    src={userPhoto}
-                    alt={senderName}
-                    className="w-full h-full rounded-full object-cover border-2 border-stone-950"
-                  />
-                  <button
-                    onClick={handleRemovePhoto}
-                    title="फोटो हटाएँ"
-                    className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 text-[10px] shadow-md cursor-pointer transition"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                    {birthdayPhoto && (
+                      <button
+                        onClick={handleRemoveBirthdayPhoto}
+                        title="फोटो हटाएँ"
+                        className="absolute top-2 right-0 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 text-[10px] shadow-md cursor-pointer transition"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span className="text-[11px] text-amber-300 font-semibold bg-black/60 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                    ✨ {senderName} की पावन छवि ✨
+
+                {/* Celebrant Name Ribbon */}
+                <div className="mt-2 flex flex-col items-center gap-1">
+                  <span className="text-xs sm:text-sm text-yellow-300 font-extrabold bg-black/70 px-4 py-1 rounded-full border border-yellow-400/40 shadow-lg">
+                    ✨ {birthdayPerson} की पावन छवि ✨
                   </span>
                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-[10px] text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                    type="button"
+                    onClick={() => birthdayFileInputRef.current?.click()}
+                    className="text-[11px] text-amber-300 hover:text-white underline flex items-center gap-1 cursor-pointer font-medium mt-0.5"
                   >
-                    बदलें
+                    <Camera className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{birthdayPhoto ? 'फोटो बदलें' : 'जन्मदिन वाले की फोटो लगाएँ 📷'}</span>
                   </button>
                 </div>
               </div>
             ) : (
-              /* Quick Photo Upload Trigger inside card */
-              <div className="my-2">
+              /* Regular Festival Artwork Slideshow & Photo */
+              <>
+                <div className="my-3">
+                  <FestivalImageSlider
+                    slides={deitySlides}
+                    currentIndex={activeImageIndex}
+                    onSelectIndex={(idx) => setActiveImageIndex(idx)}
+                    festivalName={festival.nameHi}
+                  />
+                </div>
+
+                {userPhoto ? (
+                  <div className="flex flex-col items-center justify-center my-3">
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-xl shadow-amber-500/30 animate-pulse">
+                      <img
+                        src={userPhoto}
+                        alt={senderName}
+                        className="w-full h-full rounded-full object-cover border-2 border-stone-950"
+                      />
+                      <button
+                        onClick={handleRemovePhoto}
+                        title="फोटो हटाएँ"
+                        className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 text-[10px] shadow-md cursor-pointer transition"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <span className="text-[11px] text-amber-300 font-semibold bg-black/60 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                        ✨ {senderName} की पावन छवि ✨
+                      </span>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                      >
+                        बदलें
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="my-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-medium transition cursor-pointer"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-amber-400" />
+                      <span>अपनी फोटो लगाएँ (Upload Photo)</span>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* 2. Birthday Interactive Cake & Candle Blowing (Only on Birthday) */}
+            {isBirthday && (
+              <div className="my-3 p-3 rounded-2xl bg-black/60 border border-pink-500/30 backdrop-blur-md shadow-xl text-center space-y-1.5">
+                <div className="flex items-center justify-center gap-4 text-xl sm:text-2xl animate-pulse">
+                  <span>{candlesLit ? '🔥' : '💨'}</span>
+                  <span>{candlesLit ? '🔥' : '💨'}</span>
+                  <span>{candlesLit ? '🔥' : '💨'}</span>
+                </div>
+                <div className="text-4xl sm:text-5xl drop-shadow-md select-none">
+                  🎂
+                </div>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleBlowCandles}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-bold text-xs inline-flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                  >
+                    <PartyPopper className="w-3.5 h-3.5 text-stone-950" />
+                    <span>{candlesLit ? '🎂 मोमबत्तियाँ बुझाएँ व केक काटें (Blow Candles)' : '🕯️ पुनः मोमबत्तियाँ जलाएँ'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Birthday Personalized Song Player (Singing name: Happy Birthday to Akash!) */}
+            {isBirthday && (
+              <div className="my-3 space-y-2">
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-medium transition cursor-pointer"
+                  type="button"
+                  onClick={handleToggleBirthdaySong}
+                  className={`w-full py-3.5 px-4 rounded-2xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-xl transition cursor-pointer ${
+                    isPlayingBirthdaySong
+                      ? 'bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white shadow-pink-900/50 animate-pulse'
+                      : 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-900/50 hover:scale-[1.02] active:scale-98'
+                  }`}
                 >
-                  <Camera className="w-3.5 h-3.5 text-amber-400" />
-                  <span>अपनी फोटो लगाएँ (Upload Photo)</span>
+                  {isPlayingBirthdaySong ? (
+                    <>
+                      <Pause className="w-5 h-5 text-yellow-300 animate-spin" />
+                      <span>🛑 गाना बंद करें (बज रहा है: Happy Birthday to {birthdayPerson}...)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5 text-yellow-300 fill-current animate-bounce" />
+                      <span>🎂 {birthdayPerson} के नाम का बर्थडे सॉन्ग बजाएँ 🎵</span>
+                    </>
+                  )}
                 </button>
+                
+                {/* Animated Equalizer Wave when playing */}
+                {isPlayingBirthdaySong && (
+                  <div className="flex items-center justify-center gap-1 py-1">
+                    <span className="w-1.5 h-6 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-8 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-10 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span className="w-1.5 h-7 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '450ms' }}></span>
+                    <span className="w-1.5 h-5 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '600ms' }}></span>
+                  </div>
+                )}
+                <p className="text-[11px] text-pink-200 font-mono text-center">
+                  🎶 "Happy birthday to you, happy birthday to you, happy birthday to {birthdayPerson}, happy birthday to you!"
+                </p>
               </div>
             )}
 
@@ -543,12 +790,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               <h2 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 font-serif tracking-tight drop-shadow-md mt-1">
                 {senderName}
               </h2>
-              <p className="text-[11px] text-amber-300/70 mt-0.5">की ओर से आपको एवं आपके पूरे परिवार को</p>
+              <p className="text-[11px] text-amber-300/70 mt-0.5">
+                {isBirthday ? `की ओर से ${birthdayPerson} को जन्मदिन की लख-लख बधाई` : 'की ओर से आपको एवं आपके पूरे परिवार को'}
+              </p>
             </div>
 
             {/* Festival Grand Title */}
             <h1 className="text-2xl sm:text-4xl font-extrabold text-white mt-3 font-serif leading-tight drop-shadow-lg">
-              {activeTranslation.greetingTitle}
+              {isBirthday ? `🎉 Happy Birthday ${birthdayPerson}! 🎉` : activeTranslation.greetingTitle}
             </h1>
 
             {/* Poetic Message */}
@@ -575,58 +824,145 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
             </div>
 
             {/* Name & Photo Customizer Form */}
-            <div className="mt-6 p-4 rounded-2xl bg-black/75 border border-amber-400/40 shadow-xl text-left space-y-3">
-              <label className="block text-xs font-semibold text-amber-300">
-                ✍️ अपना नाम और फोटो जोड़कर विश तैयार करें:
-              </label>
-
-              {/* Name input */}
-              <form onSubmit={handleApplyName} className="flex gap-2">
-                <input
-                  ref={nameInputRef}
-                  type="text"
-                  value={inputName}
-                  onChange={(e) => setInputName(e.target.value)}
-                  placeholder="अपना नाम यहाँ लिखें (उदा. राहुल, सुधा)..."
-                  maxLength={40}
-                  className="flex-1 bg-stone-900 border border-amber-500/40 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/50"
-                />
-                <button
-                  type="submit"
-                  className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition flex items-center gap-1 shadow-md cursor-pointer shrink-0"
-                >
-                  <span>नाम बदलें</span>
-                </button>
-              </form>
-
-              {/* Photo Upload Actions */}
-              <div className="flex items-center justify-between pt-1 border-t border-stone-800 text-xs">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-700 transition cursor-pointer font-medium"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>{userPhoto ? 'फोटो बदलें' : 'अपनी फोटो जोड़ें 📷'}</span>
-                  </button>
-
-                  {userPhoto && (
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className="text-stone-400 hover:text-red-400 transition text-[11px]"
-                    >
-                      हटाएँ
-                    </button>
-                  )}
+            {isBirthday ? (
+              /* Dedicated Birthday Customizer Form */
+              <div className="mt-6 p-4 rounded-2xl bg-black/80 border border-pink-500/40 shadow-2xl text-left space-y-3.5">
+                <div className="flex items-center gap-2 pb-2 border-b border-stone-800">
+                  <span className="text-xl">🎂</span>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-pink-300">
+                      जिसका बर्थडे है उसका नाम व फोटो जोड़ें:
+                    </h4>
+                    <p className="text-[10px] text-stone-400">
+                      नाम बदलते ही "Happy Birthday to {inputBirthdayPerson || '...'}" गाना बजेगा!
+                    </p>
+                  </div>
                 </div>
 
-                <span className="text-[10px] text-stone-400">
-                  {userPhoto ? '✅ फोटो लगी है' : 'फोटो लगाना वैकल्पिक है'}
-                </span>
+                <form onSubmit={handleApplyBirthdayDetails} className="space-y-3">
+                  {/* 1. Birthday Person Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-pink-200 mb-1">
+                      1. जिसका जन्मदिन है उनका नाम (Birthday Person Name) *
+                    </label>
+                    <input
+                      type="text"
+                      value={inputBirthdayPerson}
+                      onChange={(e) => setInputBirthdayPerson(e.target.value)}
+                      placeholder="उदा. आकाश, राहुल, प्रिया..."
+                      maxLength={40}
+                      className="w-full bg-stone-900 border border-pink-500/50 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-pink-400 font-bold"
+                    />
+                  </div>
+
+                  {/* 2. Birthday Person Photo */}
+                  <div className="pt-1">
+                    <label className="block text-xs font-bold text-amber-300 mb-1">
+                      2. जन्मदिन वाले की फोटो (Birthday Photo)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => birthdayFileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border border-stone-700 text-xs font-semibold cursor-pointer"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>{birthdayPhoto ? 'फोटो बदलें' : 'जन्मदिन की फोटो लगाएँ 📷'}</span>
+                      </button>
+                      {birthdayPhoto && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveBirthdayPhoto}
+                          className="text-stone-400 hover:text-red-400 text-xs cursor-pointer"
+                        >
+                          हटाएँ
+                        </button>
+                      )}
+                      <span className="text-[10px] text-stone-400 ml-auto">
+                        {birthdayPhoto ? '✅ फोटो लगी है' : 'वैकल्पिक'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3. Sender Name */}
+                  <div className="pt-1">
+                    <label className="block text-xs font-bold text-amber-300 mb-1">
+                      3. आपकी ओर से (विश भेजने वाले का नाम / प्रेषक)
+                    </label>
+                    <input
+                      type="text"
+                      value={inputName}
+                      onChange={(e) => setInputName(e.target.value)}
+                      placeholder="उदा. राहुल, बेस्ट फ्रेंड..."
+                      maxLength={40}
+                      className="w-full bg-stone-900 border border-stone-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-pink-600 via-rose-500 to-amber-500 hover:from-pink-500 hover:to-amber-400 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-yellow-300" />
+                    <span>✨ {inputBirthdayPerson || 'आकाश'} के नाम का बर्थडे गाना व कार्ड तैयार करें ✓</span>
+                  </button>
+                </form>
               </div>
-            </div>
+            ) : (
+              /* Regular Festival Customizer Form */
+              <div className="mt-6 p-4 rounded-2xl bg-black/75 border border-amber-400/40 shadow-xl text-left space-y-3">
+                <label className="block text-xs font-semibold text-amber-300">
+                  ✍️ अपना नाम और फोटो जोड़कर विश तैयार करें:
+                </label>
+
+                {/* Name input */}
+                <form onSubmit={handleApplyName} className="flex gap-2">
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={inputName}
+                    onChange={(e) => setInputName(e.target.value)}
+                    placeholder="अपना नाम यहाँ लिखें (उदा. राहुल, सुधा)..."
+                    maxLength={40}
+                    className="flex-1 bg-stone-900 border border-amber-500/40 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/50"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition flex items-center gap-1 shadow-md cursor-pointer shrink-0"
+                  >
+                    <span>नाम बदलें</span>
+                  </button>
+                </form>
+
+                {/* Photo Upload Actions */}
+                <div className="flex items-center justify-between pt-1 border-t border-stone-800 text-xs">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-700 transition cursor-pointer font-medium"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{userPhoto ? 'फोटो बदलें' : 'अपनी फोटो जोड़ें 📷'}</span>
+                    </button>
+
+                    {userPhoto && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="text-stone-400 hover:text-red-400 transition text-[11px]"
+                      >
+                        हटाएँ
+                      </button>
+                    )}
+                  </div>
+
+                  <span className="text-[10px] text-stone-400">
+                    {userPhoto ? '✅ फोटो लगी है' : 'फोटो लगाना वैकल्पिक है'}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Mega Action Buttons: WhatsApp Viral Share, Download Photo Card, Copy Link */}
             <div className="mt-5 space-y-2.5">

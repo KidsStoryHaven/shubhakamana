@@ -4,6 +4,8 @@ export interface StatusCardOptions {
   festival: Festival;
   senderName: string;
   userPhoto: string | null;
+  birthdayPerson?: string;
+  birthdayPhoto?: string | null;
   poem: string;
   greetingTitle: string;
   heroImageOverride?: string;
@@ -13,7 +15,9 @@ export interface StatusCardOptions {
  * Generates an Ultra-HD (2160 x 3840, 4K/8K resolution) vertical status card.
  */
 export async function generateStatusCardBlob(options: StatusCardOptions): Promise<Blob> {
-  const { festival, senderName, userPhoto, poem, greetingTitle, heroImageOverride } = options;
+  const { festival, senderName, userPhoto, birthdayPerson, birthdayPhoto, poem, greetingTitle, heroImageOverride } = options;
+  const isBirthday = festival.id === 'birthday' || festival.soundType === 'birthday' || !!birthdayPerson;
+  const effectivePhoto = birthdayPhoto || userPhoto;
 
   const canvas = document.createElement('canvas');
   canvas.width = 2160;
@@ -87,16 +91,34 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
   ctx.fillStyle = '#fbbf24';
   ctx.font = 'bold 64px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✨ SHUBHAKAMNA.IN • पावन शुभकामना ✨', 1080, 240);
+  ctx.fillText(
+    isBirthday && birthdayPerson
+      ? `👑 HAPPY BIRTHDAY ${birthdayPerson.toUpperCase()} • 8K STATUS 👑`
+      : '✨ SHUBHAKAMNA.IN • पावन शुभकामना ✨',
+    1080,
+    240
+  );
 
   // 5. Festival Title & Tagline
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 104px serif';
-  ctx.fillText(greetingTitle || festival.nameHi, 1080, 400);
+  ctx.fillText(
+    isBirthday && birthdayPerson
+      ? `🎉 Happy Birthday ${birthdayPerson}! 🎉`
+      : (greetingTitle || festival.nameHi),
+    1080,
+    400
+  );
 
   ctx.fillStyle = '#fde68a';
   ctx.font = '54px sans-serif';
-  ctx.fillText(festival.taglineHi, 1080, 500);
+  ctx.fillText(
+    isBirthday && birthdayPerson
+      ? `ईश्वर आपको दीर्घायु, उत्तम स्वास्थ्य और अपार खुशियाँ प्रदान करें`
+      : festival.taglineHi,
+    1080,
+    500
+  );
 
   // 6. Draw Festival Hero Image
   await new Promise<void>((resolve) => {
@@ -155,8 +177,8 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
   }
   ctx.fillText(line, 1080, y);
 
-  // 8. User Photo (if available)
-  if (userPhoto) {
+  // 8. Photo (Celebrant Photo or User Photo)
+  if (effectivePhoto) {
     await new Promise<void>((resolve) => {
       const userImg = new Image();
       userImg.onload = () => {
@@ -181,20 +203,34 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
         ctx.arc(1080, 2720, 252, 0, Math.PI * 2);
         ctx.stroke();
 
+        // If birthday celebrant, draw a cute crown symbol
+        if (isBirthday) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = '72px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('👑', 1080, 2480);
+        }
+
         resolve();
       };
       userImg.onerror = () => resolve();
-      userImg.src = userPhoto;
+      userImg.src = effectivePhoto;
     });
   }
 
   // 9. Sender Royal Plate
-  const nameY = userPhoto ? 3120 : 2750;
+  const nameY = effectivePhoto ? 3120 : 2750;
 
   ctx.fillStyle = '#fde047';
   ctx.font = 'bold 50px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✨ सप्रेम एवं आदर सहित प्रेषित ✨', 1080, nameY);
+  ctx.fillText(
+    isBirthday && birthdayPerson
+      ? `🎂 ${birthdayPerson} को जन्मदिन की हार्दिक बधाई • प्रेषक 🎂`
+      : '✨ सप्रेम एवं आदर सहित प्रेषित ✨',
+    1080,
+    nameY
+  );
 
   // Big Sender Name
   ctx.fillStyle = '#ffffff';
@@ -203,7 +239,13 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
 
   ctx.fillStyle = '#fde68a';
   ctx.font = '54px sans-serif';
-  ctx.fillText('की ओर से आपको एवं आपके परिवार को हार्दिक शुभकामनाएँ', 1080, nameY + 230);
+  ctx.fillText(
+    isBirthday && birthdayPerson
+      ? `की ओर से आपको जन्मदिन की अनंत शुभकामनाएँ व मंगल आशीष`
+      : 'की ओर से आपको एवं आपके परिवार को हार्दिक शुभकामनाएँ',
+    1080,
+    nameY + 230
+  );
 
   // 10. Watermark & Creation Link
   ctx.fillStyle = '#d6d3d1';

@@ -80,9 +80,42 @@ export function isDefaultSenderName(name: string): boolean {
  * - Named (English): https://shubhakamna.in/?w=Rahul_diwali
  * - Named (Hindi): https://shubhakamna.in/?w=Sudha_diwali
  */
-export function createShortWishUrl(senderName: string, festivalId: string, lang: string = 'hi'): string {
+export interface ParsedWishData {
+  festivalId?: string;
+  senderName?: string;
+  birthdayPerson?: string;
+  birthdayPhoto?: string;
+  lang?: string;
+}
+
+/**
+ * Creates a 100% clean, short, aesthetic URL with ZERO percent-encoding.
+ * - Default: https://shubhakamna.in/?w=diwali
+ * - Named (English): https://shubhakamna.in/?w=Rahul_diwali
+ * - Birthday with Name: https://shubhakamna.in/?w=birthday&bname=Akash&from=Rahul
+ */
+export function createShortWishUrl(
+  senderName: string, 
+  festivalId: string, 
+  lang: string = 'hi',
+  birthdayPerson?: string
+): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
   const fest = festivalId || 'diwali';
+
+  // If this is a birthday wish and a birthday person name is provided
+  if ((fest === 'birthday' || fest.includes('birthday')) && birthdayPerson?.trim()) {
+    const cleanBday = devanagariToLatin(birthdayPerson) || birthdayPerson.trim();
+    let url = `${origin}/?w=birthday&bname=${encodeURIComponent(cleanBday)}`;
+    if (!isDefaultSenderName(senderName)) {
+      const cleanSender = devanagariToLatin(senderName) || senderName.trim();
+      url += `&from=${encodeURIComponent(cleanSender)}`;
+    }
+    if (lang && lang !== 'hi') {
+      url += `&lang=${lang}`;
+    }
+    return url;
+  }
 
   // 1. If default name: no sender name in URL, keeping it ultra-short!
   if (isDefaultSenderName(senderName)) {
@@ -103,17 +136,12 @@ export function createShortWishUrl(senderName: string, festivalId: string, lang:
   return `${origin}/?w=${shortParam}`;
 }
 
-export interface ParsedWishData {
-  festivalId?: string;
-  senderName?: string;
-  lang?: string;
-}
-
 /**
  * Parses wish parameters from search query or pathname.
  * Supports:
- * - Clean paths: /diwali, /holi, /festival/diwali, /new-year-2026
+ * - Clean paths: /diwali, /holi, /festival/diwali, /new-year-2026, /happy-birthday-name-wishes
  * - Short query: ?w=diwali, ?w=Rahul_diwali, ?w=Sudha_diwali_en
+ * - Birthday queries: ?w=birthday&bname=Akash&from=Rahul
  * - Standard query: ?festival=diwali&from=Rahul&lang=hi
  */
 export function parseWishUrl(search: string = '', pathname: string = ''): ParsedWishData {
@@ -123,6 +151,16 @@ export function parseWishUrl(search: string = '', pathname: string = ''): Parsed
   } catch {}
 
   const params = new URLSearchParams(decodedSearch);
+
+  // Extract birthday celebrant name if present (?bname=Akash or ?birthday=Akash or ?for=Akash)
+  const rawBirthdayPerson = (
+    params.get('bname') || 
+    params.get('birthday') || 
+    params.get('celebrant') || 
+    params.get('for') || 
+    ''
+  ).replace(/_/g, ' ').trim();
+  const birthdayPerson = rawBirthdayPerson || undefined;
 
   // 0. Check clean pathname (e.g. /diwali, /holi, /new-year, /festival/diwali)
   let cleanPath = (pathname || '').replace(/^\/+|\/+$/g, '').trim();
@@ -138,7 +176,7 @@ export function parseWishUrl(search: string = '', pathname: string = ''): Parsed
       const rawSender = (params.get('from') || params.get('name') || params.get('n') || '').replace(/_/g, ' ').trim();
       const senderName = rawSender ? (isDefaultSenderName(rawSender) ? 'आपका शुभचिंतक' : rawSender) : undefined;
       const lang = params.get('lang') || params.get('l') || undefined;
-      return { festivalId: festMatch.id, senderName, lang };
+      return { festivalId: festMatch.id, senderName, birthdayPerson, lang };
     }
   }
 
@@ -166,14 +204,14 @@ export function parseWishUrl(search: string = '', pathname: string = ''): Parsed
       const rawName = nameParts.join(' ').replace(/_/g, ' ').trim();
       const senderName = isDefaultSenderName(rawName) ? 'आपका शुभचिंतक' : rawName;
 
-      return { festivalId, senderName, lang };
+      return { festivalId, senderName, birthdayPerson, lang };
     } else {
-      // Single token: could be a festival id like ?w=diwali
+      // Single token: could be a festival id like ?w=diwali or ?w=birthday
       const festMatch = FESTIVALS.find(f => f.id === shortParam || f.slug === shortParam);
       if (festMatch) {
-        return { festivalId: festMatch.id, senderName: 'आपका शुभचिंतक' };
+        return { festivalId: festMatch.id, senderName: 'आपका शुभचिंतक', birthdayPerson };
       }
-      return { senderName: shortParam.replace(/_/g, ' ').trim() };
+      return { senderName: shortParam.replace(/_/g, ' ').trim(), birthdayPerson };
     }
   }
 
@@ -183,5 +221,5 @@ export function parseWishUrl(search: string = '', pathname: string = ''): Parsed
   const senderName = rawSender ? (isDefaultSenderName(rawSender) ? 'आपका शुभचिंतक' : rawSender) : undefined;
   const lang = params.get('lang') || params.get('l') || undefined;
 
-  return { festivalId, senderName, lang };
+  return { festivalId, senderName, birthdayPerson, lang };
 }

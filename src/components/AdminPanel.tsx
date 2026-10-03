@@ -61,8 +61,33 @@ import {
   Users,
   Trophy,
   CreditCard,
-  Gift
+  Gift,
+  Globe,
+  FileText,
+  ExternalLink,
+  Link,
+  Music,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react';
+import { 
+  festiveAudio, 
+  FESTIVE_SOUND_OPTIONS, 
+  FestiveSoundType 
+} from '../utils/festiveAudio';
+import { 
+  WishCategory, 
+  HindiWish, 
+  FAQItem, 
+  getStoredWishCategories, 
+  saveStoredWishCategories, 
+  saveOrUpdateWishCategory, 
+  deleteWishCategory, 
+  resetWishCategoriesToDefault 
+} from '../data/wishesData';
 import { 
   getStoredUsers, 
   saveStoredUsers, 
@@ -119,8 +144,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     handleCloseOrExit();
   };
 
-  // Active Tab: 'festivals' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'
-  const [activeTab, setActiveTab] = useState<'festivals' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'>('festivals');
+  // Active Tab: 'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'
+  const [activeTab, setActiveTab] = useState<'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'>('festivals');
+
+  // Audio Testing State
+  const [testingAudioKey, setTestingAudioKey] = useState<string | null>(null);
+  const [audioSectionFilter, setAudioSectionFilter] = useState<'all' | 'festivals' | 'categories' | 'seo_pages'>('all');
+  const [audioSearchQuery, setAudioSearchQuery] = useState('');
+
+  // SEO Wishing Pages & Categories State
+  const [wishCategories, setWishCategories] = useState<WishCategory[]>(() => getStoredWishCategories());
+  const [wishCategorySearch, setWishCategorySearch] = useState('');
+  const [editingWishCategory, setEditingWishCategory] = useState<WishCategory | null>(null);
+  const [originalSlugForEdit, setOriginalSlugForEdit] = useState<string | null>(null);
+  const [isAddingWishCategory, setIsAddingWishCategory] = useState(false);
 
   // Ad Settings State (Google AdSense, Ad Networks, Custom Banners)
   const [adSettings, setAdSettings] = useState<AdSettings>(() => getStoredAdSettings());
@@ -170,9 +207,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     const handleDataChange = () => loadAllData();
     window.addEventListener('shubhakamna_data_changed', handleDataChange);
     window.addEventListener('shubhakamna_users_changed', handleDataChange);
+    window.addEventListener('shubhakamna_wish_categories_changed', handleDataChange);
     return () => {
       window.removeEventListener('shubhakamna_data_changed', handleDataChange);
       window.removeEventListener('shubhakamna_users_changed', handleDataChange);
+      window.removeEventListener('shubhakamna_wish_categories_changed', handleDataChange);
     };
   }, []);
 
@@ -184,9 +223,76 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setAdSettings(getStoredAdSettings());
     setUsers(getStoredUsers());
     setPointRules(getStoredPointRules());
+    setWishCategories(getStoredWishCategories());
     if (fests.length > 0 && !selectedFestivalForPhotos) {
       setSelectedFestivalForPhotos(fests[0].id);
     }
+  };
+
+  // Stop preview sound on tab change
+  useEffect(() => {
+    festiveAudio.stopAll();
+    setTestingAudioKey(null);
+  }, [activeTab]);
+
+  const handleToggleTestAudio = (
+    key: string,
+    soundType: FestiveSoundType,
+    customUrl?: string,
+    sampleName: string = 'आकाश'
+  ) => {
+    if (testingAudioKey === key) {
+      festiveAudio.stopAll();
+      setTestingAudioKey(null);
+    } else {
+      setTestingAudioKey(key);
+      festiveAudio.previewSound(soundType, customUrl, sampleName);
+    }
+  };
+
+  const handleQuickUpdateFestivalSound = (festivalId: string, soundType: FestiveSoundType, customUrl?: string) => {
+    const updated = festivals.map(f => {
+      if (f.id === festivalId) {
+        return { 
+          ...f, 
+          soundType, 
+          customAudioUrl: customUrl !== undefined ? customUrl : f.customAudioUrl 
+        };
+      }
+      return f;
+    });
+    setFestivals(updated);
+    saveStoredFestivals(updated);
+    showToast(`त्योहार का ऑडियो '${FESTIVE_SOUND_OPTIONS.find(o => o.id === soundType)?.labelHi || soundType}' सेट हो गया! 🎵`);
+  };
+
+  const handleQuickUpdateCategorySound = (categoryId: string, soundType: FestiveSoundType, customUrl?: string) => {
+    const updated = categories.map(c => {
+      if (c.id === categoryId) {
+        return { 
+          ...c, 
+          defaultSoundType: soundType, 
+          customAudioUrl: customUrl !== undefined ? customUrl : c.customAudioUrl 
+        };
+      }
+      return c;
+    });
+    setCategories(updated);
+    saveStoredCategories(updated);
+    showToast(`श्रेणी का डिफ़ॉल्ट ऑडियो सेट हो गया! 🎵`);
+  };
+
+  const handleQuickUpdateWishCategorySound = (slug: string, soundType: FestiveSoundType, customUrl?: string) => {
+    const target = wishCategories.find(w => w.slug === slug);
+    if (!target) return;
+    const updated = { 
+      ...target, 
+      soundType, 
+      customAudioUrl: customUrl !== undefined ? customUrl : target.customAudioUrl 
+    };
+    saveOrUpdateWishCategory(updated);
+    setWishCategories(getStoredWishCategories());
+    showToast(`विशिंग पेज का ऑडियो सेट हो गया! 🎵`);
   };
 
   // ==========================================
@@ -356,6 +462,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  // ==========================================
+  // AUDIO TESTING & QUICK CONFIGURATION
+  // ==========================================
+  const handleTestAudio = (key: string, soundType: FestiveSoundType, customUrl?: string) => {
+    if (testingAudioKey === key) {
+      festiveAudio.stopAll();
+      setTestingAudioKey(null);
+    } else {
+      setTestingAudioKey(key);
+      festiveAudio.previewSound(soundType, customUrl, 'आकाश');
+    }
+  };
+
+  const handleUpdateFestivalAudio = (festId: string, soundType: FestiveSoundType, customAudioUrl?: string) => {
+    const updated = festivals.map(f => {
+      if (f.id === festId) {
+        return { ...f, soundType, customAudioUrl: customAudioUrl ?? f.customAudioUrl };
+      }
+      return f;
+    });
+    setFestivals(updated);
+    saveStoredFestivals(updated);
+    showToast('त्योहार का ऑडियो अपडेट हो गया!');
+  };
+
+  const handleUpdateWishCategoryAudio = (slug: string, soundType: FestiveSoundType, customAudioUrl?: string) => {
+    const updated = wishCategories.map(c => {
+      if (c.slug === slug) {
+        return { ...c, soundType, customAudioUrl: customAudioUrl ?? c.customAudioUrl };
+      }
+      return c;
+    });
+    setWishCategories(updated);
+    saveStoredWishCategories(updated);
+    showToast('SEO विशिंग पेज का ऑडियो अपडेट हो गया!');
+  };
+
+  const handleUpdateCategoryAudio = (catId: FestivalCategory, defaultSoundType: FestiveSoundType, customAudioUrl?: string) => {
+    const updated = categories.map(c => {
+      if (c.id === catId) {
+        return { ...c, defaultSoundType, customAudioUrl: customAudioUrl ?? c.customAudioUrl };
+      }
+      return c;
+    });
+    setCategories(updated);
+    saveStoredCategories(updated);
+    showToast('नेविगेशन श्रेणी का ऑडियो अपडेट हो गया!');
   };
 
   // ==========================================
@@ -636,6 +791,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('seo_pages')}
+          className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'seo_pages'
+              ? 'border-amber-400 text-amber-300'
+              : 'border-transparent text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          <span>📄</span>
+          <span>SEO विशिंग पेज व URL ({wishCategories.length})</span>
+          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full font-mono font-bold">
+            Clean URL
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('audio')}
+          className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'audio'
+              ? 'border-amber-400 text-amber-300'
+              : 'border-transparent text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          <span>🎵</span>
+          <span>ऑडियो व संगीत प्रबंधक</span>
+          <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.2 rounded-full font-mono font-bold">
+            Songs 🎶
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('users')}
           className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
             activeTab === 'users'
@@ -815,6 +1000,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                     </div>
 
+                    {/* Audio Preview Bar */}
+                    <div className="flex items-center justify-between text-[11px] bg-stone-950/80 px-2.5 py-1.5 rounded-xl border border-stone-800">
+                      <span className="text-stone-300 flex items-center gap-1 font-mono text-[10px] truncate max-w-[140px]">
+                        <Music className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span className="truncate">{FESTIVE_SOUND_OPTIONS.find(o => o.id === fest.soundType)?.labelHi.slice(0, 14) || fest.soundType}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleTestAudio(fest.id, fest.soundType, fest.customAudioUrl, 'आकाश')}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition cursor-pointer shrink-0 ${
+                          testingAudioKey === fest.id
+                            ? 'bg-red-600 text-white animate-pulse'
+                            : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                        }`}
+                      >
+                        {testingAudioKey === fest.id ? (
+                          <>
+                            <Pause className="w-2.5 h-2.5" />
+                            <span>रोकें</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-2.5 h-2.5 fill-current" />
+                            <span>सुनें 🎵</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between text-xs">
                       <button
                         onClick={() => {
@@ -850,6 +1064,576 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 );
               })}
             </div>
+
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 2: SEO WISHING PAGES & CATEGORY URL MANAGER           */}
+        {/* ========================================================= */}
+        {activeTab === 'seo_pages' && (
+          <div className="space-y-6">
+            
+            {/* Top Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-900/80 p-3.5 rounded-2xl border border-stone-800">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  value={wishCategorySearch}
+                  onChange={(e) => setWishCategorySearch(e.target.value)}
+                  placeholder="पेज का नाम या URL स्लॉग खोजें (उदा. diwali, mother, birthday)..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSlug = `new-wishes-${Date.now()}`;
+                    setEditingWishCategory({
+                      slug: newSlug,
+                      nameHi: 'नया विशिंग पेज',
+                      nameEn: 'New Wishing Page',
+                      seoTitle: 'नया विशिंग पेज 2026 | New Wishes in Hindi - Shubhakamna.in',
+                      metaDescription: 'इस पावन अवसर पर अपनों को भेजें सुंदर शुभकामना संदेश व शायरी। नाम व फोटो का 9:16 कार्ड बनाएं।',
+                      keywords: ['wishes in hindi', 'shubhakamna'],
+                      h1: 'नए अवसर पर हार्दिक शुभकामनाएं व बधाई संदेश',
+                      intro: 'इस शुभ अवसर पर अपने प्रियजनों को भेजने हेतु यहाँ सुंदर, भावपूर्ण व प्रेरक शुभकामना संदेश संकलित हैं।',
+                      theme: {
+                        primaryColor: '#f59e0b',
+                        gradient: 'from-amber-600 via-orange-500 to-yellow-500',
+                        accentEmoji: '✨'
+                      },
+                      heroImageUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=80',
+                      wishes: [
+                        {
+                          id: `wish_${Date.now()}_1`,
+                          hindiText: 'आपके जीवन में सदा सुख, शांति और समृद्धि की नई किरणें जगमगाती रहें। हार्दिक शुभकामनाएं!',
+                          authorOrTone: 'शुभकामना'
+                        }
+                      ],
+                      faqs: [
+                        {
+                          question: 'क्या इस पेज से नाम वाला कार्ड बना सकते हैं?',
+                          answer: 'हाँ, हमारे 1-क्लिक विश कार्ड जनरेटर में अपना नाम व फोटो जोड़कर 9:16 साइज का एचडी कार्ड मुफ़्त में बनाएं।'
+                        }
+                      ],
+                      relatedSlugs: ['birthday-wishes', 'diwali-wishes'],
+                      updatedAt: new Date().toISOString().slice(0, 10)
+                    });
+                    setOriginalSlugForEdit(null);
+                    setIsAddingWishCategory(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ नया SEO पेज जोड़ें</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Explanatory Banner */}
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-300">
+                  Google SEO लैंडिंग पेज व Clean URL नियंत्रण केंद्र:
+                </p>
+                <p className="text-stone-300 leading-relaxed text-[11px]">
+                  यहाँ आप किसी भी विशिंग पेज का <strong>नाम (Page Title/H1)</strong>, <strong>URL Slug (जैसे: /birthday-wishes-for-mother/)</strong>, <strong>SEO Meta Tags</strong>, और उसके <strong>शुभकामना संदेश</strong> सीधे बदल सकते हैं। URL बदलने पर भी पेज लाइव साइट पर तुरंत सही लोड होगा।
+                </p>
+              </div>
+            </div>
+
+            {/* Category Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {wishCategories
+                .filter(cat => {
+                  const q = wishCategorySearch.toLowerCase();
+                  return (
+                    cat.nameHi.toLowerCase().includes(q) ||
+                    cat.nameEn.toLowerCase().includes(q) ||
+                    cat.slug.toLowerCase().includes(q)
+                  );
+                })
+                .map(cat => {
+                  return (
+                    <div
+                      key={cat.slug}
+                      className="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 hover:border-amber-500/40 transition space-y-3 flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl">{cat.theme.accentEmoji}</span>
+                          <span className="text-[10px] font-mono bg-stone-950 text-stone-400 px-2 py-0.5 rounded border border-stone-800">
+                            {cat.wishes.length} संदेश
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-bold text-white font-serif truncate">
+                            {cat.nameHi}
+                          </h4>
+                          <p className="text-[11px] text-stone-400 truncate">
+                            {cat.nameEn}
+                          </p>
+                        </div>
+
+                        {/* Clean URL Box */}
+                        <div className="p-2.5 rounded-xl bg-stone-950 border border-stone-800/80 space-y-1">
+                          <span className="text-[9px] uppercase tracking-wider text-amber-400/80 font-bold block">
+                            URL Slug (Web Path):
+                          </span>
+                          <div className="flex items-center justify-between gap-1 text-[11px] font-mono text-stone-300">
+                            <span className="text-amber-300 font-bold truncate">/{cat.slug}/</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const fullUrl = `${window.location.origin}/${cat.slug}/`;
+                                  navigator.clipboard.writeText(fullUrl);
+                                  showToast('URL कॉपी हो गया!');
+                                }}
+                                title="URL कॉपी करें"
+                                className="p-1 hover:text-amber-400 text-stone-400 cursor-pointer"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <a
+                                href={`/${cat.slug}/`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="लाइव पेज देखें"
+                                className="p-1 hover:text-amber-400 text-stone-400 cursor-pointer"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-stone-400 line-clamp-2 leading-relaxed">
+                          {cat.metaDescription}
+                        </p>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="pt-2 border-t border-stone-800 flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingWishCategory({ ...cat, wishes: [...cat.wishes], faqs: [...(cat.faqs || [])] });
+                            setOriginalSlugForEdit(cat.slug);
+                            setIsAddingWishCategory(false);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>नाम व URL एडिट करें</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`क्या आप सचमुच '${cat.nameHi}' (/${cat.slug}/) पेज को हटाना चाहते हैं?`)) {
+                              deleteWishCategory(cat.slug);
+                              setWishCategories(getStoredWishCategories());
+                              showToast(`'${cat.nameHi}' डिलीट कर दिया गया!`);
+                            }
+                          }}
+                          className="p-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 transition cursor-pointer"
+                          title="डिलीट करें"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 3: AUDIO & SONGS MANAGEMENT (FESTIVALS & WISHES AUDIO)*/}
+        {/* ========================================================= */}
+        {activeTab === 'audio' && (
+          <div className="space-y-6">
+            
+            {/* Top Info Banner */}
+            <div className="rounded-3xl border-2 border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-stone-900 to-amber-950/30 p-5 sm:p-6 shadow-xl space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-purple-500/20 font-bold text-xl shrink-0">
+                    🎵
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white font-serif flex items-center gap-2">
+                      <span>ऑडियो व संगीत प्रबंधक (Audio & Songs Control)</span>
+                      <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30 font-sans font-bold">
+                        9+ साउंड मोड्स
+                      </span>
+                    </h3>
+                    <p className="text-xs text-stone-300">
+                      हर त्योहार व विशिंग पेज में बजने वाला ऑडियो यहीं से तय करें। हैप्पी बर्थडे सॉन्ग, आरती, बांसुरी, शहनाई, शंख, डमरू, आतिशबाजी या अपना कोई भी MP3 गाना जोड़ें।
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Stop Audio Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    festiveAudio.stopAll();
+                    setTestingAudioKey(null);
+                    showToast('सभी ऑडियो बंद कर दिए गए!');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shrink-0"
+                >
+                  <VolumeX className="w-4 h-4 text-red-400" />
+                  <span>सभी ध्वनि बंद करें (Stop All)</span>
+                </button>
+              </div>
+
+              {/* Sound Presets Quick Audition Strip */}
+              <div className="pt-3 border-t border-stone-800/80">
+                <span className="text-[11px] font-bold text-amber-300 block mb-2">
+                  🎧 किसी भी साउंड का तुरंत डेमो सुनें (Click to Sample):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {FESTIVE_SOUND_OPTIONS.map((opt) => {
+                    const isPlayingThis = testingAudioKey === `sample_${opt.id}`;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleTestAudio(`sample_${opt.id}`, opt.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                          isPlayingThis
+                            ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-md animate-pulse'
+                            : 'bg-stone-900/90 text-stone-300 hover:text-white hover:bg-stone-800 border border-stone-800'
+                        }`}
+                      >
+                        <span>{opt.icon}</span>
+                        <span>{opt.labelHi.split('(')[0].trim()}</span>
+                        {isPlayingThis ? <Pause className="w-3 h-3 text-yellow-300" /> : <Play className="w-3 h-3 text-amber-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Filter & Search Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-900/80 p-3.5 rounded-2xl border border-stone-800">
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                <button
+                  type="button"
+                  onClick={() => setAudioSectionFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    audioSectionFilter === 'all'
+                      ? 'bg-amber-500 text-stone-950 shadow-md'
+                      : 'bg-stone-950 text-stone-400 hover:text-white border border-stone-800'
+                  }`}
+                >
+                  सभी ({festivals.length + wishCategories.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioSectionFilter('festivals')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    audioSectionFilter === 'festivals'
+                      ? 'bg-amber-500 text-stone-950 shadow-md'
+                      : 'bg-stone-950 text-stone-400 hover:text-white border border-stone-800'
+                  }`}
+                >
+                  🪔 त्योहार ({festivals.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioSectionFilter('seo_pages')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    audioSectionFilter === 'seo_pages'
+                      ? 'bg-amber-500 text-stone-950 shadow-md'
+                      : 'bg-stone-950 text-stone-400 hover:text-white border border-stone-800'
+                  }`}
+                >
+                  📄 विशिंग पेज ({wishCategories.length})
+                </button>
+              </div>
+
+              <div className="relative flex-1 sm:max-w-xs">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  value={audioSearchQuery}
+                  onChange={(e) => setAudioSearchQuery(e.target.value)}
+                  placeholder="खोजें (उदा: birthday, diwali, holi)..."
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+            </div>
+
+            {/* 1. FESTIVALS AUDIO SECTION */}
+            {(audioSectionFilter === 'all' || audioSectionFilter === 'festivals') && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-amber-300 font-serif flex items-center gap-2">
+                    <span>🪔 त्योहारों का ऑडियो नियंत्रण (Festivals Sound Settings)</span>
+                  </h4>
+                  <span className="text-[11px] text-stone-400 font-mono">
+                    {festivals.length} त्योहार
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {festivals
+                    .filter(f => {
+                      const q = audioSearchQuery.toLowerCase();
+                      return !q || f.nameHi.toLowerCase().includes(q) || f.nameEn.toLowerCase().includes(q) || f.id.toLowerCase().includes(q);
+                    })
+                    .map((fest) => {
+                      const currentSound = fest.soundType || 'aarti';
+                      const isPlaying = testingAudioKey === `fest_${fest.id}`;
+
+                      return (
+                        <div
+                          key={fest.id}
+                          className="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 hover:border-amber-500/40 transition space-y-3 flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xl">
+                                  {FESTIVE_SOUND_OPTIONS.find(o => o.id === currentSound)?.icon || '🪔'}
+                                </span>
+                                <div className="truncate">
+                                  <h5 className="text-sm font-bold text-white font-serif truncate">
+                                    {fest.nameHi}
+                                  </h5>
+                                  <p className="text-[10px] text-stone-400 font-mono truncate">
+                                    id: {fest.id} • {fest.dateLabel}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 shrink-0">
+                                {FESTIVE_SOUND_OPTIONS.find(o => o.id === currentSound)?.labelHi.split('(')[0] || currentSound}
+                              </span>
+                            </div>
+
+                            {/* Sound Type Selector Dropdown */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-stone-300">
+                                कौन सा ऑडियो बजेगा (Select Sound Type):
+                              </label>
+                              <select
+                                value={currentSound}
+                                onChange={(e) => {
+                                  const newSound = e.target.value as FestiveSoundType;
+                                  handleUpdateFestivalAudio(fest.id, newSound);
+                                }}
+                                className="w-full p-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+                              >
+                                {FESTIVE_SOUND_OPTIONS.map((opt) => (
+                                  <option key={opt.id} value={opt.id}>
+                                    {opt.icon} {opt.labelHi}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Optional Custom Audio URL Input */}
+                            {(currentSound === 'custom_url' || fest.customAudioUrl) && (
+                              <div className="mt-2 space-y-1">
+                                <label className="block text-[10px] font-bold text-stone-400">
+                                  कस्टम MP3 लिंक (Custom Audio URL):
+                                </label>
+                                <input
+                                  type="url"
+                                  value={fest.customAudioUrl || ''}
+                                  onChange={(e) => handleUpdateFestivalAudio(fest.id, currentSound, e.target.value)}
+                                  placeholder="https://.../song.mp3"
+                                  className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons: Test Sound & Save */}
+                          <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleTestAudio(`fest_${fest.id}`, currentSound, fest.customAudioUrl)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                                isPlaying
+                                  ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse'
+                                  : 'bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700'
+                              }`}
+                            >
+                              {isPlaying ? (
+                                <>
+                                  <Pause className="w-3.5 h-3.5 text-yellow-300" />
+                                  <span>रोकें (Playing...)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                                  <span>बजाकर देखें (Preview)</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingFestival(fest);
+                                setIsAddingFestival(false);
+                              }}
+                              className="text-[11px] text-amber-400 hover:text-amber-300 underline font-semibold cursor-pointer"
+                            >
+                              पूरा त्योहार एडिट करें →
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* 2. SEO WISHES PAGES AUDIO SECTION */}
+            {(audioSectionFilter === 'all' || audioSectionFilter === 'seo_pages') && (
+              <div className="space-y-3 pt-4 border-t border-stone-800">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-amber-300 font-serif flex items-center gap-2">
+                    <span>📄 SEO विशिंग पेज ऑडियो नियंत्रण (Wishes Pages Sound Settings)</span>
+                  </h4>
+                  <span className="text-[11px] text-stone-400 font-mono">
+                    {wishCategories.length} पेज
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {wishCategories
+                    .filter(c => {
+                      const q = audioSearchQuery.toLowerCase();
+                      return !q || c.nameHi.toLowerCase().includes(q) || c.nameEn.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q);
+                    })
+                    .map((cat) => {
+                      const isBday = cat.slug.includes('birthday');
+                      const currentSound: FestiveSoundType = cat.soundType || (isBday ? 'birthday' : 'flute');
+                      const isPlaying = testingAudioKey === `wish_${cat.slug}`;
+
+                      return (
+                        <div
+                          key={cat.slug}
+                          className="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 hover:border-amber-500/40 transition space-y-3 flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xl">
+                                  {cat.theme.accentEmoji || '✨'}
+                                </span>
+                                <div className="truncate">
+                                  <h5 className="text-sm font-bold text-white font-serif truncate">
+                                    {cat.nameHi}
+                                  </h5>
+                                  <p className="text-[10px] text-stone-400 font-mono truncate">
+                                    /{cat.slug}/
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-bold border border-purple-500/30 shrink-0">
+                                {FESTIVE_SOUND_OPTIONS.find(o => o.id === currentSound)?.labelHi.split('(')[0] || currentSound}
+                              </span>
+                            </div>
+
+                            {/* Sound Type Selector Dropdown */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-stone-300">
+                                कौन सा ऑडियो बजेगा (Select Sound Type):
+                              </label>
+                              <select
+                                value={currentSound}
+                                onChange={(e) => {
+                                  const newSound = e.target.value as FestiveSoundType;
+                                  handleUpdateWishCategoryAudio(cat.slug, newSound);
+                                }}
+                                className="w-full p-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+                              >
+                                {FESTIVE_SOUND_OPTIONS.map((opt) => (
+                                  <option key={opt.id} value={opt.id}>
+                                    {opt.icon} {opt.labelHi}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Optional Custom Audio URL Input */}
+                            {(currentSound === 'custom_url' || cat.customAudioUrl) && (
+                              <div className="mt-2 space-y-1">
+                                <label className="block text-[10px] font-bold text-stone-400">
+                                  कस्टम MP3 लिंक (Custom Audio URL):
+                                </label>
+                                <input
+                                  type="url"
+                                  value={cat.customAudioUrl || ''}
+                                  onChange={(e) => handleUpdateWishCategoryAudio(cat.slug, currentSound, e.target.value)}
+                                  placeholder="https://.../song.mp3"
+                                  className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons: Test Sound & Edit */}
+                          <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleTestAudio(`wish_${cat.slug}`, currentSound, cat.customAudioUrl)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                                isPlaying
+                                  ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse'
+                                  : 'bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700'
+                              }`}
+                            >
+                              {isPlaying ? (
+                                <>
+                                  <Pause className="w-3.5 h-3.5 text-yellow-300" />
+                                  <span>रोकें (Playing...)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                                  <span>बजाकर देखें (Preview)</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingWishCategory(cat);
+                                setOriginalSlugForEdit(cat.slug);
+                                setIsAddingWishCategory(false);
+                              }}
+                              className="text-[11px] text-amber-400 hover:text-amber-300 underline font-semibold cursor-pointer"
+                            >
+                              पूरा पेज एडिट करें →
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
           </div>
         )}
@@ -1895,6 +2679,68 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-amber-300"
                 />
               </div>
+
+              {/* FESTIVE AUDIO & SOUND CONFIGURATION */}
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-black/50 border border-purple-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                    <span>🎵 बैकग्राउंड संगीत / ध्वनि (Background Audio)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleTestAudio(
+                      `modal_${editingFestival.id}`,
+                      editingFestival.soundType || 'aarti',
+                      editingFestival.customAudioUrl
+                    )}
+                    className="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  >
+                    {testingAudioKey === `modal_${editingFestival.id}` ? (
+                      <>
+                        <Pause className="w-3 h-3 text-yellow-300" />
+                        <span>रोकें (Playing...)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3 h-3 text-purple-300 fill-purple-300" />
+                        <span>▶️ टेस्ट ऑडियो सुनें</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1">
+                      ध्वनि का प्रकार (Sound Type):
+                    </label>
+                    <select
+                      value={editingFestival.soundType || 'aarti'}
+                      onChange={(e) => setEditingFestival({ ...editingFestival, soundType: e.target.value as FestiveSoundType })}
+                      className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-amber-300 font-bold focus:outline-none focus:border-purple-400 cursor-pointer"
+                    >
+                      {FESTIVE_SOUND_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.icon} {opt.labelHi}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1">
+                      कस्टम MP3 URL (वैकल्पिक):
+                    </label>
+                    <input
+                      type="url"
+                      value={editingFestival.customAudioUrl || ''}
+                      onChange={(e) => setEditingFestival({ ...editingFestival, customAudioUrl: e.target.value })}
+                      placeholder="https://.../audio.mp3"
+                      className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="pt-3 border-t border-stone-800 flex items-center justify-end gap-2">
@@ -2118,6 +2964,410 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 सेव करें ✓
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* EDIT / ADD SEO WISH CATEGORY & URL MODAL                  */}
+      {/* ========================================================= */}
+      {(editingWishCategory || isAddingWishCategory) && editingWishCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 animate-fade-in overflow-y-auto">
+          <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl border-2 border-amber-500/40 bg-stone-950 p-5 sm:p-7 shadow-2xl space-y-5 my-auto">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-800">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{editingWishCategory.theme?.accentEmoji || '📄'}</span>
+                <div>
+                  <h3 className="text-base font-bold text-white font-serif">
+                    {isAddingWishCategory 
+                      ? '✨ नया SEO विशिंग पेज बनाएं' 
+                      : `✏️ '${editingWishCategory.nameHi}' का नाम, URL व कंटेंट एडिट करें`}
+                  </h3>
+                  <p className="text-xs text-amber-400 font-mono">
+                    /{editingWishCategory.slug}/
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingWishCategory(null);
+                  setIsAddingWishCategory(false);
+                  setOriginalSlugForEdit(null);
+                }}
+                className="p-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form Inputs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+              
+              {/* 1. Hindi Page Name */}
+              <div>
+                <label className="block text-stone-300 font-bold mb-1">
+                  पेज का नाम (हिंदी - Page Name) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingWishCategory.nameHi}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, nameHi: e.target.value })}
+                  placeholder="उदा. माँ के लिए जन्मदिन की शुभकामनाएं"
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-medium focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 2. English Page Name */}
+              <div>
+                <label className="block text-stone-300 font-bold mb-1">
+                  Page Name (English)
+                </label>
+                <input
+                  type="text"
+                  value={editingWishCategory.nameEn}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, nameEn: e.target.value })}
+                  placeholder="उदा. Birthday Wishes for Mother"
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-medium focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 3. Customizable URL SLUG (THE MAIN USER REQUIREMENT) */}
+              <div className="sm:col-span-2 space-y-1">
+                <label className="block text-xs font-bold text-amber-300">
+                  🔗 पेज का URL Slug (वेब एड्रेस / Link) *
+                </label>
+                <div className="flex items-center">
+                  <span className="bg-stone-900 border border-r-0 border-stone-700 px-3 py-2.5 text-stone-400 font-mono text-xs rounded-l-xl select-none">
+                    https://shubhakamna.in/
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={editingWishCategory.slug}
+                    onChange={(e) => {
+                      const clean = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '');
+                      setEditingWishCategory({ ...editingWishCategory, slug: clean });
+                    }}
+                    placeholder="birthday-wishes-for-mother"
+                    className="flex-1 bg-stone-950 border border-stone-700 py-2.5 px-3 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                  />
+                  <span className="bg-stone-900 border border-l-0 border-stone-700 px-3 py-2.5 text-stone-400 font-mono text-xs rounded-r-xl select-none">
+                    /
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-400">
+                  👉 आप अपनी पसंद के अनुसार कोई भी URL रख सकते हैं (उदा: <span className="font-mono text-amber-300">maa-ke-janamdin-ki-shubhakamnaye</span> या <span className="font-mono text-amber-300">diwali-wishes-2026</span>)।
+                </p>
+              </div>
+
+              {/* 4. Parent Category (Breadcrumb Hierarchy) */}
+              <div>
+                <label className="block text-stone-300 font-bold mb-1">
+                  पैरेंट पेज (ब्रेडक्रम्ब्स हेतु)
+                </label>
+                <select
+                  value={editingWishCategory.parentSlug || ''}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, parentSlug: e.target.value || undefined })}
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  <option value="">कोई नहीं (Top Level Hub)</option>
+                  {wishCategories
+                    .filter(c => c.slug !== editingWishCategory.slug)
+                    .map(c => (
+                      <option key={c.slug} value={c.slug}>
+                        {c.nameHi} (/{c.slug}/)
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* 5. Emoji & Icon */}
+              <div>
+                <label className="block text-stone-300 font-bold mb-1">
+                  इमोजी / आइकॉन (Emoji Motif)
+                </label>
+                <input
+                  type="text"
+                  value={editingWishCategory.theme?.accentEmoji || '✨'}
+                  onChange={(e) => setEditingWishCategory({
+                    ...editingWishCategory,
+                    theme: {
+                      ...editingWishCategory.theme,
+                      accentEmoji: e.target.value || '✨'
+                    }
+                  })}
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white text-base focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 6. SEO Title */}
+              <div className="sm:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-stone-300 font-bold">
+                    SEO Meta Title (&lt;title&gt;) *
+                  </label>
+                  <span className="text-[10px] text-stone-500 font-mono">
+                    {editingWishCategory.seoTitle?.length || 0} / 60 अक्षर
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={editingWishCategory.seoTitle}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, seoTitle: e.target.value })}
+                  placeholder="उदा. माँ के जन्मदिन की शुभकामनाएं | Birthday Wishes for Mother in Hindi"
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-medium focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 7. SEO Meta Description */}
+              <div className="sm:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-stone-300 font-bold">
+                    SEO Meta Description (&lt;meta name="description"&gt;) *
+                  </label>
+                  <span className="text-[10px] text-stone-500 font-mono">
+                    {editingWishCategory.metaDescription?.length || 0} / 155 अक्षर
+                  </span>
+                </div>
+                <textarea
+                  rows={2}
+                  required
+                  value={editingWishCategory.metaDescription}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, metaDescription: e.target.value })}
+                  placeholder="पेज का आकर्षक विवरण जो Google सर्च व WhatsApp शेयर में दिखेगा..."
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 8. Main H1 Heading */}
+              <div className="sm:col-span-2">
+                <label className="block text-stone-300 font-bold mb-1">
+                  मुख्य H1 Heading (Page Heading) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingWishCategory.h1}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, h1: e.target.value })}
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-medium focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 9. Intro Paragraph (Crawlable Content) */}
+              <div className="sm:col-span-2">
+                <label className="block text-stone-300 font-bold mb-1">
+                  परिचय पैराग्राफ (Introductory Crawlable Content) *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={editingWishCategory.intro}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, intro: e.target.value })}
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white leading-relaxed focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 10. Hero Image URL */}
+              <div className="sm:col-span-2">
+                <label className="block text-stone-300 font-bold mb-1">
+                  हेरो बैनर इमेज URL (Hero Banner Image)
+                </label>
+                <input
+                  type="url"
+                  value={editingWishCategory.heroImageUrl}
+                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, heroImageUrl: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* 10.1 Category Audio / Song Configuration */}
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-black/50 border border-purple-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                    <span>🎵 बैकग्राउंड संगीत / ध्वनि (Background Audio)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleTestAudio(
+                      `modal_wish_${editingWishCategory.slug}`,
+                      editingWishCategory.soundType || (editingWishCategory.slug.includes('birthday') ? 'birthday' : 'flute'),
+                      editingWishCategory.customAudioUrl
+                    )}
+                    className="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  >
+                    {testingAudioKey === `modal_wish_${editingWishCategory.slug}` ? (
+                      <>
+                        <Pause className="w-3 h-3 text-yellow-300" />
+                        <span>रोकें (Playing...)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3 h-3 text-purple-300 fill-purple-300" />
+                        <span>▶️ टेस्ट ऑडियो सुनें</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1">
+                      ध्वनि का प्रकार (Sound Type):
+                    </label>
+                    <select
+                      value={editingWishCategory.soundType || (editingWishCategory.slug.includes('birthday') ? 'birthday' : 'flute')}
+                      onChange={(e) => setEditingWishCategory({ ...editingWishCategory, soundType: e.target.value as FestiveSoundType })}
+                      className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-amber-300 font-bold focus:outline-none focus:border-purple-400 cursor-pointer"
+                    >
+                      {FESTIVE_SOUND_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.icon} {opt.labelHi}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1">
+                      कस्टम MP3 URL (वैकल्पिक):
+                    </label>
+                    <input
+                      type="url"
+                      value={editingWishCategory.customAudioUrl || ''}
+                      onChange={(e) => setEditingWishCategory({ ...editingWishCategory, customAudioUrl: e.target.value })}
+                      placeholder="https://.../song.mp3"
+                      className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 11. Wishes & Shayari Manager */}
+            <div className="space-y-3 pt-3 border-t border-stone-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>शुभकामना संदेश व शायरी संग्रह ({editingWishCategory.wishes.length})</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newWish: HindiWish = {
+                      id: `wish_${Date.now()}_${editingWishCategory.wishes.length + 1}`,
+                      hindiText: 'आपके जीवन में सदा खुशियां और सफलता बनी रहे। हार्दिक शुभकामनाएं!',
+                      authorOrTone: 'शुभकामना'
+                    };
+                    setEditingWishCategory({
+                      ...editingWishCategory,
+                      wishes: [...editingWishCategory.wishes, newWish]
+                    });
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> + नया संदेश जोड़ें
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                {editingWishCategory.wishes.map((w, idx) => (
+                  <div key={w.id || idx} className="p-3 rounded-2xl bg-stone-900 border border-stone-800 space-y-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-mono text-amber-400 font-bold">संदेश #{idx + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={w.authorOrTone || ''}
+                          onChange={(e) => {
+                            const updated = [...editingWishCategory.wishes];
+                            updated[idx] = { ...updated[idx], authorOrTone: e.target.value };
+                            setEditingWishCategory({ ...editingWishCategory, wishes: updated });
+                          }}
+                          placeholder="टोन: उदा. भावुक, शायरी..."
+                          className="px-2 py-0.5 rounded bg-stone-950 border border-stone-800 text-[10px] text-stone-300 w-28"
+                        />
+                        {editingWishCategory.wishes.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = editingWishCategory.wishes.filter((_, i) => i !== idx);
+                              setEditingWishCategory({ ...editingWishCategory, wishes: updated });
+                            }}
+                            className="text-stone-500 hover:text-rose-400 p-1 cursor-pointer"
+                            title="संदेश हटाएं"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={w.hindiText}
+                      onChange={(e) => {
+                        const updated = [...editingWishCategory.wishes];
+                        updated[idx] = { ...updated[idx], hindiText: e.target.value };
+                        setEditingWishCategory({ ...editingWishCategory, wishes: updated });
+                      }}
+                      className="w-full p-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-100 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="pt-4 border-t border-stone-800 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingWishCategory(null);
+                  setIsAddingWishCategory(false);
+                  setOriginalSlugForEdit(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-stone-900 text-stone-300 hover:text-white text-xs font-semibold cursor-pointer"
+              >
+                रद्द करें
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!editingWishCategory.nameHi.trim() || !editingWishCategory.slug.trim()) {
+                    alert('कृपया पेज का नाम और URL Slug अवश्य भरें!');
+                    return;
+                  }
+
+                  const cleanSlug = editingWishCategory.slug.trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+                  const toSave: WishCategory = {
+                    ...editingWishCategory,
+                    slug: cleanSlug,
+                    nameHi: editingWishCategory.nameHi.trim(),
+                    updatedAt: new Date().toISOString().slice(0, 10)
+                  };
+
+                  saveOrUpdateWishCategory(toSave, originalSlugForEdit || undefined);
+                  setWishCategories(getStoredWishCategories());
+                  setEditingWishCategory(null);
+                  setIsAddingWishCategory(false);
+                  setOriginalSlugForEdit(null);
+                  showToast(`'${toSave.nameHi}' (/${toSave.slug}/) सफलतापूर्वक सहेजा गया! ✓`);
+                }}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>💾 पेज व URL सहेजें (Save & Publish)</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}
