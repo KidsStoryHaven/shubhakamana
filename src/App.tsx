@@ -25,10 +25,21 @@ export default function App() {
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
   const checkIsAdminRoute = () => {
     try {
+      const hostname = (window.location.hostname || '').toLowerCase();
       const path = (window.location.pathname || '').toLowerCase();
       const search = (window.location.search || '').toLowerCase();
       const hash = (window.location.hash || '').toLowerCase();
+
+      // Subdomain check: e.g. admin.yourdomain.com or panel.yourdomain.com
+      const isSubdomainAdmin = (
+        hostname.startsWith('admin.') ||
+        hostname.startsWith('panel.') ||
+        hostname.startsWith('manage.') ||
+        hostname.startsWith('wp-admin.')
+      );
+
       return (
+        isSubdomainAdmin ||
         path.includes('wp-admin') ||
         path.includes('admin') ||
         search.includes('admin') ||
@@ -183,15 +194,11 @@ export default function App() {
               </button>
             ))}
             <span aria-hidden="true">·</span>
-            {/* Direct Easy Admin Login Button */}
-            <button
+            <span
               onClick={() => setIsAdminOpen(true)}
-              className="text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-1.5 cursor-pointer bg-stone-900 hover:bg-stone-800 px-3 py-1.5 rounded-xl border border-amber-500/40 text-xs transition active:scale-95 shadow-sm"
+              className="text-amber-400/90 font-medium cursor-pointer select-none hover:text-amber-300 transition-colors"
+              title="© 2026 Shubhakamna.in"
             >
-              <span>🔐 एडमिन लॉगिन</span>
-            </button>
-            <span aria-hidden="true">·</span>
-            <span className="text-amber-400/90 font-medium">
               © 2026 Shubhakamna.in
             </span>
           </div>

@@ -46,14 +46,49 @@ import {
 } from 'lucide-react';
 
 interface AdminPanelProps {
-  onClose: () => void;
+  onClose?: () => void;
   onPreviewFestival?: (festival: Festival) => void;
+  standalone?: boolean;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   onClose,
-  onPreviewFestival
+  onPreviewFestival,
+  standalone = false
 }) => {
+  const handleCloseOrExit = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      window.location.href = '/';
+    }
+  };
+  // Authentication State (Protected with maahi32 / Sk951951)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isAdminLoggedIn());
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (verifyAdminCredentials(usernameInput, passwordInput)) {
+      setIsAuthenticated(true);
+      loginAdminSession();
+      setAuthError('');
+      showToast('लॉग इन सफल! स्वागत है maahi32 👋');
+    } else {
+      setAuthError('गलत यूज़रनेम या पासवर्ड! कृपया सही विवरण दर्ज करें।');
+    }
+  };
+
+  const handleLogout = () => {
+    logoutAdminSession();
+    setIsAuthenticated(false);
+    setUsernameInput('');
+    setPasswordInput('');
+    handleCloseOrExit();
+  };
+
   // Active Tab: 'festivals' | 'photos' | 'categories' | 'backup'
   const [activeTab, setActiveTab] = useState<'festivals' | 'photos' | 'categories' | 'backup'>('festivals');
 
@@ -296,6 +331,88 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     return matchesCat && matchesQuery;
   });
 
+  // ==========================================
+  // LOGIN SCREEN (Protected: maahi32 / Sk951951)
+  // ==========================================
+  if (!isAuthenticated) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-lg p-4 animate-fade-in overflow-y-auto">
+        <div className="w-full max-w-md rounded-3xl border-2 border-amber-500/40 bg-stone-950 p-6 sm:p-8 shadow-2xl text-center space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center shadow-lg shadow-amber-500/30 text-stone-950">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-extrabold text-white font-serif">
+              🔐 Shubhakamna Admin Login
+            </h3>
+            <p className="text-xs text-stone-400 mt-1">
+              एडमिन पोर्टल केवल अधिकृत व्यवस्थापक के लिए है
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div>
+              <label className="block text-xs font-bold text-amber-300 mb-1">
+                यूज़रनेम (Username)
+              </label>
+              <input
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                placeholder="यूज़रनेम दर्ज करें..."
+                className="w-full py-2.5 px-3.5 rounded-xl bg-stone-900 border border-stone-700 text-stone-100 focus:outline-none focus:border-amber-400 font-mono text-sm"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-amber-300 mb-1">
+                पासवर्ड (Password)
+              </label>
+              <input
+                type="password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="पासवर्ड दर्ज करें..."
+                className="w-full py-2.5 px-3.5 rounded-xl bg-stone-900 border border-stone-700 text-stone-100 focus:outline-none focus:border-amber-400 font-mono text-sm"
+              />
+            </div>
+
+            {authError && (
+              <p className="text-xs font-semibold text-red-400 flex items-center gap-1.5 bg-red-950/40 p-2.5 rounded-xl border border-red-500/30">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{authError}</span>
+              </p>
+            )}
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleCloseOrExit}
+                className="flex-1 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-300 font-semibold text-xs transition cursor-pointer"
+              >
+                ← वापस लौटें
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer"
+              >
+                लॉग इन करें →
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-stone-950 text-stone-100 overflow-hidden animate-fade-in">
       
@@ -322,11 +439,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={onClose}
-            className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition cursor-pointer"
+            onClick={handleCloseOrExit}
+            className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs flex items-center gap-1.5 border border-stone-700 transition cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
-            <span>लाइव साइट देखें ✕</span>
+            <span>लाइव साइट देखें</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>लॉगआउट</span>
           </button>
         </div>
       </header>

@@ -248,15 +248,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* PWA App Install Button */}
           <PWAInstallButton />
 
-          {/* Admin Login Button */}
-          <button
-            onClick={onOpenAdmin}
-            title="एडमिन लॉगिन (Admin Login)"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-stone-900 text-amber-400 hover:bg-amber-500/20 active:scale-95 transition cursor-pointer"
-          >
-            <Lock className="h-4 w-4" />
-          </button>
-
           {/* Temple Bell */}
           <button
             onClick={handleBellRing}
@@ -365,20 +356,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               );
             })}
-
-            {/* Mobile Admin Login Button */}
-            <div className="pt-2 border-t border-stone-800">
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  onOpenAdmin?.();
-                }}
-                className="w-full py-2.5 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Lock className="w-4 h-4 text-amber-400" />
-                <span>🔐 एडमिन लॉगिन (Admin Login)</span>
-              </button>
-            </div>
           </div>
         </div>
       )}
