@@ -7,6 +7,8 @@ import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
 import { getFestivalDeitySlides } from '../data/divineGodsData';
+import { AdBanner } from './AdBanner';
+import { awardUserPoints } from '../data/userStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
 import { generateStatusCardBlob } from '../utils/generateStatusCard';
 import { 
@@ -39,7 +41,8 @@ import {
   Globe,
   Eye,
   Gift,
-  Loader2
+  Loader2,
+  Trophy
 } from 'lucide-react';
 
 interface FestivalWishPageProps {
@@ -108,6 +111,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [copiedWishIndex, setCopiedWishIndex] = useState<number | null>(null);
+  const [pointToast, setPointToast] = useState<{ message: string; points: number } | null>(null);
 
   // Multilingual Wish Language State
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(() => {
@@ -222,6 +226,13 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
     const text = activeTranslation.whatsappMessage(displayName, url, !!userPhoto);
     
+    // Award loyalty reward points
+    const res = awardUserPoints('whatsapp_share', festival.nameHi);
+    if (res.awarded) {
+      setPointToast({ message: `+${res.points} पॉइंट्स मिले! कुल अंक: ${res.newTotal} 🎉`, points: res.points });
+      setTimeout(() => setPointToast(null), 4000);
+    }
+
     const waUrl = `whatsapp://send?text=${encodeURIComponent(text)}`;
     const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 
@@ -236,6 +247,13 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const handleWhatsAppStatusShare = async () => {
     setIsGenerating8K(true);
     festiveAudio.playSoundForFestival(festival.soundType);
+
+    // Award loyalty reward points for status
+    const res = awardUserPoints('status_share', festival.nameHi);
+    if (res.awarded) {
+      setPointToast({ message: `📸 स्टेटस शेयर पर +${res.points} अंक मिले! कुल: ${res.newTotal} pts 🎉`, points: res.points });
+      setTimeout(() => setPointToast(null), 4000);
+    }
 
     const url = getShareUrl();
     const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
@@ -299,6 +317,12 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     navigator.clipboard.writeText(url).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2500);
+
+      const res = awardUserPoints('link_copy', festival.nameHi);
+      if (res.awarded) {
+        setPointToast({ message: `🔗 लिंक कॉपी पर +${res.points} अंक मिले! कुल: ${res.newTotal} pts 🎉`, points: res.points });
+        setTimeout(() => setPointToast(null), 4000);
+      }
     });
   };
 
@@ -675,18 +699,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         </div>
       </div>
 
-      {/* AdSense Mid-Content Slot */}
-      <div className="max-w-3xl mx-auto px-4 my-6">
-        <div className="bg-stone-900/60 border border-stone-800 rounded-lg p-2 text-center text-stone-500 text-[10px] tracking-widest uppercase">
-          <div className="flex items-center justify-between text-[9px] text-stone-500 mb-1 px-1">
-            <span>विज्ञापन • SPONSORED</span>
-            <span>AdSense Responsive Unit</span>
-          </div>
-          <div className="h-20 sm:h-24 bg-stone-950/70 border border-dashed border-stone-800 rounded flex items-center justify-center text-stone-400 text-xs sm:text-sm">
-            <span>यहाँ आपका 300x250 या Responsive इन-आर्टिकल विज्ञापन दिखेगा</span>
-          </div>
-        </div>
-      </div>
+      {/* Dynamic Ad Banner Slot (AdSense / Custom) */}
+      <AdBanner slotId="below_generator" />
 
       {/* Rich SEO Content Section (Guarantees Google Rank #1 and AdSense Approval) */}
       <div className="max-w-3xl mx-auto px-4 space-y-6">
@@ -836,6 +850,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         imageUrl={statusModalImage}
         captionText={`🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${getShareUrl()}`}
       />
+
+      {/* Floating Loyalty Reward Points Celebration Toast */}
+      {pointToast && (
+        <div className="fixed top-20 right-4 sm:right-6 z-50 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 font-extrabold text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-2xl shadow-amber-500/40 border-2 border-white flex items-center gap-2.5 animate-bounce">
+          <Trophy className="w-5 h-5 text-stone-950 shrink-0" />
+          <span>{pointToast.message}</span>
+        </div>
+      )}
 
     </div>
   );

@@ -11,7 +11,11 @@ import {
   X, 
   ArrowRight,
   Heart,
-  Lock
+  Lock,
+  Trophy,
+  User,
+  LogOut,
+  CreditCard
 } from 'lucide-react';
 import { festiveAudio } from '../utils/festiveAudio';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -21,33 +25,52 @@ import {
   CategoryInfo 
 } from '../data/festivals';
 import { getStoredFestivals, getStoredCategories } from '../data/festivalStore';
+import { getCurrentUser, logoutUser, UserProfile } from '../data/userStore';
 
 interface NavbarProps {
   onSelectCategory?: (category: FestivalCategory | 'all') => void;
   onSelectFestival?: (festival: Festival) => void;
   onGoHome: () => void;
+  onOpenLeaderboard?: () => void;
+  onOpenAuth?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onSelectCategory,
   onSelectFestival,
-  onGoHome
+  onGoHome,
+  onOpenLeaderboard,
+  onOpenAuth
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<FestivalCategory | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileExpandedCat, setMobileExpandedCat] = useState<FestivalCategory | null>('hindu');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => getCurrentUser());
 
   useEffect(() => {
     const handleDataChanged = () => {
       setFestivals(getStoredFestivals());
       setCategories(getStoredCategories());
     };
+    const handleUserChanged = () => {
+      setCurrentUser(getCurrentUser());
+    };
+
     window.addEventListener('shubhakamna_data_changed', handleDataChanged);
-    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+    window.addEventListener('shubhakamna_user_session_changed', handleUserChanged);
+    window.addEventListener('shubhakamna_users_changed', handleUserChanged);
+
+    return () => {
+      window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+      window.removeEventListener('shubhakamna_user_session_changed', handleUserChanged);
+      window.removeEventListener('shubhakamna_users_changed', handleUserChanged);
+    };
   }, []);
 
   const handleBellRing = () => {
@@ -222,6 +245,113 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Action Buttons & Mobile Toggle */}
         <div className="flex items-center gap-2">
+          {/* Leaderboard Button */}
+          <button
+            onClick={() => onOpenLeaderboard?.()}
+            title="मासिक लीडरबोर्ड व विजेता देखें"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 text-amber-300 hover:text-white hover:border-amber-400 active:scale-95 transition cursor-pointer text-xs font-bold shadow-sm"
+          >
+            <Trophy className="h-4 w-4 text-amber-400" />
+            <span className="hidden sm:inline">लीडरबोर्ड</span>
+          </button>
+
+          {/* User Account / Login Button */}
+          {currentUser ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-white hover:border-emerald-400 transition cursor-pointer"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-stone-800 border border-emerald-400 shrink-0 flex items-center justify-center">
+                  {currentUser.photoUrl ? (
+                    <img src={currentUser.photoUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-emerald-400" />
+                  )}
+                </div>
+                <div className="hidden sm:flex flex-col text-left leading-none">
+                  <span className="text-xs font-bold text-white truncate max-w-[90px]">
+                    {currentUser.name}
+                  </span>
+                  <span className="text-[10px] text-amber-300 font-mono font-bold">
+                    {currentUser.points} pts
+                  </span>
+                </div>
+              </button>
+
+              {/* User Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl border-2 border-emerald-500/40 bg-stone-950 p-3 shadow-2xl z-50 space-y-2.5 text-xs animate-fade-in">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-800">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800 border border-emerald-400 shrink-0 flex items-center justify-center">
+                      {currentUser.photoUrl ? (
+                        <img src={currentUser.photoUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5 text-emerald-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-white truncate">{currentUser.name}</h4>
+                      <p className="text-[10px] text-stone-400 truncate">{currentUser.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-stone-900 border border-stone-800 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-stone-400 text-[11px]">कुल अंक (Points):</span>
+                      <span className="font-extrabold text-amber-400 font-mono text-sm">{currentUser.points} pts</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-stone-400 text-[11px]">कुल शेयर्स:</span>
+                      <span className="font-bold text-white">{currentUser.sharesCount} बार</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-stone-800">
+                      <span className="text-stone-400 text-[10px] flex items-center gap-1">
+                        <CreditCard className="w-3 h-3 text-emerald-400" />
+                        <span>इनाम UPI:</span>
+                      </span>
+                      <span className="font-mono text-emerald-300 text-[10px] truncate max-w-[130px]" title={currentUser.upiId}>
+                        {currentUser.upiId}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-1">
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        onOpenLeaderboard?.();
+                      }}
+                      className="w-full py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-left font-semibold flex items-center justify-between cursor-pointer"
+                    >
+                      <span>🏆 लीडरबोर्ड व अपनी रैंक देखें</span>
+                      <span>→</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        logoutUser();
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="w-full py-1.5 px-2.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 text-left font-semibold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>खाता लॉग आउट करें</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => onOpenAuth?.()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 active:scale-95 transition cursor-pointer text-xs font-extrabold shadow-md shadow-amber-500/20"
+            >
+              <User className="h-3.5 w-3.5" />
+              <span>लॉग इन / रिवॉर्ड्स 🎁</span>
+            </button>
+          )}
+
           {/* PWA App Install Button */}
           <PWAInstallButton />
 
@@ -246,7 +376,34 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Mobile Horizontal Quick Bar */}
-      <div className="flex lg:hidden border-t border-stone-800/80 overflow-x-auto px-3 py-2 gap-1.5 text-xs font-medium text-stone-300 scrollbar-none">
+      <div className="flex lg:hidden border-t border-stone-800/80 overflow-x-auto px-3 py-2 gap-1.5 text-xs font-medium text-stone-300 scrollbar-none items-center">
+        {/* Mobile Leaderboard Quick Link */}
+        <button
+          onClick={() => onOpenLeaderboard?.()}
+          className="shrink-0 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 font-bold flex items-center gap-1"
+        >
+          <Trophy className="w-3.5 h-3.5 text-amber-400" />
+          <span>लीडरबोर्ड</span>
+        </button>
+
+        {/* Mobile User Status / Login */}
+        {currentUser ? (
+          <button
+            onClick={() => onOpenLeaderboard?.()}
+            className="shrink-0 px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>{currentUser.name} ({currentUser.points} pts)</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => onOpenAuth?.()}
+            className="shrink-0 px-2.5 py-1 rounded-full bg-amber-500 text-stone-950 font-bold flex items-center gap-1"
+          >
+            <span>लॉग इन 🎁</span>
+          </button>
+        )}
+
         <button
           onClick={() => {
             onGoHome();

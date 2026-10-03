@@ -8,8 +8,12 @@ import { Navbar } from './components/Navbar';
 import { FestivalsPortal } from './components/FestivalsPortal';
 import { FestivalWishPage } from './components/FestivalWishPage';
 import { AdminPanel } from './components/AdminPanel';
+import { AdBanner } from './components/AdBanner';
+import { LeaderboardModal } from './components/LeaderboardModal';
+import { UserAuthModal } from './components/UserAuthModal';
 import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
 import { getStoredFestivals, getStoredCategories } from './data/festivalStore';
+import { getStoredAdSettings } from './data/adStore';
 import { parseWishUrl } from './utils/shortUrl';
 
 export default function App() {
@@ -68,6 +72,41 @@ export default function App() {
     return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
   }, []);
 
+  // Dynamically inject Google AdSense Auto Ads / Global Header Script into <head>
+  useEffect(() => {
+    const applyHeaderScript = () => {
+      const settings = getStoredAdSettings();
+      const existingScript = document.getElementById('shubhakamna-ad-header-script');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      if (settings.adsEnabled && settings.headerScript?.trim()) {
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = settings.headerScript.trim();
+        const scriptTags = tempContainer.querySelectorAll('script');
+        
+        scriptTags.forEach((s) => {
+          const newScript = document.createElement('script');
+          newScript.id = 'shubhakamna-ad-header-script';
+          Array.from(s.attributes).forEach((attr) => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          if (s.innerHTML) {
+            newScript.innerHTML = s.innerHTML;
+          }
+          document.head.appendChild(newScript);
+        });
+      }
+    };
+
+    applyHeaderScript();
+    window.addEventListener('shubhakamna_ads_changed', applyHeaderScript);
+    return () => {
+      window.removeEventListener('shubhakamna_ads_changed', applyHeaderScript);
+    };
+  }, []);
+
   const [selectedFestival, setSelectedFestival] = useState<Festival | null>(() => {
     try {
       const parsed = parseWishUrl(window.location.search, window.location.pathname);
@@ -87,6 +126,8 @@ export default function App() {
   });
 
   const [activeCategory, setActiveCategory] = useState<FestivalCategory | 'all'>('all');
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   if (isAdminOpen) {
     return (
@@ -112,7 +153,12 @@ export default function App() {
 
   if (selectedFestival) {
     return (
-      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
+      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white pb-14">
+        {/* Top Header Ad Banner */}
+        <div className="max-w-4xl mx-auto w-full px-4 pt-2">
+          <AdBanner slotId="header" />
+        </div>
+
         <FestivalWishPage
           festival={selectedFestival}
           initialSenderName={urlData.senderName}
@@ -121,12 +167,31 @@ export default function App() {
           onSelectAnotherFestival={(f) => setSelectedFestival(f)}
           allFestivals={festivals}
         />
+
+        {/* Sticky Bottom Ad Banner */}
+        <AdBanner slotId="sticky_bottom" />
+
+        {/* Monthly Rewards Leaderboard Modal */}
+        <LeaderboardModal
+          isOpen={isLeaderboardOpen}
+          onClose={() => setIsLeaderboardOpen(false)}
+          onOpenAuth={() => setIsAuthOpen(true)}
+        />
+
+        {/* User Login & Signup Modal */}
+        <UserAuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={() => {
+            setIsAuthOpen(false);
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
+    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white pb-14">
       {/* Top Navbar with Dropdown Menus */}
       <Navbar
         onSelectCategory={(cat) => setActiveCategory(cat)}
@@ -135,16 +200,42 @@ export default function App() {
           setSelectedFestival(null);
           setActiveCategory('all');
         }}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
+      {/* Top Header Ad Banner */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2">
+        <AdBanner slotId="header" />
+      </div>
+
       {/* Main Festive Portal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <FestivalsPortal
           onSelectFestival={(fest) => setSelectedFestival(fest)}
           currentCategory={activeCategory}
           onCategoryChange={(cat) => setActiveCategory(cat)}
         />
       </main>
+
+      {/* Sticky Bottom Mobile/Desktop Ad Banner */}
+      <AdBanner slotId="sticky_bottom" />
+
+      {/* Monthly Rewards Leaderboard Modal */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
+
+      {/* User Login & Signup Modal */}
+      <UserAuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={() => {
+          setIsAuthOpen(false);
+        }}
+      />
 
       {/* Editorial Festive Footer */}
       <footer className="mt-12 border-t border-amber-500/20 bg-stone-950/90 py-8 px-4 sm:px-6 lg:px-8">

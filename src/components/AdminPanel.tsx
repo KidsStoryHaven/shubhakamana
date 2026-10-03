@@ -15,6 +15,13 @@ import {
   importFullBackup, 
   resetToDefaults 
 } from '../data/festivalStore';
+import { 
+  getStoredAdSettings, 
+  saveStoredAdSettings, 
+  AdSettings, 
+  AdSlotId, 
+  DEFAULT_AD_SETTINGS 
+} from '../data/adStore';
 import { Festival, CategoryInfo, FestivalCategory } from '../data/festivals';
 import { DivineDeitySlide } from '../data/divineGodsData';
 import { 
@@ -42,8 +49,31 @@ import {
   Save,
   AlertCircle,
   LogOut,
-  User
+  User,
+  Megaphone,
+  Code,
+  ToggleLeft,
+  ToggleRight,
+  Sliders,
+  HelpCircle,
+  CheckCircle2,
+  Copy,
+  Users,
+  Trophy,
+  CreditCard,
+  Gift
 } from 'lucide-react';
+import { 
+  getStoredUsers, 
+  saveStoredUsers, 
+  UserProfile, 
+  updateUserByAdmin, 
+  deleteUserByAdmin, 
+  getStoredPointRules, 
+  saveStoredPointRules, 
+  PointRules, 
+  exportPayoutsCSV 
+} from '../data/userStore';
 
 interface AdminPanelProps {
   onClose?: () => void;
@@ -89,12 +119,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     handleCloseOrExit();
   };
 
-  // Active Tab: 'festivals' | 'photos' | 'categories' | 'backup'
-  const [activeTab, setActiveTab] = useState<'festivals' | 'photos' | 'categories' | 'backup'>('festivals');
+  // Active Tab: 'festivals' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'
+  const [activeTab, setActiveTab] = useState<'festivals' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'>('festivals');
+
+  // Ad Settings State (Google AdSense, Ad Networks, Custom Banners)
+  const [adSettings, setAdSettings] = useState<AdSettings>(() => getStoredAdSettings());
+  const [activePreviewSlot, setActivePreviewSlot] = useState<AdSlotId | null>(null);
 
   // Stored Data State
   const [festivals, setFestivals] = useState<Festival[]>([]);
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
+
+  // Users & Loyalty Points State
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [pointRules, setPointRules] = useState<PointRules>(() => getStoredPointRules());
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [userSearch, setUserSearch] = useState('');
 
   // Search & Filter State
   const [festivalSearch, setFestivalSearch] = useState('');
@@ -129,7 +169,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     loadAllData();
     const handleDataChange = () => loadAllData();
     window.addEventListener('shubhakamna_data_changed', handleDataChange);
-    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChange);
+    window.addEventListener('shubhakamna_users_changed', handleDataChange);
+    return () => {
+      window.removeEventListener('shubhakamna_data_changed', handleDataChange);
+      window.removeEventListener('shubhakamna_users_changed', handleDataChange);
+    };
   }, []);
 
   const loadAllData = () => {
@@ -137,8 +181,130 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     const cats = getStoredCategories();
     setFestivals(fests);
     setCategories(cats);
+    setAdSettings(getStoredAdSettings());
+    setUsers(getStoredUsers());
+    setPointRules(getStoredPointRules());
     if (fests.length > 0 && !selectedFestivalForPhotos) {
       setSelectedFestivalForPhotos(fests[0].id);
+    }
+  };
+
+  // ==========================================
+  // USER & REWARD MANAGEMENT HANDLERS
+  // ==========================================
+  const handleSaveUser = (updatedUser: UserProfile) => {
+    updateUserByAdmin(updatedUser.id, updatedUser);
+    setEditingUser(null);
+    loadAllData();
+    showToast(`यूज़र '${updatedUser.name}' की जानकारी अपडेट हो गई! ✨`);
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (window.confirm(`क्या आप सचमुच '${userName}' को हटाना चाहते हैं?`)) {
+      deleteUserByAdmin(userId);
+      loadAllData();
+      showToast(`यूज़र '${userName}' को सफलतापूर्वक हटा दिया गया!`);
+    }
+  };
+
+  const handleQuickAddPoints = (userId: string, pointsToAdd: number) => {
+    const target = users.find(u => u.id === userId);
+    if (!target) return;
+    const newPoints = Math.max(0, target.points + pointsToAdd);
+    updateUserByAdmin(userId, { points: newPoints });
+    loadAllData();
+    showToast(`'${target.name}' को ${pointsToAdd > 0 ? `+${pointsToAdd}` : pointsToAdd} अंक दिए गए! नया बैलेंस: ${newPoints} pts`);
+  };
+
+  const handleSavePointRules = (rulesToSave: PointRules) => {
+    saveStoredPointRules(rulesToSave);
+    setPointRules(rulesToSave);
+    showToast('पॉइंट्स नियम व इनाम विवरण सहेज लिए गए! 🎉');
+  };
+
+  const handleExportPayouts = () => {
+    const csvContent = exportPayoutsCSV();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Shubhakamna-Monthly-Winners-Payouts-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('विजेताओं की UPI लिस्ट CSV में डाउनलोड हो गई! 📥');
+  };
+
+  // ==========================================
+  // AD MANAGEMENT HANDLERS (Google AdSense & Ad Networks)
+  // ==========================================
+  const handleSaveAdSettings = (newSettings?: AdSettings) => {
+    const toSave = newSettings || adSettings;
+    saveStoredAdSettings(toSave);
+    showToast('विज्ञापन कोड व सेटिंग्स सफलतापूर्वक सहेज ली गईं! 🎉');
+  };
+
+  const handleToggleMasterAds = () => {
+    const nextState = !adSettings.adsEnabled;
+    const updated = { ...adSettings, adsEnabled: nextState };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast(nextState ? '🟢 सभी विज्ञापन चालू कर दिए गए!' : '⏸️ सभी विज्ञापन रोक (Pause) दिए गए!');
+  };
+
+  const handleUpdateAdSlot = (slotId: AdSlotId, updates: Partial<typeof adSettings.slots[AdSlotId]>) => {
+    setAdSettings(prev => ({
+      ...prev,
+      slots: {
+        ...prev.slots,
+        [slotId]: {
+          ...prev.slots[slotId],
+          ...updates
+        }
+      }
+    }));
+  };
+
+  const handleInsertSampleSlot = (slotId: AdSlotId) => {
+    const sampleAdCode = `<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-1234567890123456"
+     data-ad-slot="9876543210"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>`;
+    handleUpdateAdSlot(slotId, { code: sampleAdCode, enabled: true });
+    showToast(`'${adSettings.slots[slotId].name}' में सैंपल AdSense कोड भर दिया गया!`);
+  };
+
+  const handleClearSlotCode = (slotId: AdSlotId) => {
+    handleUpdateAdSlot(slotId, { code: '', enabled: false });
+    showToast(`'${adSettings.slots[slotId].name}' का कोड हटा दिया गया!`);
+  };
+
+  const handleInsertSampleHeaderScript = () => {
+    const sampleScript = `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>`;
+    setAdSettings(prev => ({ ...prev, headerScript: sampleScript }));
+    showToast('सैंपल AdSense Auto-Ads स्क्रिप्ट कोड भर दिया गया!');
+  };
+
+  const handleClearAllAds = () => {
+    if (window.confirm('क्या आप सचमुच सभी विज्ञापन कोड हटाना चाहते हैं?')) {
+      const resetAds: AdSettings = {
+        adsEnabled: false,
+        headerScript: '',
+        slots: {
+          header: { ...adSettings.slots.header, code: '', enabled: false },
+          in_content: { ...adSettings.slots.in_content, code: '', enabled: false },
+          below_generator: { ...adSettings.slots.below_generator, code: '', enabled: false },
+          sticky_bottom: { ...adSettings.slots.sticky_bottom, code: '', enabled: false }
+        }
+      };
+      setAdSettings(resetAds);
+      saveStoredAdSettings(resetAds);
+      showToast('सभी विज्ञापन कोड सफलतापूर्वक साफ़ कर दिए गए!');
     }
   };
 
@@ -470,6 +636,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('users')}
+          className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'users'
+              ? 'border-amber-400 text-amber-300'
+              : 'border-transparent text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          <span>👥</span>
+          <span>यूज़र्स व रिवॉर्ड्स ({users.length})</span>
+          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded-full font-mono font-bold">
+            UPI 🏆
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('photos')}
           className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
             activeTab === 'photos'
@@ -491,6 +672,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         >
           <span>🏷️</span>
           <span>श्रेणी प्रबंधन ({categories.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ads')}
+          className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'ads'
+              ? 'border-amber-400 text-amber-300'
+              : 'border-transparent text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          <span>📢</span>
+          <span>विज्ञापन प्रबंधक (Google AdSense & Banners)</span>
+          {adSettings.adsEnabled && (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          )}
         </button>
 
         <button
@@ -659,7 +855,338 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         )}
 
         {/* ========================================================= */}
-        {/* TAB 2: PHOTOS & DEITY SLIDER MANAGEMENT (REORDER & UPLOAD) */}
+        {/* TAB 2: USERS & REWARDS MANAGEMENT (LEADERBOARD & UPI PAYOUTS) */}
+        {/* ========================================================= */}
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            
+            {/* Header & Overview Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-1">
+                <span className="text-[11px] text-stone-400 font-semibold block">कुल पंजीकृत यूज़र्स</span>
+                <span className="text-2xl font-extrabold text-white font-serif">{users.length}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-1">
+                <span className="text-[11px] text-stone-400 font-semibold block">कुल बांटे गए पॉइंट्स</span>
+                <span className="text-2xl font-extrabold text-amber-400 font-serif">
+                  {users.reduce((acc, u) => acc + u.points, 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-1">
+                <span className="text-[11px] text-stone-400 font-semibold block">कुल शेयर्स (Viral Count)</span>
+                <span className="text-2xl font-extrabold text-emerald-400 font-serif">
+                  {users.reduce((acc, u) => acc + u.sharesCount, 0)}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-yellow-500/10 border border-amber-500/30 space-y-1">
+                <span className="text-[11px] text-amber-300 font-semibold block">वर्तमान #1 विजेता</span>
+                <span className="text-lg font-bold text-white truncate block">
+                  {users.slice().sort((a,b) => b.points - a.points)[0]?.name || 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {/* Monthly Winners & UPI Payouts Box */}
+            <div className="rounded-3xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-950/40 via-stone-900 to-yellow-950/40 p-5 sm:p-6 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-stone-950 flex items-center justify-center font-bold shadow-md shrink-0">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white font-serif flex items-center gap-2">
+                      <span>🏆 इस महीने के शीर्ष 3 नकद पुरस्कार विजेता</span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-sans font-bold">
+                        सीधा UPI भुगतान
+                      </span>
+                    </h3>
+                    <p className="text-xs text-stone-300">
+                      नीचे दिए गए विजेताओं के UPI ID कॉपी करें और PhonePe / Google Pay / Paytm से सीधा इनाम ट्रांसफर करें:
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExportPayouts}
+                  className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <Download className="w-4 h-4 text-amber-400" />
+                  <span>पूरी UPI लिस्ट डाउनलोड करें (.CSV)</span>
+                </button>
+              </div>
+
+              {/* Top 3 Winners Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {users.slice().sort((a,b) => b.points - a.points).slice(0, 3).map((w, idx) => {
+                  const medals = ['🥇 1st Rank', '🥈 2nd Rank', '🥉 3rd Rank'];
+                  const borders = ['border-yellow-400/50 bg-black/40', 'border-stone-400/40 bg-black/40', 'border-amber-600/40 bg-black/40'];
+                  
+                  return (
+                    <div key={w.id} className={`p-4 rounded-2xl border-2 ${borders[idx]} space-y-2`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-amber-300">{medals[idx]}</span>
+                        <span className="text-sm font-extrabold text-amber-400 font-serif">{w.points} pts</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full overflow-hidden bg-stone-800 border border-amber-400/50 shrink-0 flex items-center justify-center">
+                          {w.photoUrl ? (
+                            <img src={w.photoUrl} alt={w.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-4 h-4 text-stone-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-xs font-bold text-white truncate">{w.name}</h4>
+                          <p className="text-[10px] text-stone-400 truncate">{w.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-stone-800 flex items-center justify-between gap-1">
+                        <span className="text-[10px] text-stone-400 flex items-center gap-1 truncate max-w-[150px]">
+                          <CreditCard className="w-3 h-3 text-emerald-400 shrink-0" />
+                          <span className="font-mono text-emerald-300 font-bold">{w.upiId || 'UPI दर्ज नहीं'}</span>
+                        </span>
+                        {w.upiId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(w.upiId);
+                              showToast(`'${w.name}' की UPI ID (${w.upiId}) कॉपी हो गई!`);
+                            }}
+                            className="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold transition cursor-pointer"
+                          >
+                            कॉपी
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Point Rules Configuration Box */}
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5 space-y-4">
+              <h4 className="text-sm font-bold text-white font-serif flex items-center gap-2">
+                <Gift className="w-4 h-4 text-amber-400" />
+                <span>पॉइंट्स नियम व मासिक पुरस्कार राशि सेटिंग्स (Rules Configuration)</span>
+              </h4>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">WhatsApp शेयर अंक</label>
+                  <input
+                    type="number"
+                    value={pointRules.whatsappShare}
+                    onChange={(e) => setPointRules({ ...pointRules, whatsappShare: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">WhatsApp स्टेटस शेयर</label>
+                  <input
+                    type="number"
+                    value={pointRules.statusShare}
+                    onChange={(e) => setPointRules({ ...pointRules, statusShare: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">लिंक कॉपी करने पर अंक</label>
+                  <input
+                    type="number"
+                    value={pointRules.copyLink}
+                    onChange={(e) => setPointRules({ ...pointRules, copyLink: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">साइनअप वेलकम बोनस</label>
+                  <input
+                    type="number"
+                    value={pointRules.signupBonus}
+                    onChange={(e) => setPointRules({ ...pointRules, signupBonus: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white font-mono"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-stone-300 font-bold mb-1">मासिक पुरस्कार शीर्षक</label>
+                  <input
+                    type="text"
+                    value={pointRules.monthlyRewardTitle}
+                    onChange={(e) => setPointRules({ ...pointRules, monthlyRewardTitle: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-stone-300 font-bold mb-1">मासिक पुरस्कार राशि विवरण</label>
+                  <input
+                    type="text"
+                    value={pointRules.monthlyRewardAmount}
+                    onChange={(e) => setPointRules({ ...pointRules, monthlyRewardAmount: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleSavePointRules(pointRules)}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-bold text-xs shadow-md transition cursor-pointer"
+                >
+                  💾 पॉइंट्स सेटिंग्स सहेजें
+                </button>
+              </div>
+            </div>
+
+            {/* All Users Table & Search */}
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <h4 className="text-sm font-bold text-white font-serif flex items-center gap-2">
+                  <Users className="w-4 h-4 text-amber-400" />
+                  <span>सभी पंजीकृत सदस्य (All Registered Users)</span>
+                </h4>
+
+                <div className="relative min-w-[240px]">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="नाम, ईमेल या UPI ID खोजें..."
+                    className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-stone-950 border border-stone-800 text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {/* Users List Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-stone-300">
+                  <thead className="bg-stone-950 text-stone-400 uppercase text-[10px] tracking-wider border-b border-stone-800">
+                    <tr>
+                      <th className="py-3 px-3">रैंक / यूज़र</th>
+                      <th className="py-3 px-3">ईमेल पता</th>
+                      <th className="py-3 px-3">इनाम UPI ID</th>
+                      <th className="py-3 px-3 text-center">अंक (Points)</th>
+                      <th className="py-3 px-3 text-center">शेयर्स</th>
+                      <th className="py-3 px-3 text-right">कार्रवाई</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-800/80">
+                    {users
+                      .slice()
+                      .sort((a,b) => b.points - a.points)
+                      .filter(u => {
+                        const q = userSearch.toLowerCase();
+                        return (
+                          u.name.toLowerCase().includes(q) ||
+                          u.email.toLowerCase().includes(q) ||
+                          u.upiId.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((u, idx) => (
+                        <tr key={u.id} className="hover:bg-stone-900/80 transition">
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="font-mono text-xs font-bold text-amber-400 w-5">
+                                #{idx + 1}
+                              </span>
+                              <div className="w-8 h-8 rounded-full overflow-hidden bg-stone-800 border border-stone-700 shrink-0 flex items-center justify-center">
+                                {u.photoUrl ? (
+                                  <img src={u.photoUrl} alt={u.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-4 h-4 text-stone-400" />
+                                )}
+                              </div>
+                              <span className="font-semibold text-white truncate max-w-[130px]">{u.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-stone-400 font-mono text-[11px] truncate max-w-[150px]">
+                            {u.email}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-emerald-300 text-[11px] font-semibold truncate max-w-[130px]" title={u.upiId}>
+                                {u.upiId || '—'}
+                              </span>
+                              {u.upiId && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(u.upiId);
+                                    showToast(`${u.upiId} कॉपी हो गया!`);
+                                  }}
+                                  className="text-stone-400 hover:text-amber-300 cursor-pointer"
+                                  title="UPI ID कॉपी करें"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <div className="inline-flex items-center gap-1.5">
+                              <span className="font-bold text-amber-400 font-mono text-sm">{u.points}</span>
+                              <div className="flex flex-col gap-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAddPoints(u.id, 50)}
+                                  className="text-[9px] bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 px-1 rounded font-bold cursor-pointer"
+                                  title="+50 अंक जोड़ें"
+                                >
+                                  +50
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAddPoints(u.id, -50)}
+                                  className="text-[9px] bg-red-950/40 hover:bg-red-900/60 text-red-300 px-1 rounded font-bold cursor-pointer"
+                                  title="-50 अंक घटाएँ"
+                                >
+                                  -50
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center font-mono text-stone-300 font-semibold">
+                            {u.sharesCount}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setEditingUser(u)}
+                                className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 transition cursor-pointer"
+                                title="यूज़र विवरण एडिट करें"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u.id, u.name)}
+                                className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 transition cursor-pointer"
+                                title="यूज़र हटाएँ"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 3: PHOTOS & DEITY SLIDER MANAGEMENT (REORDER & UPLOAD) */}
         {/* ========================================================= */}
         {activeTab === 'photos' && (
           <div className="space-y-6">
@@ -883,7 +1410,304 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         )}
 
         {/* ========================================================= */}
-        {/* TAB 4: BACKUP, RESTORE & SECURITY PIN                     */}
+        {/* TAB 4: AD MANAGEMENT (Google AdSense & Ad Networks)       */}
+        {/* ========================================================= */}
+        {activeTab === 'ads' && (
+          <div className="space-y-6 max-w-5xl">
+            {/* Top Info Banner */}
+            <div className="rounded-3xl border-2 border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-stone-900/90 to-yellow-950/40 p-5 sm:p-6 shadow-xl space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-stone-950 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+                  <Megaphone className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white font-serif">
+                    📢 विज्ञापन प्रबंधन (Google AdSense & Ad Networks)
+                  </h3>
+                  <p className="text-xs text-stone-300">
+                    Google AdSense, Adsterra, Media.net या किसी भी विज्ञापन नेटवर्क के कोड यहाँ जोड़ें, जब चाहें रोकें या हटाएँ।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Global Master Switch */}
+            <div className={`rounded-3xl border-2 p-5 sm:p-6 transition-all shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+              adSettings.adsEnabled 
+                ? 'border-emerald-500/50 bg-emerald-950/20 shadow-emerald-500/10' 
+                : 'border-stone-800 bg-stone-900/60'
+            }`}>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-bold text-white font-serif">
+                    सभी विज्ञापनों का मास्टर स्विच (Global Master Switch)
+                  </span>
+                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                    adSettings.adsEnabled 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                      : 'bg-stone-800 text-stone-400 border border-stone-700'
+                  }`}>
+                    {adSettings.adsEnabled ? '🟢 चालू (Active)' : '⏸️ बंद (Paused)'}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-300 max-w-xl">
+                  {adSettings.adsEnabled 
+                    ? 'आपकी वेबसाइट पर सभी सक्षम विज्ञापन स्लॉट्स लाइव दिखाए जा रहे हैं।' 
+                    : 'वेबसाइट पर सभी विज्ञापन अभी बंद हैं। यूज़र्स को एक भी विज्ञापन नहीं दिखेगा।'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleToggleMasterAds}
+                  className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-lg ${
+                    adSettings.adsEnabled
+                      ? 'bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-emerald-500/20'
+                      : 'bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-600'
+                  }`}
+                >
+                  {adSettings.adsEnabled ? (
+                    <>
+                      <ToggleRight className="w-5 h-5 text-stone-950" />
+                      <span>विज्ञापन चालू हैं (चालू रखें)</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-5 h-5 text-stone-400" />
+                      <span>विज्ञापन अभी बंद हैं (चालू करें)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 1. Global Head Script (Google AdSense Auto-Ads / Verification) */}
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/80 p-5 sm:p-6 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-800">
+                <div className="flex items-center gap-2">
+                  <Code className="w-5 h-5 text-amber-400" />
+                  <h4 className="text-sm font-bold text-amber-300 font-serif">
+                    1. Google AdSense ग्लोबल स्क्रिप्ट / Auto-Ads / Verification Code
+                  </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleInsertSampleHeaderScript}
+                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>📋 सैंपल कोड भरें</span>
+                  </button>
+                  {adSettings.headerScript && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdSettings(prev => ({ ...prev, headerScript: '' }));
+                        showToast('ग्लोबल स्क्रिप्ट हटा दी गई!');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>हटाएँ</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-stone-300">
+                Google AdSense में वेबसाइट जोड़ने पर मिलने वाला मुख्य पब्लिशर स्क्रिप्ट कोड (उदा. <code className="text-amber-300 font-mono text-[11px]">&lt;script async src="https://pagead2.googlesyndication.com/..."&gt;&lt;/script&gt;</code>) यहाँ पेस्ट करें। यह आपकी पूरी वेबसाइट के <code className="text-amber-300 font-mono text-[11px]">&lt;head&gt;</code> में जुड़ जाएगा।
+              </p>
+
+              <textarea
+                value={adSettings.headerScript}
+                onChange={(e) => setAdSettings({ ...adSettings, headerScript: e.target.value })}
+                placeholder={`<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>`}
+                rows={4}
+                className="w-full p-3 rounded-2xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/40"
+              />
+            </div>
+
+            {/* 2. Banner Slots Management */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-white font-serif flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-amber-400" />
+                    <span>2. विशेष बैनर विज्ञापन स्लॉट्स (Banner Ad Slots)</span>
+                  </h4>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    प्रत्येक स्थान के लिए अलग कोड डालें या जब चाहें उस विशेष स्लॉट को बंद या चालू करें:
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(Object.keys(adSettings.slots) as AdSlotId[]).map((slotId) => {
+                  const slot = adSettings.slots[slotId];
+                  const hasCode = slot.code.trim().length > 0;
+                  const isPreview = activePreviewSlot === slotId;
+
+                  return (
+                    <div
+                      key={slotId}
+                      className={`rounded-3xl border p-5 space-y-3.5 transition-all flex flex-col justify-between ${
+                        slot.enabled && hasCode
+                          ? 'border-amber-500/40 bg-stone-900/90 shadow-lg'
+                          : 'border-stone-800 bg-stone-900/40'
+                      }`}
+                    >
+                      {/* Slot Header */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-white font-serif">
+                                {slot.name}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-mono">
+                              अनुशंसित साइज़: {slot.recommendedSize}
+                            </span>
+                          </div>
+
+                          {/* Enable/Disable Toggle */}
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateAdSlot(slotId, { enabled: !slot.enabled })}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                              slot.enabled
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                : 'bg-stone-800 text-stone-400 border border-stone-700'
+                            }`}
+                          >
+                            {slot.enabled ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>सक्रिय</span>
+                              </>
+                            ) : (
+                              <span>निष्क्रिय (Off)</span>
+                            )}
+                          </button>
+                        </div>
+
+                        <p className="text-[11px] text-stone-300">
+                          {slot.description}
+                        </p>
+                      </div>
+
+                      {/* Code Textarea */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-stone-400 font-semibold">विज्ञापन कोड (HTML / JS):</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleInsertSampleSlot(slotId)}
+                              className="text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
+                            >
+                              सैंपल AdSense कोड
+                            </button>
+                            {hasCode && (
+                              <>
+                                <span className="text-stone-600">·</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleClearSlotCode(slotId)}
+                                  className="text-red-400 hover:text-red-300 underline font-medium cursor-pointer"
+                                >
+                                  कोड हटाएं
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <textarea
+                          value={slot.code}
+                          onChange={(e) => handleUpdateAdSlot(slotId, { code: e.target.value })}
+                          placeholder={`यहाँ AdSense / Adsterra बैनर कोड पेस्ट करें...
+उदा: <ins class="adsbygoogle" ...></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>`}
+                          rows={4}
+                          className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-[11px] focus:outline-none focus:border-amber-400"
+                        />
+                      </div>
+
+                      {/* Preview toggle & quick helper */}
+                      <div className="pt-2 border-t border-stone-800/80 flex items-center justify-between text-xs">
+                        <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                          hasCode ? 'text-emerald-400' : 'text-stone-500'
+                        }`}>
+                          {hasCode ? '✓ कोड मौजूद है' : '○ कोई कोड नहीं डाला गया'}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => setActivePreviewSlot(isPreview ? null : slotId)}
+                          className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-[11px] flex items-center gap-1 transition cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3 text-amber-400" />
+                          <span>{isPreview ? 'प्रिव्यू छिपाएँ' : 'प्रिव्यू देखें'}</span>
+                        </button>
+                      </div>
+
+                      {/* Live Slot Preview Box */}
+                      {isPreview && (
+                        <div className="p-3 rounded-2xl bg-black border border-dashed border-amber-500/40 text-center space-y-1.5 animate-fade-in">
+                          <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold block">
+                            विज्ञापन पूर्वावलोकन (Preview)
+                          </span>
+                          {hasCode ? (
+                            <div className="p-2 bg-stone-950 rounded border border-stone-800 text-[11px] text-stone-400 font-mono overflow-x-auto text-left max-h-24">
+                              {slot.code}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-stone-500 italic py-2">
+                              पूर्वावलोकन देखने के लिए कृपया ऊपर कोई कोड पेस्ट करें या "सैंपल AdSense कोड" पर क्लिक करें।
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bottom Actions Bar */}
+            <div className="sticky bottom-0 z-20 rounded-3xl border border-amber-500/40 bg-stone-950/95 backdrop-blur-md p-4 sm:p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-stone-300">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>बदलाव करने के बाद "सेव करें" दबाएँ ताकि पूरी वेबसाइट पर तुरंत विज्ञापन अपडेट हो जाएँ।</span>
+              </div>
+
+              <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleClearAllAds}
+                  className="px-4 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>सभी कोड हटाएं</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveAdSettings()}
+                  className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>💾 विज्ञापन सेटिंग्स सहेजें (Save All)</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 5: BACKUP, RESTORE & SECURITY PIN                     */}
         {/* ========================================================= */}
         {activeTab === 'backup' && (
           <div className="space-y-6 max-w-3xl">

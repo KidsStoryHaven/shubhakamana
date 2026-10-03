@@ -214,6 +214,8 @@ export function resetToDefaults(): void {
   localStorage.removeItem(STORAGE_KEYS.FESTIVALS);
   localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
   localStorage.removeItem(STORAGE_KEYS.DEITY_SLIDES);
-  localStorage.removeItem(STORAGE_KEYS.ADMIN_PIN);
+  localStorage.removeItem(STORAGE_KEYS.ADMIN_USER);
+  localStorage.removeItem(STORAGE_KEYS.ADMIN_PASS);
+  localStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
   window.dispatchEvent(new Event('shubhakamna_data_changed'));
 }

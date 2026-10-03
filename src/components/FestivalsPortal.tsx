@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Festival, FestivalCategory, CategoryInfo } from '../data/festivals';
 import { getStoredFestivals, getStoredCategories } from '../data/festivalStore';
 import { PanchangWidget } from './PanchangWidget';
+import { AdBanner } from './AdBanner';
 import { 
   Sparkles, 
   Calendar, 
@@ -152,6 +153,9 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* In-Content Ad Banner (Google AdSense / Custom) */}
+      <AdBanner slotId="in_content" />
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
