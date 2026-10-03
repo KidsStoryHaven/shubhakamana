@@ -27,26 +27,18 @@ export default function App() {
     try {
       const hostname = (window.location.hostname || '').toLowerCase();
       const path = (window.location.pathname || '').toLowerCase();
-      const search = (window.location.search || '').toLowerCase();
-      const hash = (window.location.hash || '').toLowerCase();
 
-      // Subdomain check: e.g. admin.yourdomain.com or panel.yourdomain.com
+      // Dedicated admin subdomain: e.g. admin.shubhakamna.in
       const isSubdomainAdmin = (
         hostname.startsWith('admin.') ||
         hostname.startsWith('panel.') ||
-        hostname.startsWith('manage.') ||
-        hostname.startsWith('wp-admin.')
+        hostname.startsWith('manage.')
       );
 
-      return (
-        isSubdomainAdmin ||
-        path.includes('wp-admin') ||
-        path.includes('admin') ||
-        search.includes('admin') ||
-        search.includes('wp-admin') ||
-        hash.includes('admin') ||
-        hash.includes('wp-admin')
-      );
+      // Strict dedicated path: /admin or /admin/
+      const isPathAdmin = path === '/admin' || path === '/admin/' || path.startsWith('/admin/');
+
+      return isSubdomainAdmin || isPathAdmin;
     } catch {
       return false;
     }
@@ -54,7 +46,7 @@ export default function App() {
 
   const [isAdminOpen, setIsAdminOpen] = useState(() => checkIsAdminRoute());
 
-  // Listen to popstate and hashchange so changing the URL bar immediately opens admin
+  // Listen to popstate so changing the URL bar to /admin immediately opens admin
   useEffect(() => {
     const handleUrlChange = () => {
       if (checkIsAdminRoute()) {
@@ -62,23 +54,9 @@ export default function App() {
       }
     };
     window.addEventListener('popstate', handleUrlChange);
-    window.addEventListener('hashchange', handleUrlChange);
     return () => {
       window.removeEventListener('popstate', handleUrlChange);
-      window.removeEventListener('hashchange', handleUrlChange);
     };
-  }, []);
-
-  // Secret shortcut: Ctrl + Shift + A (or Cmd + Shift + A) to toggle Admin Panel
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-        e.preventDefault();
-        setIsAdminOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -157,8 +135,6 @@ export default function App() {
           setSelectedFestival(null);
           setActiveCategory('all');
         }}
-        onSecretAdminTrigger={() => setIsAdminOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
       {/* Main Festive Portal */}
@@ -195,9 +171,7 @@ export default function App() {
             ))}
             <span aria-hidden="true">·</span>
             <span
-              onClick={() => setIsAdminOpen(true)}
-              className="text-amber-400/90 font-medium cursor-pointer select-none hover:text-amber-300 transition-colors"
-              title="© 2026 Shubhakamna.in"
+              className="text-stone-400 select-none"
             >
               © 2026 Shubhakamna.in
             </span>

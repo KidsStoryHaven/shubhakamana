@@ -26,16 +26,12 @@ interface NavbarProps {
   onSelectCategory?: (category: FestivalCategory | 'all') => void;
   onSelectFestival?: (festival: Festival) => void;
   onGoHome: () => void;
-  onSecretAdminTrigger?: () => void;
-  onOpenAdmin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onSelectCategory,
   onSelectFestival,
-  onGoHome,
-  onSecretAdminTrigger,
-  onOpenAdmin
+  onGoHome
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<FestivalCategory | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,24 +40,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
-
-  // Stealth 3-tap on logo to open WP-Admin
-  const [logoTapCount, setLogoTapCount] = useState(0);
-  const logoTapTimer = useRef<number | null>(null);
-
-  const handleLogoTap = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setLogoTapCount(prev => {
-      const next = prev + 1;
-      if (next >= 3) {
-        onSecretAdminTrigger?.();
-        return 0;
-      }
-      if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
-      logoTapTimer.current = window.setTimeout(() => setLogoTapCount(0), 1800);
-      return next;
-    });
-  };
 
   useEffect(() => {
     const handleDataChanged = () => {
@@ -118,7 +96,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="group flex items-center gap-2.5 text-left focus-visible:outline-none cursor-pointer shrink-0"
         >
           <div 
-            onClick={handleLogoTap} 
             className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300 active:scale-95 transition-transform"
           >
             <span className="text-xl">🪔</span>

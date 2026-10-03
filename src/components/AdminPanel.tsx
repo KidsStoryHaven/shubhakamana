@@ -63,8 +63,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       window.location.href = '/';
     }
   };
-  // Authentication State (Protected with maahi32 / Sk951951)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isAdminLoggedIn());
+  // Authentication State: ALWAYS start unauthenticated so password is required every time
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
