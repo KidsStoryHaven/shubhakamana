@@ -1,5 +1,5 @@
 import { Festival } from '../data/festivals';
-import { resolveDirectImageUrl, getGoogleDriveFallbackUrls, extractGoogleDriveFileId } from './googleDriveHelper';
+import { resolveDirectImageUrl, resolveDirectAudioUrl, getGoogleDriveFallbackUrls, extractGoogleDriveFileId } from './googleDriveHelper';
 
 export interface VideoStatusOptions {
   festival: Festival;
@@ -116,7 +116,7 @@ export function createFestiveAudioStream(
     // If a custom MP3 audio URL / uploaded dataUrl is provided, connect real audio element!
     if (customAudioUrl && customAudioUrl.length > 5) {
       try {
-        const directAudioUrl = resolveDirectImageUrl(customAudioUrl);
+        const directAudioUrl = resolveDirectAudioUrl(customAudioUrl);
         const audioEl = new Audio();
         audioEl.crossOrigin = 'anonymous';
         audioEl.src = directAudioUrl;
