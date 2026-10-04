@@ -334,13 +334,16 @@ function run() {
   fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt, 'utf-8');
   console.log('✅ Generated: robots.txt');
 
-  // 4. Generate Cloudflare Pages _redirects and _headers
-  console.log('⚡ Generating Cloudflare Pages _redirects & _headers...');
-  const redirectsContent = `# Cloudflare Pages Routing Rules\n/*    /index.html   200\n`;
-  fs.writeFileSync(path.join(distDir, '_redirects'), redirectsContent, 'utf-8');
-
+  // 4. Generate Cloudflare Pages _headers
+  console.log('⚡ Generating Cloudflare Pages _headers...');
   const headersContent = `# Cloudflare Pages Performance & Security Headers\n/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n\n/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: SAMEORIGIN\n  Referrer-Policy: strict-origin-when-cross-origin\n`;
   fs.writeFileSync(path.join(distDir, '_headers'), headersContent, 'utf-8');
+
+  // If a legacy _redirects exists in dist, delete it to prevent Cloudflare redirect loop errors
+  const legacyRedirectsPath = path.join(distDir, '_redirects');
+  if (fs.existsSync(legacyRedirectsPath)) {
+    fs.unlinkSync(legacyRedirectsPath);
+  }
 
   console.log('🎉 Static Site Generation (SSG) Completed Successfully!');
 }
