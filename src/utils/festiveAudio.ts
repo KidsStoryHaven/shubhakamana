@@ -4,6 +4,8 @@
  * and External MP3 / Audio Stream playback.
  */
 
+import { resolveDirectAudioUrl } from './googleDriveHelper';
+
 export type FestiveSoundType = 
   | 'aarti' 
   | 'fireworks' 
@@ -571,7 +573,8 @@ class FestiveAudioEngine {
     this.stopAll();
 
     try {
-      const audio = new Audio(url.trim());
+      const resolved = resolveDirectAudioUrl(url.trim());
+      const audio = new Audio(resolved);
       audio.volume = 0.85;
       audio.play().catch((err) => {
         console.warn('Audio play restricted or URL unreachable, falling back to synthesizer:', err);

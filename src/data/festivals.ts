@@ -360,7 +360,8 @@ export const FESTIVALS: Festival[] = [
       glow: 'shadow-red-500/20'
     },
     particlesType: 'flowers',
-    soundType: 'aarti',
+    soundType: 'custom_url',
+    customAudioUrl: '/audio/navratri-aarti.mp3',
     greetingTitle: 'नवरात्रि की असीम शुभकामनाएँ • जय माता दी',
     defaultPoem: 'सर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके। शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते॥ माँ दुर्गा आपके घर में सुख, शांति और शक्ति का वरदान दें।',
     mantraOrShloka: 'या देवी सर्वभूतेषु शक्ति-रूपेण संस्थिता। नमस्तस्यै नमस्तस्यै नमस्तस्यै नमो नमः॥',

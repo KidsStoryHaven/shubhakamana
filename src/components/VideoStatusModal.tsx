@@ -12,11 +12,15 @@ import {
   VolumeX, 
   Film, 
   Copy,
-  RotateCcw
+  RotateCcw,
+  Layers
 } from 'lucide-react';
 import { Festival } from '../data/festivals';
+import { DivineDeitySlide } from '../data/divineGodsData';
 import { 
   loadStatusImage, 
+  loadAllSlideImages,
+  LoadedDeitySlide,
   initParticles, 
   drawVideoStatusFrame, 
   recordFastVideoStatus,
@@ -38,6 +42,7 @@ interface VideoStatusModalProps {
   heroImageOverride?: string;
   customAudioUrl?: string;
   shareUrl: string;
+  slides?: DivineDeitySlide[];
 }
 
 export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
@@ -52,7 +57,8 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
   greetingTitle,
   heroImageOverride,
   customAudioUrl,
-  shareUrl
+  shareUrl,
+  slides = []
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -64,6 +70,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
 
   const heroImgRef = useRef<HTMLImageElement | null>(null);
   const userImgRef = useRef<HTMLImageElement | null>(null);
+  const loadedSlidesRef = useRef<LoadedDeitySlide[]>([]);
   const particlesRef = useRef<ParticleItem[]>([]);
   const animFrameIdRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
@@ -84,11 +91,13 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
 
     Promise.all([
       loadStatusImage(heroSrc),
-      effectivePhoto ? loadStatusImage(effectivePhoto) : Promise.resolve(null)
-    ]).then(([hero, user]) => {
+      effectivePhoto ? loadStatusImage(effectivePhoto) : Promise.resolve(null),
+      loadAllSlideImages(slides)
+    ]).then(([hero, user, loadedSlides]) => {
       if (!isMounted) return;
       heroImgRef.current = hero;
       userImgRef.current = user;
+      loadedSlidesRef.current = loadedSlides;
       particlesRef.current = initParticles(720, 1280, isBirthday);
       startTimeRef.current = Date.now();
       setIsPlaying(true);
@@ -99,7 +108,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
       isMounted = false;
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
-  }, [isOpen, festival.id, heroImageOverride, effectivePhoto]);
+  }, [isOpen, festival.id, heroImageOverride, effectivePhoto, slides]);
 
   // 2. Realtime 60fps Live Canvas Rendering Loop (Instant 0-wait Preview)
   useEffect(() => {
@@ -127,9 +136,12 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
               poem,
               greetingTitle,
               heroImageOverride,
-              customAudioUrl
+              customAudioUrl,
+              slides,
+              totalDuration: selectedDuration
             },
-            particlesRef.current
+            particlesRef.current,
+            loadedSlidesRef.current
           );
         }
       }
@@ -141,7 +153,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
     return () => {
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
-  }, [isOpen, isPlaying, festival, senderName, userPhoto, birthdayPerson, birthdayPhoto, poem, greetingTitle, heroImageOverride, customAudioUrl]);
+  }, [isOpen, isPlaying, festival, senderName, userPhoto, birthdayPerson, birthdayPhoto, poem, greetingTitle, heroImageOverride, customAudioUrl, slides, selectedDuration]);
 
   if (!isOpen) return null;
 
@@ -170,7 +182,6 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
       setIsExporting(true);
       setExportProgress(5);
 
-      // Create an offscreen recording canvas
       const recCanvas = document.createElement('canvas');
       recCanvas.width = 720;
       recCanvas.height = 1280;
@@ -186,15 +197,17 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
           poem,
           greetingTitle,
           heroImageOverride,
-          customAudioUrl
+          customAudioUrl,
+          slides,
+          totalDuration: selectedDuration
         },
         heroImgRef.current,
         userImgRef.current,
         selectedDuration, // 30s, 45s, 59s
-        (pct) => setExportProgress(pct)
+        (pct) => setExportProgress(pct),
+        loadedSlidesRef.current
       );
 
-      // Trigger instant browser download
       const link = document.createElement('a');
       link.href = result.url;
       link.download = result.fileName;
@@ -220,221 +233,163 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2500);
-    });
+    navigator.clipboard.writeText(shareUrl);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2500);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-xl animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-stone-900 border-2 border-amber-500/50 rounded-3xl shadow-2xl shadow-amber-500/20 overflow-hidden text-stone-100 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto animate-fadeIn">
+      <div className="relative w-full max-w-lg bg-stone-950 border-2 border-amber-500/50 rounded-3xl shadow-2xl shadow-amber-500/20 overflow-hidden flex flex-col my-auto max-h-[96vh]">
         
-        {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-amber-500/20 bg-stone-950/90">
-          <div className="flex items-center gap-2">
-            <Film className="w-5 h-5 text-amber-400" />
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-amber-950/80 via-stone-900 to-amber-950/80 border-b border-amber-500/30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-stone-950 font-black shadow-md">
+              <Film className="w-4 h-4" />
+            </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-white font-serif flex items-center gap-1.5">
-                <span>8K WhatsApp Video Status</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-sans">
-                  {selectedDuration}s MP4
+              <h2 className="text-sm sm:text-base font-extrabold text-amber-400 leading-tight flex items-center gap-1.5">
+                8K WhatsApp Video Status Generator
+                <span className="text-[10px] bg-red-600 text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Live
                 </span>
-              </h3>
+              </h2>
+              <p className="text-[11px] text-stone-400">
+                {slides.length > 0 ? `✨ ${slides.length} फ़ोटो स्लाइडशो (3s ऑटो रोटेशन) • HD ऑडियो` : '3D मोशन • बैकग्राउंड संगीत • HD डाउनलोड'}
+              </p>
             </div>
           </div>
-
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-stone-800 text-stone-400 hover:text-white transition cursor-pointer"
+            className="p-1.5 text-stone-400 hover:text-white rounded-full bg-stone-900/80 hover:bg-stone-800 transition cursor-pointer"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-4 sm:p-6 space-y-4">
-          
-          {/* Instant Live 9:16 Canvas Viewport (0-wait instant playback) */}
-          <div className="relative mx-auto w-[240px] sm:w-[270px] aspect-[9/16] bg-black rounded-2xl overflow-hidden border-2 border-amber-500/50 shadow-2xl shadow-amber-950/60 flex items-center justify-center">
-            
+        {/* Live Canvas Viewport (9:16 aspect ratio scaled) */}
+        <div className="relative flex-1 bg-black flex items-center justify-center p-2 sm:p-3 overflow-hidden">
+          <div className="relative w-full max-w-[280px] sm:max-w-[310px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-amber-500/40 bg-stone-950 group">
             <canvas
               ref={canvasRef}
               width={720}
               height={1280}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain block"
             />
 
-            {/* Exporting Progress Overlay */}
-            {isExporting && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center space-y-3 z-20">
-                <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
-                <span className="text-sm font-bold text-white">
-                  🎬 {selectedDuration} सेकंड 8K वीडियो स्टेटस तैयार हो रहा है... {exportProgress}%
-                </span>
-                <span className="text-[11px] text-amber-300 font-mono">
-                  🎵 MP3 संगीत व 8K एनिमेशन रेंडरिंग
-                </span>
-                <div className="w-full bg-stone-800 h-2.5 rounded-full overflow-hidden border border-stone-700">
-                  <div 
-                    className="bg-gradient-to-r from-amber-500 to-yellow-400 h-full transition-all duration-150"
-                    style={{ width: `${exportProgress}%` }}
-                  />
-                </div>
+            {/* Play/Pause Overlay Controls */}
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-auto bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-stone-700/60 opacity-90 group-hover:opacity-100 transition">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleTogglePlay}
+                  className="p-1.5 text-amber-400 hover:text-amber-300 rounded-lg bg-stone-900/80 transition cursor-pointer"
+                  title={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={handleRestart}
+                  className="p-1.5 text-stone-300 hover:text-white rounded-lg bg-stone-900/80 transition cursor-pointer"
+                  title="Restart"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
               </div>
-            )}
 
-            {/* Floating Live Controls */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-auto z-10">
-              <button
-                onClick={handleTogglePlay}
-                className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white backdrop-blur-md border border-white/20 transition cursor-pointer"
-                title={isPlaying ? 'Pause' : 'Play'}
-              >
-                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              </button>
-
-              <button
-                onClick={handleRestart}
-                className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-amber-300 backdrop-blur-md border border-white/20 transition cursor-pointer"
-                title="Replay Animation"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Duration Selector Buttons: 30s to 59s */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-amber-300 flex items-center gap-1">
-                <span>⏱️ वीडियो स्टेटस की अवधि (Duration):</span>
-              </span>
-              <span className="text-[11px] text-stone-400">
-                {selectedDuration} सेकंड का वीडियो बनेगा
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedDuration(30)}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center cursor-pointer border ${
-                  selectedDuration === 30
-                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
-                    : 'bg-stone-950 text-stone-300 border-stone-800 hover:border-amber-500/40'
-                }`}
-              >
-                <span className="text-sm">30 सेकंड</span>
-                <span className="text-[9px] opacity-80">WhatsApp Status</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedDuration(45)}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center cursor-pointer border ${
-                  selectedDuration === 45
-                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
-                    : 'bg-stone-950 text-stone-300 border-stone-800 hover:border-amber-500/40'
-                }`}
-              >
-                <span className="text-sm">45 सेकंड</span>
-                <span className="text-[9px] opacity-80">Reels & Story</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedDuration(59)}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center cursor-pointer border ${
-                  selectedDuration === 59
-                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
-                    : 'bg-stone-950 text-stone-300 border-stone-800 hover:border-amber-500/40'
-                }`}
-              >
-                <span className="text-sm">59 सेकंड</span>
-                <span className="text-[9px] opacity-80">Full HD Max Status</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Feature Highlights Badges */}
-          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] sm:text-[11px]">
-            <div className="p-2 rounded-xl bg-stone-950/80 border border-stone-800 text-amber-300">
-              <span className="block font-bold">✍️ बड़े अक्षर विशिंग</span>
-              <span className="text-stone-400 text-[9px]">HD Large Hindi Font</span>
-            </div>
-            <div className="p-2 rounded-xl bg-stone-950/80 border border-stone-800 text-yellow-300">
-              <span className="block font-bold">🪔 पावन मंत्र प्लेट</span>
-              <span className="text-stone-400 text-[9px]">Sacred Sanskrit Shloka</span>
-            </div>
-            <div className="p-2 rounded-xl bg-stone-950/80 border border-stone-800 text-emerald-300">
-              <span className="block font-bold">🎵 MP3 म्यूजिक ट्रैक</span>
-              <span className="text-stone-400 text-[9px]">HQ Audio Embedded</span>
-            </div>
-          </div>
-
-          {/* Action Download & Share Buttons */}
-          <div className="space-y-2.5 pt-1">
-            
-            {/* Primary Fast 1-Click Download Button */}
-            <button
-              onClick={handleDownloadVideo}
-              disabled={isExporting}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition cursor-pointer disabled:opacity-50 active:scale-98"
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="w-5 h-5 text-stone-950 animate-spin" />
-                  <span>{selectedDuration}s वीडियो डाउनलोड हो रहा है ({exportProgress}%)...</span>
-                </>
-              ) : hasDownloaded ? (
-                <>
-                  <Check className="w-5 h-5 text-stone-950" />
-                  <span>✓ {selectedDuration}s वीडियो स्टेटस डाउनलोड हो गया! (पुनः डाउनलोड करें)</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-5 h-5" />
-                  <span>📥 {selectedDuration} सेकंड 8K वीडियो स्टेटस डाउनलोड करें (.MP4)</span>
-                </>
+              {/* Slide Counter Badge */}
+              {slides.length > 0 && (
+                <div className="flex items-center gap-1 text-[11px] text-amber-300 font-bold bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-500/30">
+                  <Layers className="w-3 h-3 text-amber-400" />
+                  <span>{slides.length} Photos</span>
+                </div>
               )}
-            </button>
 
-            {/* WhatsApp Status Share */}
+              <div className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                <span>8K MP4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Video Duration Selector (30s, 45s, 59s WhatsApp Status Length) */}
+        <div className="px-5 py-2.5 bg-stone-900/90 border-t border-stone-800 flex items-center justify-between">
+          <span className="text-xs font-bold text-stone-300 flex items-center gap-1.5">
+            ⏱️ वीडियो लंबाई:
+          </span>
+          <div className="flex gap-2">
+            {[30, 45, 59].map((dur) => (
+              <button
+                key={dur}
+                onClick={() => setSelectedDuration(dur)}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer border ${
+                  selectedDuration === dur
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
+                    : 'bg-stone-950 text-stone-300 border-stone-700 hover:border-stone-500'
+                }`}
+              >
+                {dur}s {dur === 30 ? '• 10 Photos' : dur === 45 ? '• 15 Photos' : '• 20 Photos'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Download & Actions Bar */}
+        <div className="p-4 sm:p-5 bg-gradient-to-b from-stone-950 to-stone-900 border-t border-amber-500/30 flex flex-col gap-3">
+          
+          {/* Main Download Button */}
+          <button
+            onClick={handleDownloadVideo}
+            disabled={isExporting}
+            className={`w-full py-3.5 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition shadow-xl cursor-pointer ${
+              hasDownloaded
+                ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/30'
+                : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 shadow-amber-500/30'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>वीडियो रेंडर हो रहा है... {exportProgress}%</span>
+              </>
+            ) : hasDownloaded ? (
+              <>
+                <Check className="w-5 h-5" />
+                <span>डाउनलोड पूर्ण! पुनः डाउनलोड करें</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                <span>WhatsApp स्टेटस वीडियो डाउनलोड करें ({selectedDuration}s HD)</span>
+              </>
+            )}
+          </button>
+
+          {/* Social Share & Copy Buttons */}
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleWhatsAppShare}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 hover:from-emerald-500 hover:to-green-400 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-900/30 transition cursor-pointer"
+              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
             >
               <Share2 className="w-4 h-4" />
-              <span>🟢 WhatsApp Status पर लगाएँ 🚀</span>
+              <span>WhatsApp पर भेजें</span>
             </button>
-
-            {/* Copy Wish Link */}
             <button
               onClick={handleCopyLink}
-              className="w-full py-2 px-3 rounded-xl bg-stone-950 hover:bg-stone-800 border border-stone-800 text-stone-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
             >
-              {isCopied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-300">लिंक कॉपी हो गया!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 text-amber-400" />
-                  <span>विशिंग लिंक कॉपी करें</span>
-                </>
-              )}
+              {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              <span>{isCopied ? 'लिंक कॉपी हुआ!' : 'विश लिंक कॉपी करें'}</span>
             </button>
-
           </div>
 
-          <p className="text-[10px] text-stone-500 text-center leading-relaxed">
-            यह 9:16 वीडियो स्टेटस WhatsApp Status, Instagram Reels, Facebook Stories और YouTube Shorts के लिए 100% अनुकूलित है।
+          <p className="text-[11px] text-center text-stone-400 leading-tight">
+            💡 हर 3 सेकंड में फ़ोटो अपने नाम और पावन झांकी के साथ बदलेगी • Shubhakamna.in
           </p>
-
         </div>
+
       </div>
     </div>
   );

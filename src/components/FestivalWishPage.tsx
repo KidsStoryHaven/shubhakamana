@@ -1325,6 +1325,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         heroImageOverride={activeHeroImage}
         customAudioUrl={effectiveAudioUrl}
         shareUrl={getShareUrl()}
+        slides={deitySlides}
       />
 
       {/* Floating Loyalty Reward Points Celebration Toast */}
