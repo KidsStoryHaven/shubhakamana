@@ -12,6 +12,7 @@ import {
   logoutAdminSession,
   updateAdminCredentials,
   syncSiteDataToServer,
+  downloadSiteDataJson,
   exportFullBackup, 
   importFullBackup, 
   resetToDefaults 
@@ -2817,6 +2818,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 >
                   <Download className="w-4 h-4" />
                   <span>पूरा बैकअप डाउनलोड करें (JSON)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    downloadSiteDataJson();
+                    showToast('site-data.json फ़ाइल डाउनलोड हो गई! ✓');
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>site-data.json फ़ाइल डाउनलोड करें</span>
                 </button>
 
                 <input
