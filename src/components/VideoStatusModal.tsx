@@ -36,6 +36,7 @@ interface VideoStatusModalProps {
   poem: string;
   greetingTitle: string;
   heroImageOverride?: string;
+  customAudioUrl?: string;
   shareUrl: string;
 }
 
@@ -50,11 +51,12 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
   poem,
   greetingTitle,
   heroImageOverride,
+  customAudioUrl,
   shareUrl
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState<number>(30); // 30s, 45s, 59s
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [hasDownloaded, setHasDownloaded] = useState(false);
@@ -124,7 +126,8 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
               birthdayPhoto,
               poem,
               greetingTitle,
-              heroImageOverride
+              heroImageOverride,
+              customAudioUrl
             },
             particlesRef.current
           );
@@ -138,7 +141,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
     return () => {
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
-  }, [isOpen, isPlaying, festival, senderName, userPhoto, birthdayPerson, birthdayPhoto, poem, greetingTitle, heroImageOverride]);
+  }, [isOpen, isPlaying, festival, senderName, userPhoto, birthdayPerson, birthdayPhoto, poem, greetingTitle, heroImageOverride, customAudioUrl]);
 
   if (!isOpen) return null;
 
@@ -158,14 +161,14 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
     setIsPlaying(true);
   };
 
-  // 3. Fast Video Download Handler (Takes only ~2.5s)
+  // 3. Fast Video Download Handler (User-selected 30s to 59s with real MP3 audio)
   const handleDownloadVideo = async () => {
     const canvas = canvasRef.current;
     if (!canvas || isExporting) return;
 
     try {
       setIsExporting(true);
-      setExportProgress(10);
+      setExportProgress(5);
 
       // Create an offscreen recording canvas
       const recCanvas = document.createElement('canvas');
@@ -182,11 +185,12 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
           birthdayPhoto,
           poem,
           greetingTitle,
-          heroImageOverride
+          heroImageOverride,
+          customAudioUrl
         },
         heroImgRef.current,
         userImgRef.current,
-        3.2, // 3.2s fast recording captures full animation loop in ~1.5-2 seconds
+        selectedDuration, // 30s, 45s, 59s
         (pct) => setExportProgress(pct)
       );
 
@@ -199,7 +203,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
       document.body.removeChild(link);
 
       setHasDownloaded(true);
-      awardUserPoints('download_card', `${festival.nameHi} 8K Video Status`);
+      awardUserPoints('download_card', `${festival.nameHi} ${selectedDuration}s 8K Video Status`);
     } catch (err) {
       console.error('Video status export error:', err);
     } finally {
@@ -234,7 +238,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
               <h3 className="text-sm sm:text-base font-bold text-white font-serif flex items-center gap-1.5">
                 <span>8K WhatsApp Video Status</span>
                 <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-sans">
-                  MP4
+                  {selectedDuration}s MP4
                 </span>
               </h3>
             </div>
@@ -264,12 +268,15 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
 
             {/* Exporting Progress Overlay */}
             {isExporting && (
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center space-y-2.5 z-20">
-                <Loader2 className="w-9 h-9 text-amber-400 animate-spin" />
-                <span className="text-xs font-bold text-white">
-                  🎬 8K वीडियो डाउनलोड हो रहा है... {exportProgress}%
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center space-y-3 z-20">
+                <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+                <span className="text-sm font-bold text-white">
+                  🎬 {selectedDuration} सेकंड 8K वीडियो स्टेटस तैयार हो रहा है... {exportProgress}%
                 </span>
-                <div className="w-full bg-stone-800 h-2 rounded-full overflow-hidden border border-stone-700">
+                <span className="text-[11px] text-amber-300 font-mono">
+                  🎵 MP3 संगीत व 8K एनिमेशन रेंडरिंग
+                </span>
+                <div className="w-full bg-stone-800 h-2.5 rounded-full overflow-hidden border border-stone-700">
                   <div 
                     className="bg-gradient-to-r from-amber-500 to-yellow-400 h-full transition-all duration-150"
                     style={{ width: `${exportProgress}%` }}
@@ -298,19 +305,72 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
             </div>
           </div>
 
+          {/* Duration Selector Buttons: 30s to 59s */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-amber-300 flex items-center gap-1">
+                <span>⏱️ वीडियो स्टेटस की अवधि (Duration):</span>
+              </span>
+              <span className="text-[11px] text-stone-400">
+                {selectedDuration} सेकंड का वीडियो बनेगा
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedDuration(30)}
+                className={`py-2 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center cursor-pointer border ${
+                  selectedDuration === 30
+                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
+                    : 'bg-stone-950 text-stone-300 border-stone-800 hover:border-amber-500/40'
+                }`}
+              >
+                <span className="text-sm">30 सेकंड</span>
+                <span className="text-[9px] opacity-80">WhatsApp Status</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDuration(45)}
+                className={`py-2 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center cursor-pointer border ${
+                  selectedDuration === 45
+                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
+                    : 'bg-stone-950 text-stone-300 border-stone-800 hover:border-amber-500/40'
+                }`}
+              >
+                <span className="text-sm">45 सेकंड</span>
+                <span className="text-[9px] opacity-80">Reels & Story</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDuration(59)}
+                className={`py-2 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center cursor-pointer border ${
+                  selectedDuration === 59
+                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/30'
+                    : 'bg-stone-950 text-stone-300 border-stone-800 hover:border-amber-500/40'
+                }`}
+              >
+                <span className="text-sm">59 सेकंड</span>
+                <span className="text-[9px] opacity-80">Full HD Max Status</span>
+              </button>
+            </div>
+          </div>
+
           {/* Feature Highlights Badges */}
           <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] sm:text-[11px]">
             <div className="p-2 rounded-xl bg-stone-950/80 border border-stone-800 text-amber-300">
-              <span className="block font-bold">✍️ लिखवाट इफ़ेक्ट</span>
-              <span className="text-stone-400 text-[9px]">Handwriting Animation</span>
+              <span className="block font-bold">✍️ बड़े अक्षर विशिंग</span>
+              <span className="text-stone-400 text-[9px]">HD Large Hindi Font</span>
             </div>
             <div className="p-2 rounded-xl bg-stone-950/80 border border-stone-800 text-yellow-300">
-              <span className="block font-bold">🪔 स्लो ब्लिंक लोगो</span>
-              <span className="text-stone-400 text-[9px]">Soft Glowing Logo</span>
+              <span className="block font-bold">🪔 पावन मंत्र प्लेट</span>
+              <span className="text-stone-400 text-[9px]">Sacred Sanskrit Shloka</span>
             </div>
             <div className="p-2 rounded-xl bg-stone-950/80 border border-stone-800 text-emerald-300">
-              <span className="block font-bold">📜 मूविंग टिकर</span>
-              <span className="text-stone-400 text-[9px]">Right-to-Left Scroll</span>
+              <span className="block font-bold">🎵 MP3 म्यूजिक ट्रैक</span>
+              <span className="text-stone-400 text-[9px]">HQ Audio Embedded</span>
             </div>
           </div>
 
@@ -326,17 +386,17 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
               {isExporting ? (
                 <>
                   <Loader2 className="w-5 h-5 text-stone-950 animate-spin" />
-                  <span>8K वीडियो तैयार हो रहा है ({exportProgress}%)...</span>
+                  <span>{selectedDuration}s वीडियो डाउनलोड हो रहा है ({exportProgress}%)...</span>
                 </>
               ) : hasDownloaded ? (
                 <>
                   <Check className="w-5 h-5 text-stone-950" />
-                  <span>✓ 8K वीडियो स्टेटस डाउनलोड हो गया! (पुनः डाउनलोड करें)</span>
+                  <span>✓ {selectedDuration}s वीडियो स्टेटस डाउनलोड हो गया! (पुनः डाउनलोड करें)</span>
                 </>
               ) : (
                 <>
                   <Download className="w-5 h-5" />
-                  <span>📥 8K वीडियो स्टेटस डाउनलोड करें (.MP4)</span>
+                  <span>📥 {selectedDuration} सेकंड 8K वीडियो स्टेटस डाउनलोड करें (.MP4)</span>
                 </>
               )}
             </button>

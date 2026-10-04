@@ -1314,6 +1314,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         poem={activeTranslation.greetingPoem || festival.defaultPoem}
         greetingTitle={isBirthday ? `Happy Birthday ${birthdayPerson}` : (activeTranslation.greetingTitle || festival.nameHi)}
         heroImageOverride={activeHeroImage}
+        customAudioUrl={effectiveAudioUrl}
         shareUrl={getShareUrl()}
       />
 

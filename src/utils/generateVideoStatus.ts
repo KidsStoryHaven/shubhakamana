@@ -9,6 +9,7 @@ export interface VideoStatusOptions {
   poem: string;
   greetingTitle: string;
   heroImageOverride?: string;
+  customAudioUrl?: string;
 }
 
 export interface VideoStatusResult {
@@ -60,9 +61,13 @@ export function loadStatusImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Creates audio stream and synthesis for video.
+ * Creates audio stream and synthesis or MP3 stream for video.
  */
-export function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { 
+export function createFestiveAudioStream(
+  durationSec: number, 
+  isBirthday: boolean,
+  customAudioUrl?: string
+): { 
   streamTrack: MediaStreamTrack | null; 
   cleanup: () => void;
   audioContext: AudioContext | null;
@@ -74,10 +79,40 @@ export function createFestiveAudioStream(durationSec: number, isBirthday: boolea
     const audioCtx = new AudioContextClass();
     const dest = audioCtx.createMediaStreamDestination();
     const masterGain = audioCtx.createGain();
-    masterGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    masterGain.gain.setValueAtTime(0.7, audioCtx.currentTime);
     masterGain.connect(dest);
 
-    // Also connect to destination so user can hear live preview if audio is running
+    // If a custom MP3 audio URL / uploaded dataUrl is provided, connect real audio element!
+    if (customAudioUrl && customAudioUrl.length > 5) {
+      try {
+        const audioEl = new Audio();
+        audioEl.crossOrigin = 'anonymous';
+        audioEl.src = customAudioUrl;
+        audioEl.loop = true;
+        audioEl.volume = 1.0;
+
+        const source = audioCtx.createMediaElementSource(audioEl);
+        source.connect(masterGain);
+        audioEl.play().catch(() => {});
+
+        const streamTrack = dest.stream.getAudioTracks()[0] || null;
+        return {
+          streamTrack,
+          audioContext: audioCtx,
+          cleanup: () => {
+            try {
+              audioEl.pause();
+              audioEl.src = '';
+              audioCtx.close();
+            } catch {}
+          }
+        };
+      } catch (err) {
+        console.warn('Could not pipe custom audio element, falling back to synthesis:', err);
+      }
+    }
+
+    // Synthesized festive melody looping across duration
     if (isBirthday) {
       const notes = [
         { f: 261.63, d: 0.35, p: 0.1 },
@@ -94,21 +129,32 @@ export function createFestiveAudioStream(durationSec: number, isBirthday: boolea
         { f: 349.23, d: 1.0, p: 6.3 }
       ];
 
-      notes.forEach(n => {
-        const osc = audioCtx.createOscillator();
-        const noteGain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(n.f, audioCtx.currentTime + n.p);
-        
-        noteGain.gain.setValueAtTime(0, audioCtx.currentTime + n.p);
-        noteGain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + n.p + 0.04);
-        noteGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + n.p + n.d);
+      const loopLength = 7.5;
+      const totalLoops = Math.ceil(durationSec / loopLength) + 1;
 
-        osc.connect(noteGain);
-        noteGain.connect(masterGain);
-        osc.start(audioCtx.currentTime + n.p);
-        osc.stop(audioCtx.currentTime + n.p + n.d + 0.1);
-      });
+      for (let l = 0; l < totalLoops; l++) {
+        const loopOffset = l * loopLength;
+        if (loopOffset > durationSec) break;
+
+        notes.forEach(n => {
+          const startTime = audioCtx.currentTime + loopOffset + n.p;
+          if (startTime > audioCtx.currentTime + durationSec) return;
+
+          const osc = audioCtx.createOscillator();
+          const noteGain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, startTime);
+          
+          noteGain.gain.setValueAtTime(0, startTime);
+          noteGain.gain.linearRampToValueAtTime(0.35, startTime + 0.04);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + n.d);
+
+          osc.connect(noteGain);
+          noteGain.connect(masterGain);
+          osc.start(startTime);
+          osc.stop(startTime + n.d + 0.1);
+        });
+      }
     } else {
       // Tanpura Root Drones
       [130.81, 196.00, 261.63].forEach(freq => {
@@ -116,7 +162,7 @@ export function createFestiveAudioStream(durationSec: number, isBirthday: boolea
         const droneGain = audioCtx.createGain();
         droneOsc.type = 'sawtooth';
         droneOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        droneGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        droneGain.gain.setValueAtTime(0.07, audioCtx.currentTime);
 
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
@@ -129,24 +175,30 @@ export function createFestiveAudioStream(durationSec: number, isBirthday: boolea
         droneOsc.stop(audioCtx.currentTime + durationSec + 1);
       });
 
-      // Temple Bell Chimes
-      [0.2, 2.8, 5.4].forEach(time => {
+      // Temple Bell Chimes repeating every 3 seconds
+      const chimeInterval = 3.0;
+      const totalChimes = Math.ceil(durationSec / chimeInterval) + 1;
+
+      for (let c = 0; c < totalChimes; c++) {
+        const chimeTime = c * chimeInterval + 0.2;
+        if (chimeTime > durationSec) break;
+
         [523.25, 659.25, 783.99, 1046.50].forEach((bellFreq, idx) => {
           const bellOsc = audioCtx.createOscillator();
           const bellGain = audioCtx.createGain();
           bellOsc.type = 'sine';
-          bellOsc.frequency.setValueAtTime(bellFreq * (1 + idx * 0.02), audioCtx.currentTime + time);
+          bellOsc.frequency.setValueAtTime(bellFreq * (1 + idx * 0.02), audioCtx.currentTime + chimeTime);
           
-          bellGain.gain.setValueAtTime(0, audioCtx.currentTime + time);
-          bellGain.gain.linearRampToValueAtTime(0.3 / (idx + 1), audioCtx.currentTime + time + 0.02);
-          bellGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time + 2.0);
+          bellGain.gain.setValueAtTime(0, audioCtx.currentTime + chimeTime);
+          bellGain.gain.linearRampToValueAtTime(0.25 / (idx + 1), audioCtx.currentTime + chimeTime + 0.02);
+          bellGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + chimeTime + 2.2);
 
           bellOsc.connect(bellGain);
           bellGain.connect(masterGain);
-          bellOsc.start(audioCtx.currentTime + time);
-          bellOsc.stop(audioCtx.currentTime + time + 2.1);
+          bellOsc.start(audioCtx.currentTime + chimeTime);
+          bellOsc.stop(audioCtx.currentTime + chimeTime + 2.3);
         });
-      });
+      }
     }
 
     const streamTrack = dest.stream.getAudioTracks()[0] || null;
@@ -347,34 +399,35 @@ export function drawVideoStatusFrame(
   ctx.fillText(displayTitle, width / 2, 680);
   ctx.restore();
 
-  // 7. Handwriting / Typewriter Animation Box
-  const typingDuration = 2.6;
+  // 7. Handwriting / Typewriter Animation Box (Bigger readable fonts)
+  const typingDuration = Math.min(Math.max(time * 0.5, 4.0), 8.0);
   const typingProgress = Math.min(Math.max((time - 0.2) / typingDuration, 0), 1);
   const charsToShow = Math.floor(typingProgress * fullPoem.length);
   const poemSlice = fullPoem.slice(0, charsToShow);
 
   ctx.save();
-  const textBoxX = 24;
+  const textBoxX = 20;
   const textBoxY = 715;
-  const textBoxW = width - 48;
-  const textBoxH = 260;
+  const textBoxW = width - 40;
+  const textBoxH = 265;
 
-  ctx.fillStyle = 'rgba(20, 18, 16, 0.94)';
+  ctx.fillStyle = 'rgba(18, 16, 14, 0.95)';
   ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.roundRect(textBoxX, textBoxY, textBoxW, textBoxH, [20]);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = '#fef3c7';
-  ctx.font = '500 21px sans-serif';
+  // Bada Akshar Typography (25px Bold text)
+  ctx.fillStyle = '#fef08a';
+  ctx.font = 'bold 25px sans-serif';
   ctx.textAlign = 'center';
 
-  const maxLineW = textBoxW - 50;
+  const maxLineW = textBoxW - 40;
   const lines = wrapTextLines(ctx, poemSlice, maxLineW);
-  const lineH = 34;
-  const startTextY = textBoxY + 54;
+  const lineH = 38;
+  const startTextY = textBoxY + 50;
   lines.slice(0, 6).forEach((l, idx) => {
     ctx.fillText(l, width / 2, startTextY + idx * lineH);
   });
@@ -383,28 +436,28 @@ export function drawVideoStatusFrame(
   if (typingProgress < 1.0 && typingProgress > 0) {
     const cursorAlpha = (Math.sin(time * 12) + 1) / 2;
     ctx.fillStyle = `rgba(251, 191, 36, ${cursorAlpha})`;
-    ctx.font = 'bold 20px sans-serif';
+    ctx.font = 'bold 22px sans-serif';
     const lastLine = lines[lines.length - 1] || '';
     const lastLineW = ctx.measureText(lastLine).width;
-    ctx.fillText(' ✍️✨', width / 2 + lastLineW / 2 + 6, startTextY + (lines.length - 1) * lineH);
+    ctx.fillText(' ✍️✨', width / 2 + lastLineW / 2 + 8, startTextY + (lines.length - 1) * lineH);
   }
   ctx.restore();
 
-  // Sacred Mantra Plate if present
+  // Sacred Mantra Plate if present (Big Sacred Gold Shloka)
   if (festival.mantraOrShloka && !isBirthday) {
     ctx.save();
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.14)';
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.18)';
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.roundRect(24, 990, width - 48, 75, [14]);
+    ctx.roundRect(20, 990, width - 40, 78, [16]);
     ctx.fill();
     ctx.stroke();
 
     ctx.fillStyle = '#fde047';
-    ctx.font = 'italic 500 16px serif';
+    ctx.font = 'bold 21px serif';
     ctx.textAlign = 'center';
-    ctx.fillText(festival.mantraOrShloka.slice(0, 52) + (festival.mantraOrShloka.length > 52 ? '...' : ''), width / 2, 1035);
+    ctx.fillText(festival.mantraOrShloka.slice(0, 48) + (festival.mantraOrShloka.length > 48 ? '...' : ''), width / 2, 1036);
     ctx.restore();
   }
 
@@ -512,8 +565,8 @@ export async function recordFastVideoStatus(
   const totalFrames = Math.floor(durationSeconds * fps);
   const stream = canvas.captureStream(fps);
 
-  // Audio setup
-  const audio = createFestiveAudioStream(durationSeconds, isBirthday);
+  // Audio setup with custom MP3 or synthesized melody
+  const audio = createFestiveAudioStream(durationSeconds, isBirthday, options.customAudioUrl);
   if (audio.streamTrack) {
     stream.addTrack(audio.streamTrack);
   }
