@@ -317,7 +317,103 @@ export const FESTIVAL_DEITY_GALLERIES: Record<string, DivineDeitySlide[]> = {
   ],
 
   // ==========================================
-  // 3. DR. B.R. AMBEDKAR JAYANTI (बाबासाहेब, संविधान, जय भीम)
+  // 3. NAVRATRI / DURGA PUJA (माँ दुर्गा, शेरावाली, नवदुर्गा, वैष्णो देवी)
+  // ==========================================
+  navratri: [
+    {
+      id: 'navratri-user-1',
+      godName: 'माँ दुर्गा शेरावाली',
+      title: 'माँ दुर्गा शेरावाली • सिंहवाहिनी दिव्य दर्शन',
+      tagline: 'अष्टभुजाधारी, त्रिशूलधारिणी, महिषासुरमर्दिनी जगदम्बा',
+      badge: '🚩 जय माता दी',
+      mantra: '॥ ॐ जयंती मंगला काली भद्रकाली कपालिनी । दुर्गा क्षमा शिवा धात्री स्वाहा स्वधा नमोऽस्तु ते ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1HE5DaiYEcjYhw2V8qw6bmBhTkkYZvgN8'
+    },
+    {
+      id: 'navratri-user-2',
+      godName: 'माँ नवदुर्गा पावन स्वरूप',
+      title: 'माँ नवदुर्गा ९ दिव्य स्वरूप दर्शन',
+      tagline: 'शैलपुत्री, ब्रह्मचारिणी, चंद्रघंटा, कूष्माण्डा, स्कन्दमाता, कात्यायनी, कालरात्रि, महागौरी, सिद्धिदात्री',
+      badge: '✨ नवदुर्गा',
+      mantra: '॥ प्रथमं शैलपुत्री च द्वितीयं ब्रह्मचारिणी । तृतीयं चन्द्रघण्टेति कूष्माण्डेति चतुर्थकम् ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/14Dm5wG-IjjHq8SPRBHui25iD5bBIZw9n'
+    },
+    {
+      id: 'navratri-user-3',
+      godName: 'माँ जगदम्बा भवानी',
+      title: 'माँ जगदम्बा भवानी • मंगलकारी दर्शन',
+      tagline: 'समस्त भक्तों की मनोकामना पूर्ण करने वाली माता रानी',
+      badge: '🌸 जगज्जननी',
+      mantra: '॥ सर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके । शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1YwfORoaFA6SlJyvLmjupNr2OoNOd9upa'
+    },
+    {
+      id: 'navratri-user-4',
+      godName: 'माँ वैष्णो देवी दरबार',
+      title: 'माँ वैष्णो देवी पावन भवन • त्रिकुटा पर्वत',
+      tagline: 'महाकाली, महालक्ष्मी और महासरस्वती का पावन त्रिपिंडी स्वरूप',
+      badge: '⛰️ वैष्णो देवी',
+      mantra: '॥ जय माँ वैष्णो देवी • चलो बुलावा आया है माता ने बुलाया है ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1ZN45FdrByf_p2C7y0aLb0UaZlGuGOATb'
+    },
+    {
+      id: 'navratri-user-5',
+      godName: 'माँ शेरावाली का पावन दरबार',
+      title: 'माँ शेरावाली का अलौकिक शृंगार दर्शन',
+      tagline: 'लाल चुनरी, छत्र और पुष्पों से सुशोभित माता रानी',
+      badge: '👑 शेरावाली',
+      mantra: '॥ या देवी सर्वभूतेषु शक्ति-रूपेण संस्थिता । नमस्तस्यै नमस्तस्यै नमस्तस्यै नमो नमः ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1pQEDqCMEboeXJQGTlqj8fH2TenKbEr9s'
+    },
+    {
+      id: 'navratri-user-6',
+      godName: 'माँ महाकाली शक्ति स्वरूप',
+      title: 'माँ महाकाली • दुष्ट दलिनी संहारक स्वरूप',
+      tagline: 'शत्रु बाधा नाशिनी, अकाल मृत्यु भय हरने वाली करुणामयी काली',
+      badge: '⚔️ महाकाली',
+      mantra: '॥ ॐ क्रीं कालिकायै नमः • ॐ कपालिन्यै नमः ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1xtawaEf-WEXwxe4JyJSDlTer8ESLI9Sa'
+    },
+    {
+      id: 'navratri-user-7',
+      godName: 'अखंड ज्योति एवं घटस्थापना',
+      title: 'नवरात्रि अखंड ज्योति • पावन कलश दर्शन',
+      tagline: 'घर-परिवार में रिद्धि-सिद्धि और सुख-शांति की मंगल कामना',
+      badge: '🪔 अखंड ज्योति',
+      mantra: '॥ दीपज्योतिः परब्रह्म दीपज्योतिर्जनार्दनः । दीपो हरतु मे पापं दीपज्योतिर्नमोऽस्तु ते ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1oxENTurES2DIHgqBrWuDfv9aodX4IkJ4'
+    },
+    {
+      id: 'navratri-user-8',
+      godName: 'माँ अंबे गौरी महाआरती',
+      title: 'जय अंबे गौरी • मैया जय श्यामा गौरी',
+      tagline: 'तुमको निशदिन ध्यावत, हरि ब्रह्मा शिवरी',
+      badge: '🔔 महाआरती',
+      mantra: '॥ ॐ जय अंबे गौरी, मैया जय श्यामा गौरी । तुमको निशदिन ध्यावत, हरि ब्रह्मा शिवरी ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/13MdOjV5vmjP3w01QiQ6tH9f1hHAolXvO'
+    },
+    {
+      id: 'navratri-user-9',
+      godName: 'माँ दुर्गा की पावन कृपा',
+      title: 'माँ दुर्गा आशीर्वाद • सुख-समृद्धि प्रदायिनी',
+      tagline: 'समस्त कष्टों का निवारण और यश-कीर्ति का वरदान',
+      badge: '🌺 मंगलमय दर्शन',
+      mantra: '॥ देहि सौभाग्यमारोग्यं देहि मे परमं सुखम् । रूपं देहि जयं देहि यशो देहि द्विषो जहि ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1hMpMgUJ4SOLvRRusK1MDJwFYm0IFoy0q'
+    },
+    {
+      id: 'navratri-user-10',
+      godName: 'कन्या पूजन एवं नवमी सिद्धि',
+      title: 'महानवमी सिद्धि • कन्या पूजन व आशीष',
+      tagline: 'साक्षात देवी स्वरूप कन्याओं का वंदन और माता का आशीर्वाद',
+      badge: '🌸 महानवमी',
+      mantra: '॥ ॐ श्रीं ह्रीं क्लीं दुर्गायै नमः ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1eVTUZbvfcTb4zSMqpjxLW75KNE5mjBry'
+    }
+  ],
+
+  // ==========================================
+  // 4. DR. B.R. AMBEDKAR JAYANTI (बाबासाहेब, संविधान, जय भीम)
   // ==========================================
   ambedkar_jayanti: [
     {

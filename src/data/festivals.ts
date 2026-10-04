@@ -352,7 +352,7 @@ export const FESTIVALS: Festival[] = [
     dateLabel: 'प्रतिपदा से नवमी',
     countdownDays: 20,
     badge: '🚩 जय माता दी',
-    heroImage: 'https://images.unsplash.com/photo-1609342122563-a43ac8917a3a?auto=format&fit=crop&w=1200&q=80',
+    heroImage: 'https://lh3.googleusercontent.com/d/1HE5DaiYEcjYhw2V8qw6bmBhTkkYZvgN8',
     themeColor: {
       gradient: 'from-rose-950 via-red-900 to-stone-950',
       border: 'border-red-500/40',
