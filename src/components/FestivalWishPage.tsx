@@ -8,6 +8,7 @@ import { StatusShareModal } from './StatusShareModal';
 import { VideoStatusModal } from './VideoStatusModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
 import { NavratriKathaAudioSection } from './NavratriKathaAudioSection';
+import { StickyKathaMiniPlayer } from './StickyKathaMiniPlayer';
 import { DivineDeitySlide } from '../data/divineGodsData';
 import { getStoredFestivals, getStoredDeitySlides } from '../data/festivalStore';
 import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
@@ -318,6 +319,20 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   useEffect(() => {
     festiveAudio.setMuted(isSoundMuted);
   }, [isSoundMuted]);
+
+  // Automatically pause background dhun when Navratri Katha starts playing
+  useEffect(() => {
+    const handleKathaStart = () => {
+      setIsSoundMuted(true);
+      festiveAudio.setMuted(true);
+      festiveAudio.stopAll();
+    };
+
+    window.addEventListener('shubhakamna_katha_started', handleKathaStart);
+    return () => {
+      window.removeEventListener('shubhakamna_katha_started', handleKathaStart);
+    };
+  }, []);
 
   // Full Dynamic SEO, OpenGraph, Twitter Cards & JSON-LD
   useEffect(() => {
@@ -664,6 +679,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 🎧 Upper Sticky / Floating Navratri Katha Mini Player Shortcut */}
+      <StickyKathaMiniPlayer festivalId={festival.id} />
 
       {/* AdSense Top Slot (728x90 / Responsive) */}
       <div className="max-w-3xl mx-auto px-4 pt-3">

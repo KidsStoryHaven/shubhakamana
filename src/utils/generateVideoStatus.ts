@@ -702,18 +702,34 @@ export function drawVideoStatusFrame(
   ctx.textAlign = 'center';
   ctx.fillText('✨ भारत का आधिकारिक 8K शुभकामना स्टेटस ✨', width / 2, 85);
 
-  // 5. User / Celebrant Photo if available
+  // 5. User / Celebrant Photo if available (Prominently Large & Beautifully Framed)
   if (userImg && userImg.complete) {
     ctx.save();
-    const photoX = 82;
-    const photoY = 575;
-    const photoR = 46;
+    const photoX = 94;
+    const photoY = 584;
+    const photoR = 62; // Significantly larger (124px diameter)
 
-    ctx.fillStyle = '#fbbf24';
+    // Outer warm gold aura
+    const auraGrad = ctx.createRadialGradient(photoX, photoY, photoR, photoX, photoY, photoR + 14);
+    auraGrad.addColorStop(0, 'rgba(251, 191, 36, 0.6)');
+    auraGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+    ctx.fillStyle = auraGrad;
     ctx.beginPath();
-    ctx.arc(photoX, photoY, photoR + 4, 0, Math.PI * 2);
+    ctx.arc(photoX, photoY, photoR + 14, 0, Math.PI * 2);
     ctx.fill();
 
+    // Multi-layer Golden Metallic Border Ring
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(photoX, photoY, photoR + 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(photoX, photoY, photoR + 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Clip & Draw Portrait
     ctx.beginPath();
     ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
     ctx.clip();
@@ -722,10 +738,10 @@ export function drawVideoStatusFrame(
   }
 
   // 6. Sender Name 3D Royal Plate
-  const sCardX = userImg ? 150 : 20;
-  const sCardY = 545;
-  const sCardW = userImg ? width - 170 : width - 40;
-  const sCardH = 88;
+  const sCardX = userImg ? 172 : 20;
+  const sCardY = 540;
+  const sCardW = userImg ? width - 192 : width - 40;
+  const sCardH = 90;
 
   ctx.save();
   const sBoxGrad = ctx.createLinearGradient(sCardX, sCardY, sCardX + sCardW, sCardY + sCardH);
