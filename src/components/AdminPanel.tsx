@@ -632,6 +632,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleImageUploadForWishCategory = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingWishCategory) return;
+    try {
+      showToast('फ़ोटो ऑप्टिमाइज़ हो रही है... ⏳');
+      const optimizedBase64 = await optimizeImageForWeb(file, 960, 0.78);
+      setEditingWishCategory({
+        ...editingWishCategory,
+        heroImageUrl: optimizedBase64
+      });
+      showToast('फ़ोटो लोड हो गई! "पेज सहेजें" दबाएँ।');
+    } catch (err) {
+      console.error('Failed to optimize wish category image:', err);
+      showToast('फ़ोटो अपलोड करने में समस्या आई!');
+    }
+  };
+
   // ==========================================
   // PHOTOS / DEITY SLIDES REORDER & CRUD
   // ==========================================
@@ -3505,18 +3522,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 />
               </div>
 
-              {/* 10. Hero Image URL */}
+              {/* 10. Hero Image URL & Upload */}
               <div className="sm:col-span-2">
                 <label className="block text-stone-300 font-bold mb-1">
-                  हेरो बैनर इमेज URL (Hero Banner Image)
+                  हेरो बैनर इमेज (Hero Banner Image)
                 </label>
-                <input
-                  type="url"
-                  value={editingWishCategory.heroImageUrl}
-                  onChange={(e) => setEditingWishCategory({ ...editingWishCategory, heroImageUrl: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editingWishCategory.heroImageUrl}
+                    onChange={(e) => setEditingWishCategory({ ...editingWishCategory, heroImageUrl: e.target.value })}
+                    placeholder="फ़ोटो URL या नीचे से अपलोड करें..."
+                    className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
+                  />
+                  <label className="px-3.5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold shrink-0 flex items-center gap-1 cursor-pointer transition">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>अपलोड</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUploadForWishCategory}
+                    />
+                  </label>
+                </div>
+                {editingWishCategory.heroImageUrl && (
+                  <div className="mt-2 p-2 rounded-xl bg-black/50 border border-stone-800 flex items-center gap-3">
+                    <img 
+                      src={editingWishCategory.heroImageUrl} 
+                      alt="Banner Preview" 
+                      className="w-16 h-10 object-cover rounded-lg border border-amber-500/30"
+                    />
+                    <span className="text-[11px] text-stone-400">फ़ोटो लाइव प्रीव्यू</span>
+                  </div>
+                )}
               </div>
 
               {/* 10.1 Category Audio / Song Configuration */}

@@ -678,6 +678,31 @@ export function getFestivalDeitySlides(festivalId: string): DivineDeitySlide[] {
     }
   } catch {}
 
+  // Check if festival itself has custom heroImage
+  try {
+    const rawFests = typeof window !== 'undefined' ? localStorage.getItem('shubhakamna_festivals_v2') : null;
+    if (rawFests) {
+      const fests = JSON.parse(rawFests);
+      const matched = fests.find((f: any) => f.id === festivalId);
+      if (matched?.heroImage) {
+        const defaultList = FESTIVAL_DEITY_GALLERIES[festivalId] || [];
+        const alreadyIn = defaultList.some(s => s.imageUrl === matched.heroImage);
+        if (!alreadyIn) {
+          const customSlide: DivineDeitySlide = {
+            id: `${festivalId}-custom-hero`,
+            godName: matched.nameHi,
+            title: matched.greetingTitle || matched.nameHi,
+            tagline: matched.taglineHi || 'पावन ईश्वरीय दर्शन',
+            badge: matched.badge || '✨ पावन दर्शन',
+            mantra: matched.mantraOrShloka || '॥ सर्वे भवन्तु सुखिनः ॥',
+            imageUrl: matched.heroImage
+          };
+          return [customSlide, ...defaultList];
+        }
+      }
+    }
+  } catch {}
+
   if (FESTIVAL_DEITY_GALLERIES[festivalId]) {
     return FESTIVAL_DEITY_GALLERIES[festivalId];
   }

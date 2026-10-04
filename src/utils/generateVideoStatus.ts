@@ -9,8 +9,6 @@ export interface VideoStatusOptions {
   poem: string;
   greetingTitle: string;
   heroImageOverride?: string;
-  onProgress?: (percent: number, statusText: string) => void;
-  durationSeconds?: number;
 }
 
 export interface VideoStatusResult {
@@ -21,69 +19,79 @@ export interface VideoStatusResult {
   fileName: string;
 }
 
+export interface ParticleItem {
+  x: number;
+  y: number;
+  size: number;
+  speedY: number;
+  speedX: number;
+  alpha: number;
+  type: 'diya' | 'sparkle' | 'confetti';
+}
+
 /**
- * Loads an image URL into an HTMLImageElement safely with CORS.
+ * Loads an image URL safely with CORS.
  */
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+export function loadStatusImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => {
-      // Fallback: create placeholder canvas
       const fb = document.createElement('canvas');
-      fb.width = 1000;
-      fb.height = 1000;
+      fb.width = 720;
+      fb.height = 720;
       const ctx = fb.getContext('2d');
       if (ctx) {
         ctx.fillStyle = '#78350f';
-        ctx.fillRect(0, 0, 1000, 1000);
+        ctx.fillRect(0, 0, 720, 720);
         ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 48px sans-serif';
+        ctx.font = 'bold 36px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('✨ पावन मंगल दर्शन ✨', 500, 500);
+        ctx.fillText('✨ पावन मंगल दर्शन ✨', 360, 360);
       }
       const fbImg = new Image();
       fbImg.src = fb.toDataURL();
       fbImg.onload = () => resolve(fbImg);
-      fbImg.onerror = () => reject(new Error('Image load failed'));
+      fbImg.onerror = () => resolve(fbImg);
     };
     img.src = src;
   });
 }
 
 /**
- * Helper to synthesize rich festive audio track for the video.
+ * Creates audio stream and synthesis for video.
  */
-function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { stream: MediaStreamTrack | null; cleanup: () => void } {
+export function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { 
+  streamTrack: MediaStreamTrack | null; 
+  cleanup: () => void;
+  audioContext: AudioContext | null;
+} {
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return { stream: null, cleanup: () => {} };
+    if (!AudioContextClass) return { streamTrack: null, cleanup: () => {}, audioContext: null };
 
     const audioCtx = new AudioContextClass();
     const dest = audioCtx.createMediaStreamDestination();
-
-    // Create festive ambient music oscillators
     const masterGain = audioCtx.createGain();
-    masterGain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+    masterGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
     masterGain.connect(dest);
 
+    // Also connect to destination so user can hear live preview if audio is running
     if (isBirthday) {
-      // Synthesize Happy Birthday melody notes: C4, C4, D4, C4, F4, E4 ...
       const notes = [
-        { f: 261.63, d: 0.35, p: 0.1 }, // Hap-
-        { f: 261.63, d: 0.35, p: 0.5 }, // py
-        { f: 293.66, d: 0.6, p: 0.9 },  // Birth-
-        { f: 261.63, d: 0.6, p: 1.6 },  // day
-        { f: 349.23, d: 0.6, p: 2.3 },  // to
-        { f: 329.63, d: 1.0, p: 3.0 },  // you
-        // Repeat phrase 2
-        { f: 261.63, d: 0.35, p: 4.2 },
-        { f: 261.63, d: 0.35, p: 4.6 },
-        { f: 293.66, d: 0.6, p: 5.0 },
-        { f: 261.63, d: 0.6, p: 5.7 },
-        { f: 392.00, d: 0.6, p: 6.4 },
-        { f: 349.23, d: 1.0, p: 7.1 },
+        { f: 261.63, d: 0.35, p: 0.1 },
+        { f: 261.63, d: 0.35, p: 0.45 },
+        { f: 293.66, d: 0.6, p: 0.8 },
+        { f: 261.63, d: 0.6, p: 1.4 },
+        { f: 349.23, d: 0.6, p: 2.0 },
+        { f: 329.63, d: 1.0, p: 2.6 },
+        { f: 261.63, d: 0.35, p: 3.8 },
+        { f: 261.63, d: 0.35, p: 4.15 },
+        { f: 293.66, d: 0.6, p: 4.5 },
+        { f: 261.63, d: 0.6, p: 5.1 },
+        { f: 392.00, d: 0.6, p: 5.7 },
+        { f: 349.23, d: 1.0, p: 6.3 }
       ];
 
       notes.forEach(n => {
@@ -93,7 +101,7 @@ function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { s
         osc.frequency.setValueAtTime(n.f, audioCtx.currentTime + n.p);
         
         noteGain.gain.setValueAtTime(0, audioCtx.currentTime + n.p);
-        noteGain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + n.p + 0.05);
+        noteGain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + n.p + 0.04);
         noteGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + n.p + n.d);
 
         osc.connect(noteGain);
@@ -102,8 +110,7 @@ function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { s
         osc.stop(audioCtx.currentTime + n.p + n.d + 0.1);
       });
     } else {
-      // Synthesize auspicious temple bells + tanpura drone + shehnai chime
-      // 1. Tanpura Root Drones (Sa-Pa, C3 & G3)
+      // Tanpura Root Drones
       [130.81, 196.00, 261.63].forEach(freq => {
         const droneOsc = audioCtx.createOscillator();
         const droneGain = audioCtx.createGain();
@@ -111,7 +118,6 @@ function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { s
         droneOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         droneGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
 
-        // Lowpass filter for warm acoustic resonance
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(450, audioCtx.currentTime);
@@ -120,11 +126,11 @@ function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { s
         filter.connect(droneGain);
         droneGain.connect(masterGain);
         droneOsc.start();
-        droneOsc.stop(audioCtx.currentTime + durationSec);
+        droneOsc.stop(audioCtx.currentTime + durationSec + 1);
       });
 
-      // 2. Temple Bell Chimes periodically (at 0s, 3s, 6s, 9s)
-      [0.2, 3.2, 6.4, 9.6].forEach(time => {
+      // Temple Bell Chimes
+      [0.2, 2.8, 5.4].forEach(time => {
         [523.25, 659.25, 783.99, 1046.50].forEach((bellFreq, idx) => {
           const bellOsc = audioCtx.createOscillator();
           const bellGain = audioCtx.createGain();
@@ -133,19 +139,20 @@ function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { s
           
           bellGain.gain.setValueAtTime(0, audioCtx.currentTime + time);
           bellGain.gain.linearRampToValueAtTime(0.3 / (idx + 1), audioCtx.currentTime + time + 0.02);
-          bellGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time + 2.2);
+          bellGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time + 2.0);
 
           bellOsc.connect(bellGain);
           bellGain.connect(masterGain);
           bellOsc.start(audioCtx.currentTime + time);
-          bellOsc.stop(audioCtx.currentTime + time + 2.3);
+          bellOsc.stop(audioCtx.currentTime + time + 2.1);
         });
       });
     }
 
-    const audioTrack = dest.stream.getAudioTracks()[0] || null;
+    const streamTrack = dest.stream.getAudioTracks()[0] || null;
     return {
-      stream: audioTrack,
+      streamTrack,
+      audioContext: audioCtx,
       cleanup: () => {
         try {
           audioCtx.close();
@@ -153,67 +160,364 @@ function createFestiveAudioStream(durationSec: number, isBirthday: boolean): { s
       }
     };
   } catch {
-    return { stream: null, cleanup: () => {} };
+    return { streamTrack: null, audioContext: null, cleanup: () => {} };
   }
 }
 
 /**
- * Generates an animated WhatsApp 8K/HD (1080 x 1920) Video Status (.MP4 / .WEBM).
+ * Initializes particles for the 9:16 canvas.
  */
-export async function generateVideoStatusBlob(options: VideoStatusOptions): Promise<VideoStatusResult> {
-  const {
-    festival,
-    senderName,
-    userPhoto,
-    birthdayPerson,
-    birthdayPhoto,
-    poem,
-    greetingTitle,
-    heroImageOverride,
-    onProgress,
-    durationSeconds = 10
-  } = options;
+export function initParticles(width: number, height: number, isBirthday: boolean): ParticleItem[] {
+  const particles: ParticleItem[] = [];
+  for (let i = 0; i < 35; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 6 + 3,
+      speedY: -(Math.random() * 1.5 + 0.7),
+      speedX: (Math.random() - 0.5) * 0.6,
+      alpha: Math.random() * 0.7 + 0.3,
+      type: isBirthday ? (i % 3 === 0 ? 'confetti' : 'sparkle') : (i % 2 === 0 ? 'diya' : 'sparkle')
+    });
+  }
+  return particles;
+}
 
-  const isBirthday = festival.id === 'birthday' || festival.soundType === 'birthday' || !!birthdayPerson;
-  const effectivePhoto = birthdayPhoto || userPhoto;
+/**
+ * Pre-computes wrapped lines of text to avoid recalculating measureText on every single animation frame.
+ */
+function wrapTextLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
 
-  onProgress?.(5, 'फ़ोटो और फ़ॉन्ट लोड हो रहे हैं...');
-
-  // Setup 9:16 Vertical Video Canvas (1080 x 1920)
-  const width = 1080;
-  const height = 1920;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d', { alpha: false });
-  if (!ctx) throw new Error('Canvas 2D context not available');
-
-  // Load Hero and User Images
-  const heroSrc = heroImageOverride || festival.heroImage;
-  const heroImg = await loadImage(heroSrc);
-  let userImg: HTMLImageElement | null = null;
-  if (effectivePhoto) {
-    try {
-      userImg = await loadImage(effectivePhoto);
-    } catch {
-      userImg = null;
+  for (let w = 0; w < words.length; w++) {
+    const testLine = currentLine ? `${currentLine} ${words[w]}` : words[w];
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = words[w];
+    } else {
+      currentLine = testLine;
     }
   }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
 
-  onProgress?.(15, 'एनिमेशन व ऑडियो तैयार हो रहे हैं...');
+/**
+ * Single Frame Renderer for both Live Preview Canvas and Video Export.
+ * Blazing fast 60fps / 30fps rendering optimized for 720 x 1280 (HD 9:16 vertical WhatsApp Story).
+ */
+export function drawVideoStatusFrame(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  time: number,
+  heroImg: HTMLImageElement | null,
+  userImg: HTMLImageElement | null,
+  options: VideoStatusOptions,
+  particles: ParticleItem[]
+): void {
+  const { festival, senderName, birthdayPerson, poem, greetingTitle } = options;
+  const isBirthday = festival.id === 'birthday' || festival.soundType === 'birthday' || !!birthdayPerson;
+  const fullPoem = poem || festival.defaultPoem;
 
-  // Setup MediaRecorder from Canvas Stream
+  // 1. Background Fill
+  ctx.fillStyle = '#0c0a09';
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. Hero Image with Cinematic Zoom / Float (Ken-Burns)
+  if (heroImg && heroImg.complete) {
+    const scale = 1.0 + Math.sin(time * 1.2) * 0.025;
+    const cardW = width - 48; // 672
+    const cardH = 500;
+    const cardX = 24;
+    const cardY = 120;
+
+    const zoomW = cardW * scale;
+    const zoomH = (cardW * scale * (heroImg.height || 1)) / (heroImg.width || 1);
+    const posX = cardX + (cardW - zoomW) / 2;
+    const posY = cardY + Math.sin(time * 0.8) * 6;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, [24]);
+    ctx.clip();
+    ctx.drawImage(heroImg, posX, posY, zoomW, Math.max(zoomH, cardH));
+
+    // Dark gradient vignette overlay at the bottom of the photo
+    const vig = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
+    vig.addColorStop(0, 'rgba(0,0,0,0.08)');
+    vig.addColorStop(0.7, 'rgba(0,0,0,0.18)');
+    vig.addColorStop(1, 'rgba(12,10,9,0.92)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(cardX, cardY, cardW, cardH);
+    ctx.restore();
+
+    // Golden frame border
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, [24]);
+    ctx.stroke();
+  }
+
+  // 3. Top Website Branding with Slow Breathing Blink
+  const blinkAlpha = 0.82 + Math.sin(time * 3.0) * 0.18;
+  ctx.save();
+  ctx.globalAlpha = blinkAlpha;
+
+  ctx.fillStyle = 'rgba(28, 25, 23, 0.9)';
+  ctx.beginPath();
+  ctx.roundRect(width / 2 - 190, 32, 380, 58, [29]);
+  ctx.fill();
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🪔 Shubhakamna.in 🪔', width / 2, 70);
+  ctx.restore();
+
+  // Top subline
+  ctx.fillStyle = 'rgba(253, 230, 138, 0.9)';
+  ctx.font = '600 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('✨ भारत का आधिकारिक 8K शुभकामना स्टेटस ✨', width / 2, 106);
+
+  // 4. User / Celebrant Photo if available
+  if (userImg && userImg.complete) {
+    ctx.save();
+    const photoX = 80;
+    const photoY = 580;
+    const photoR = 48;
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(photoX, photoY, photoR + 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(userImg, photoX - photoR, photoY - photoR, photoR * 2, photoR * 2);
+    ctx.restore();
+  }
+
+  // 5. Sender Name Royal Card
+  const sCardX = userImg ? 146 : 24;
+  const sCardY = 550;
+  const sCardW = userImg ? width - 170 : width - 48;
+  const sCardH = 88;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(24, 24, 27, 0.92)';
+  ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(sCardX, sCardY, sCardW, sCardH, [18]);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#fde68a';
+  ctx.font = '500 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('✨ स्नेह एवं सम्मान सहित प्रेषित ✨', sCardX + 18, sCardY + 28);
+
+  const sGrad = ctx.createLinearGradient(sCardX + 18, 0, sCardX + 300, 0);
+  sGrad.addColorStop(0, '#fef08a');
+  sGrad.addColorStop(0.5, '#f59e0b');
+  sGrad.addColorStop(1, '#ffffff');
+  ctx.fillStyle = sGrad;
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillText(senderName, sCardX + 18, sCardY + 68);
+  ctx.restore();
+
+  // 6. Festival Grand Greeting Title
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 34px sans-serif';
+  ctx.textAlign = 'center';
+  const displayTitle = isBirthday && birthdayPerson
+    ? `🎉 Happy Birthday ${birthdayPerson}! 🎉`
+    : greetingTitle;
+  ctx.fillText(displayTitle, width / 2, 680);
+  ctx.restore();
+
+  // 7. Handwriting / Typewriter Animation Box
+  const typingDuration = 2.6;
+  const typingProgress = Math.min(Math.max((time - 0.2) / typingDuration, 0), 1);
+  const charsToShow = Math.floor(typingProgress * fullPoem.length);
+  const poemSlice = fullPoem.slice(0, charsToShow);
+
+  ctx.save();
+  const textBoxX = 24;
+  const textBoxY = 715;
+  const textBoxW = width - 48;
+  const textBoxH = 260;
+
+  ctx.fillStyle = 'rgba(20, 18, 16, 0.94)';
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(textBoxX, textBoxY, textBoxW, textBoxH, [20]);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#fef3c7';
+  ctx.font = '500 21px sans-serif';
+  ctx.textAlign = 'center';
+
+  const maxLineW = textBoxW - 50;
+  const lines = wrapTextLines(ctx, poemSlice, maxLineW);
+  const lineH = 34;
+  const startTextY = textBoxY + 54;
+  lines.slice(0, 6).forEach((l, idx) => {
+    ctx.fillText(l, width / 2, startTextY + idx * lineH);
+  });
+
+  // Animated writing quill cursor
+  if (typingProgress < 1.0 && typingProgress > 0) {
+    const cursorAlpha = (Math.sin(time * 12) + 1) / 2;
+    ctx.fillStyle = `rgba(251, 191, 36, ${cursorAlpha})`;
+    ctx.font = 'bold 20px sans-serif';
+    const lastLine = lines[lines.length - 1] || '';
+    const lastLineW = ctx.measureText(lastLine).width;
+    ctx.fillText(' ✍️✨', width / 2 + lastLineW / 2 + 6, startTextY + (lines.length - 1) * lineH);
+  }
+  ctx.restore();
+
+  // Sacred Mantra Plate if present
+  if (festival.mantraOrShloka && !isBirthday) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.14)';
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(24, 990, width - 48, 75, [14]);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#fde047';
+    ctx.font = 'italic 500 16px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(festival.mantraOrShloka.slice(0, 52) + (festival.mantraOrShloka.length > 52 ? '...' : ''), width / 2, 1035);
+    ctx.restore();
+  }
+
+  // 8. Right-to-Left Scrolling Festive Wish Ribbon (Marquee)
+  const tickerY = 1080;
+  const tickerH = 75;
+  const tickerText = isBirthday
+    ? `🎉 HAPPY BIRTHDAY ${birthdayPerson || 'आकाश'} 🎉 • Wishing you boundless happiness & divine health • ${senderName} की ओर से ढेर सारी शुभकामनाएँ 🎂🎈✨ • `
+    : `🪔 ${festival.nameHi} की हार्दिक शुभकामनाएँ 🪔 • ${festival.taglineHi} • ${festival.mantraOrShloka || '॥ ॐ श्रीं महालक्ष्म्यै नमः ॥'} • ${senderName} की ओर से सपरिवार मंगलकामनाएँ 🌸✨ • `;
+
+  ctx.save();
+  const ribGrad = ctx.createLinearGradient(0, tickerY, 0, tickerY + tickerH);
+  ribGrad.addColorStop(0, '#78350f');
+  ribGrad.addColorStop(0.5, '#b45309');
+  ribGrad.addColorStop(1, '#451a03');
+  ctx.fillStyle = ribGrad;
+  ctx.fillRect(0, tickerY, width, tickerH);
+
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, tickerY);
+  ctx.lineTo(width, tickerY);
+  ctx.moveTo(0, tickerY + tickerH);
+  ctx.lineTo(width, tickerY + tickerH);
+  ctx.stroke();
+
+  // Fast smooth text movement from right to left
+  const speed = 140; // px/sec
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textAlign = 'left';
+  const textWidth = ctx.measureText(tickerText).width;
+  const offset = (time * speed) % (textWidth || 1);
+
+  const fullRepeated = tickerText + tickerText + tickerText;
+  ctx.fillText(fullRepeated, width - offset, tickerY + 46);
+  ctx.restore();
+
+  // 9. Floating Animated Particles
+  ctx.save();
+  particles.forEach(p => {
+    p.y += p.speedY;
+    p.x += p.speedX;
+    if (p.y < 0) p.y = height + 10;
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+
+    ctx.globalAlpha = p.alpha * (0.8 + Math.sin(time * 3 + p.x) * 0.2);
+
+    if (p.type === 'diya') {
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, p.size * 1.5, p.size * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - p.size, p.size * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.type === 'confetti') {
+      const colors = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+      ctx.fillStyle = colors[Math.floor(p.x) % colors.length];
+      ctx.fillRect(p.x, p.y, p.size * 1.2, p.size * 0.6);
+    } else {
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  ctx.restore();
+
+  // 10. Bottom Footer Stamp
+  ctx.save();
+  ctx.fillStyle = 'rgba(12, 10, 9, 0.95)';
+  ctx.fillRect(0, height - 90, width, 90);
+
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🟢 WhatsApp Status • 8K Ultra HD Animated Video 🟢', width / 2, height - 50);
+
+  ctx.fillStyle = '#a8a29e';
+  ctx.font = '500 13px sans-serif';
+  ctx.fillText(`Created with ❤️ on Shubhakamna.in • ${festival.nameHi}`, width / 2, height - 22);
+  ctx.restore();
+}
+
+/**
+ * Fast Video Recorder: Records the canvas and audio into an MP4/WebM in ~1.5 to 2.5 seconds.
+ */
+export async function recordFastVideoStatus(
+  canvas: HTMLCanvasElement,
+  options: VideoStatusOptions,
+  heroImg: HTMLImageElement | null,
+  userImg: HTMLImageElement | null,
+  durationSeconds: number = 3.2,
+  onProgress?: (pct: number) => void
+): Promise<VideoStatusResult> {
+  const { festival, senderName, birthdayPerson } = options;
+  const isBirthday = festival.id === 'birthday' || festival.soundType === 'birthday' || !!birthdayPerson;
+
   const fps = 30;
   const totalFrames = Math.floor(durationSeconds * fps);
   const stream = canvas.captureStream(fps);
 
-  // Setup Audio Track
-  const audioSetup = createFestiveAudioStream(durationSeconds, isBirthday);
-  if (audioSetup.stream) {
-    stream.addTrack(audioSetup.stream);
+  // Audio setup
+  const audio = createFestiveAudioStream(durationSeconds, isBirthday);
+  if (audio.streamTrack) {
+    stream.addTrack(audio.streamTrack);
   }
 
-  // Determine best supported MIME type
   let mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
   let extension = 'mp4';
 
@@ -224,18 +528,15 @@ export async function generateVideoStatusBlob(options: VideoStatusOptions): Prom
     } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9,opus')) {
       mimeType = 'video/webm; codecs=vp9,opus';
       extension = 'webm';
-    } else if (MediaRecorder.isTypeSupported('video/webm')) {
-      mimeType = 'video/webm';
-      extension = 'webm';
     } else {
-      mimeType = '';
+      mimeType = 'video/webm';
       extension = 'webm';
     }
   }
 
   const chunks: Blob[] = [];
   const recorder = mimeType 
-    ? new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 })
+    ? new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6000000 })
     : new MediaRecorder(stream);
 
   recorder.ondataavailable = (e) => {
@@ -244,378 +545,40 @@ export async function generateVideoStatusBlob(options: VideoStatusOptions): Prom
     }
   };
 
-  recorder.start();
+  const particles = initParticles(canvas.width, canvas.height, isBirthday);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context not available');
 
-  // Particle System
-  const particles: Array<{ x: number; y: number; size: number; speedY: number; speedX: number; alpha: number; type: string }> = [];
-  for (let i = 0; i < 45; i++) {
-    particles.push({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      size: Math.random() * 8 + 4,
-      speedY: -(Math.random() * 1.5 + 0.6),
-      speedX: (Math.random() - 0.5) * 0.8,
-      alpha: Math.random() * 0.7 + 0.3,
-      type: isBirthday ? (i % 3 === 0 ? 'confetti' : 'sparkle') : (i % 2 === 0 ? 'diya' : 'sparkle')
-    });
-  }
+  return new Promise<VideoStatusResult>((resolve) => {
+    recorder.start();
+    let frame = 0;
 
-  // Pre-calculate full text for typewriter / handwriting animation
-  const fullPoemText = poem || festival.defaultPoem;
-  const poemLength = fullPoemText.length;
+    const recordStep = () => {
+      frame++;
+      const time = frame / fps;
+      drawVideoStatusFrame(ctx, canvas.width, canvas.height, time, heroImg, userImg, options, particles);
 
-  // Marquee / Ticker text scrolling from Right to Left
-  const tickerText = isBirthday
-    ? `🎉 HAPPY BIRTHDAY ${birthdayPerson || 'आकाश'} 🎉 • Wishing you boundless happiness, divine health & immense success • ${senderName} की ओर से ढेर सारी शुभकामनाएँ 🎂🎈✨ • `
-    : `🪔 ${festival.nameHi} की हार्दिक शुभकामनाएँ 🪔 • ${festival.taglineHi} • ${festival.mantraOrShloka || '॥ ॐ श्रीं महालक्ष्म्यै नमः ॥'} • ${senderName} की ओर से सपरिवार मंगलकामनाएँ 🌸✨ • `;
+      const pct = Math.min(Math.floor((frame / totalFrames) * 100), 100);
+      onProgress?.(pct);
 
-  // Render loop using frame-by-frame interpolation
-  return new Promise<VideoStatusResult>((resolve, reject) => {
-    let currentFrame = 0;
-
-    const renderFrame = () => {
-      const time = currentFrame / fps; // current time in seconds
-      const progressRatio = currentFrame / totalFrames;
-
-      // ==========================================
-      // 1. Background Fill & Hero Image (Ken-Burns)
-      // ==========================================
-      ctx.fillStyle = '#0c0a09';
-      ctx.fillRect(0, 0, width, height);
-
-      // Subtle breathing scale (1.0 to 1.06)
-      const scale = 1.0 + Math.sin(time * 0.6) * 0.03;
-      const zoomW = width * scale;
-      const zoomH = (width * scale * heroImg.height) / heroImg.width;
-      const posX = (width - zoomW) / 2;
-      const posY = 180 + Math.sin(time * 0.4) * 15;
-
-      ctx.save();
-      // Rounded Card for Hero image
-      ctx.beginPath();
-      ctx.roundRect(40, 180, 1000, 780, [32]);
-      ctx.clip();
-      ctx.drawImage(heroImg, posX, posY, zoomW, Math.max(zoomH, 780));
-
-      // Vignette inside image
-      const imgVignette = ctx.createLinearGradient(0, 180, 0, 960);
-      imgVignette.addColorStop(0, 'rgba(0,0,0,0.15)');
-      imgVignette.addColorStop(0.7, 'rgba(0,0,0,0.1)');
-      imgVignette.addColorStop(1, 'rgba(12,10,9,0.95)');
-      ctx.fillStyle = imgVignette;
-      ctx.fillRect(40, 180, 1000, 780);
-      ctx.restore();
-
-      // Hero Image Golden Frame
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.roundRect(40, 180, 1000, 780, [32]);
-      ctx.stroke();
-
-      // ==========================================
-      // 2. Slow Blinking Website Branding (Top)
-      // ==========================================
-      // Slowly oscillates between 0.65 and 1.0 alpha with golden glow
-      const blinkAlpha = 0.75 + Math.sin(time * 2.2) * 0.25;
-
-      ctx.save();
-      ctx.globalAlpha = blinkAlpha;
-      ctx.shadowColor = '#f59e0b';
-      ctx.shadowBlur = 24 * blinkAlpha;
-
-      // Header Golden Banner Capsule
-      ctx.fillStyle = 'rgba(28, 25, 23, 0.85)';
-      ctx.beginPath();
-      ctx.roundRect(240, 50, 600, 90, [45]);
-      ctx.fill();
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Glowing Diya Icon & Text
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 36px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🪔 Shubhakamna.in 🪔', 540, 108);
-      ctx.restore();
-
-      // Top Tagline
-      ctx.fillStyle = 'rgba(253, 230, 138, 0.8)';
-      ctx.font = '600 20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('✨ भारत का आधिकारिक 8K शुभकामना स्टेटस ✨', 540, 160);
-
-      // ==========================================
-      // 3. User Photo Overlay if provided
-      // ==========================================
-      if (userImg) {
-        ctx.save();
-        const photoX = 120;
-        const photoY = 880;
-        const photoR = 75;
-
-        // Circular glow
-        ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 18;
-        ctx.fillStyle = '#fbbf24';
-        ctx.beginPath();
-        ctx.arc(photoX, photoY, photoR + 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(userImg, photoX - photoR, photoY - photoR, photoR * 2, photoR * 2);
-        ctx.restore();
-      }
-
-      // ==========================================
-      // 4. Sender Name Royal Card
-      // ==========================================
-      const senderCardY = userImg ? 840 : 880;
-      const senderCardX = userImg ? 220 : 60;
-      const senderCardW = userImg ? 800 : 960;
-
-      ctx.save();
-      ctx.fillStyle = 'rgba(24, 24, 27, 0.85)';
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(senderCardX, senderCardY, senderCardW, 130, [24]);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#fde68a';
-      ctx.font = '500 22px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('✨ स्नेह एवं सम्मान सहित प्रेषित ✨', senderCardX + 28, senderCardY + 40);
-
-      // Sender Name in Golden Gradient
-      const senderGrad = ctx.createLinearGradient(senderCardX + 28, 0, senderCardX + 500, 0);
-      senderGrad.addColorStop(0, '#fef08a');
-      senderGrad.addColorStop(0.5, '#f59e0b');
-      senderGrad.addColorStop(1, '#ffffff');
-      ctx.fillStyle = senderGrad;
-      ctx.font = 'bold 44px sans-serif';
-      ctx.fillText(senderName, senderCardX + 28, senderCardY + 95);
-      ctx.restore();
-
-      // ==========================================
-      // 5. Festival Title
-      // ==========================================
-      ctx.save();
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 50px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.shadowColor = '#f59e0b';
-      ctx.shadowBlur = 12;
-      const displayTitle = isBirthday && birthdayPerson
-        ? `🎉 Happy Birthday ${birthdayPerson}! 🎉`
-        : greetingTitle;
-      ctx.fillText(displayTitle, 540, 1050);
-      ctx.restore();
-
-      // ==========================================
-      // 6. Handwriting / Typewriter Animation Text
-      // ==========================================
-      // Calculate how many characters are revealed based on time (starts typing after 0.8s)
-      const typingStartTime = 0.8;
-      const typingDuration = 6.0; // completes typing in 6s
-      const typingProgress = Math.min(Math.max((time - typingStartTime) / typingDuration, 0), 1);
-      const charsToShow = Math.floor(typingProgress * poemLength);
-      const currentPoemSlice = fullPoemText.slice(0, charsToShow);
-
-      // Card for Handwriting Text
-      ctx.save();
-      ctx.fillStyle = 'rgba(20, 18, 16, 0.9)';
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(60, 1100, 960, 360, [28]);
-      ctx.fill();
-      ctx.stroke();
-
-      // Multiline text wrapping
-      ctx.fillStyle = '#fef3c7';
-      ctx.font = '500 32px sans-serif';
-      ctx.textAlign = 'center';
-      
-      const words = currentPoemSlice.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
-      const maxLineWidth = 880;
-
-      for (let w = 0; w < words.length; w++) {
-        const testLine = currentLine ? `${currentLine} ${words[w]}` : words[w];
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxLineWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = words[w];
-        } else {
-          currentLine = testLine;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
-
-      const lineHeight = 46;
-      const startY = 1180;
-      lines.slice(0, 5).forEach((line, idx) => {
-        ctx.fillText(line, 540, startY + idx * lineHeight);
-      });
-
-      // Animated Golden Quill Cursor Sparkle at the end of typing
-      if (typingProgress < 1.0 && typingProgress > 0) {
-        const cursorAlpha = (Math.sin(time * 12) + 1) / 2;
-        ctx.fillStyle = `rgba(251, 191, 36, ${cursorAlpha})`;
-        ctx.font = 'bold 32px sans-serif';
-        const lastLine = lines[lines.length - 1] || '';
-        const lastLineWidth = ctx.measureText(lastLine).width;
-        ctx.fillText(' ✍️✨', 540 + lastLineWidth / 2 + 10, startY + (lines.length - 1) * lineHeight);
-      }
-      ctx.restore();
-
-      // Mantra / Sacred Blessing Plate
-      if (festival.mantraOrShloka && !isBirthday) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.12)';
-        ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.roundRect(60, 1490, 960, 110, [20]);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = '#fde047';
-        ctx.font = 'italic 500 24px serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(festival.mantraOrShloka.slice(0, 65) + '...', 540, 1555);
-        ctx.restore();
-      }
-
-      // ==========================================
-      // 7. Right-to-Left Scrolling Wish Ticker Ribbon
-      // ==========================================
-      const tickerY = 1640;
-      const tickerH = 110;
-
-      ctx.save();
-      // Ribbon Background
-      const ribbonGrad = ctx.createLinearGradient(0, tickerY, 0, tickerY + tickerH);
-      ribbonGrad.addColorStop(0, '#78350f');
-      ribbonGrad.addColorStop(0.5, '#b45309');
-      ribbonGrad.addColorStop(1, '#451a03');
-      ctx.fillStyle = ribbonGrad;
-      ctx.fillRect(0, tickerY, width, tickerH);
-
-      // Gold Borders
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(0, tickerY);
-      ctx.lineTo(width, tickerY);
-      ctx.moveTo(0, tickerY + tickerH);
-      ctx.lineTo(width, tickerY + tickerH);
-      ctx.stroke();
-
-      // Marquee Text moving from Right to Left
-      const scrollSpeed = 160; // pixels per second
-      const textMetrics = ctx.measureText(tickerText);
-      const totalTextWidth = textMetrics.width * 2.2;
-      const tickerOffset = (time * scrollSpeed) % totalTextWidth;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 30px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.shadowColor = '#000000';
-      ctx.shadowBlur = 6;
-
-      const repeatedTicker = tickerText + tickerText + tickerText;
-      ctx.fillText(repeatedTicker, width - tickerOffset, tickerY + 68);
-      ctx.restore();
-
-      // ==========================================
-      // 8. Animated Particles (Diyas & Sparkles)
-      // ==========================================
-      ctx.save();
-      particles.forEach((p) => {
-        p.y += p.speedY;
-        p.x += p.speedX;
-        if (p.y < 0) p.y = height + 10;
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-
-        ctx.globalAlpha = p.alpha * (0.8 + Math.sin(time * 3 + p.x) * 0.2);
-
-        if (p.type === 'diya') {
-          // Draw small glowing Diya
-          ctx.fillStyle = '#ea580c';
-          ctx.beginPath();
-          ctx.ellipse(p.x, p.y, p.size * 1.5, p.size * 0.8, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Diya flame
-          ctx.fillStyle = '#fef08a';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y - p.size, p.size * 0.7, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (p.type === 'confetti') {
-          // Colorful birthday confetti
-          const colors = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
-          ctx.fillStyle = colors[Math.floor(p.x) % colors.length];
-          ctx.fillRect(p.x, p.y, p.size * 1.2, p.size * 0.6);
-        } else {
-          // 4-point golden sparkle
-          ctx.fillStyle = '#fef08a';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-      ctx.restore();
-
-      // ==========================================
-      // 9. Bottom Footer Badge & WhatsApp Status Stamp
-      // ==========================================
-      ctx.save();
-      ctx.fillStyle = 'rgba(12, 10, 9, 0.95)';
-      ctx.fillRect(0, 1780, width, 140);
-
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 26px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🟢 WhatsApp Status • 8K Ultra HD Animated Video 🟢', 540, 1835);
-
-      ctx.fillStyle = '#a8a29e';
-      ctx.font = '500 20px sans-serif';
-      ctx.fillText(`Created with ❤️ on Shubhakamna.in • ${festival.nameHi}`, 540, 1875);
-      ctx.restore();
-
-      // Advance Frame
-      currentFrame++;
-      const percent = Math.min(Math.floor((currentFrame / totalFrames) * 80) + 15, 95);
-      onProgress?.(percent, `8K वीडियो रेंडर हो रहा है... ${percent}%`);
-
-      if (currentFrame < totalFrames) {
-        requestAnimationFrame(renderFrame);
+      if (frame < totalFrames) {
+        requestAnimationFrame(recordStep);
       } else {
-        onProgress?.(98, 'वीडियो फ़ाइल एन्कोड की जा रही है...');
         recorder.stop();
-        audioSetup.cleanup();
+        audio.cleanup();
 
         recorder.onstop = () => {
-          const finalBlob = new Blob(chunks, { type: mimeType || 'video/mp4' });
-          const videoUrl = URL.createObjectURL(finalBlob);
+          const blob = new Blob(chunks, { type: mimeType });
+          const url = URL.createObjectURL(blob);
           const safeName = (senderName || 'Wishes').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
           const fileName = isBirthday
             ? `Happy-Birthday-${birthdayPerson || 'Akash'}-8K-Status.${extension}`
             : `Shubhakamna-8K-Video-Status-${festival.id}-${safeName}.${extension}`;
 
-          onProgress?.(100, 'वीडियो स्टेटस तैयार है! 🎉');
           resolve({
-            blob: finalBlob,
-            url: videoUrl,
-            mimeType: mimeType || 'video/mp4',
+            blob,
+            url,
+            mimeType,
             extension,
             fileName
           });
@@ -623,6 +586,6 @@ export async function generateVideoStatusBlob(options: VideoStatusOptions): Prom
       }
     };
 
-    renderFrame();
+    recordStep();
   });
 }

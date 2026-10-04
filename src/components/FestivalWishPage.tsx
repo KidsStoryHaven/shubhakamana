@@ -161,7 +161,23 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
   const getResolvedDeitySlides = (fest: Festival): DivineDeitySlide[] => {
     const rawSlides = getFestivalDeitySlides(fest.id);
-    if (fest.heroImage && !rawSlides.some(s => s.imageUrl === fest.heroImage)) {
+    if (rawSlides && rawSlides.length > 0) {
+      if (fest.heroImage && rawSlides[0].imageUrl !== fest.heroImage) {
+        const customSlide: DivineDeitySlide = {
+          id: `${fest.id}-hero-main`,
+          godName: fest.nameHi,
+          title: fest.greetingTitle || fest.nameHi,
+          tagline: fest.taglineHi || 'पावन ईश्वरीय दर्शन',
+          badge: fest.badge || '✨ पावन दर्शन',
+          mantra: fest.mantraOrShloka || '॥ ॐ श्रीं ह्रीं क्लीं ॥',
+          imageUrl: fest.heroImage
+        };
+        const others = rawSlides.filter(s => s.imageUrl !== fest.heroImage);
+        return [customSlide, ...others];
+      }
+      return rawSlides;
+    }
+    if (fest.heroImage) {
       return [
         {
           id: `${fest.id}-hero-custom`,
@@ -171,11 +187,10 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           badge: fest.badge || '✨ पावन दर्शन',
           mantra: fest.mantraOrShloka || '॥ ॐ श्रीं ह्रीं क्लीं ॥',
           imageUrl: fest.heroImage
-        },
-        ...rawSlides
+        }
       ];
     }
-    return rawSlides;
+    return [];
   };
 
   const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>(() => getResolvedDeitySlides(festival));

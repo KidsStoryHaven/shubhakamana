@@ -109,13 +109,29 @@ export function saveStoredDeitySlides(festivalId: string, slides: DivineDeitySli
     let allSlides: Record<string, DivineDeitySlide[]> = {};
     const raw = localStorage.getItem(STORAGE_KEYS.DEITY_SLIDES);
     if (raw) {
-      allSlides = JSON.parse(raw);
-    } else {
-      allSlides = { ...DEFAULT_DEITY_GALLERIES };
+      try {
+        allSlides = JSON.parse(raw);
+      } catch {
+        allSlides = {};
+      }
     }
 
     allSlides[festivalId] = slides;
     localStorage.setItem(STORAGE_KEYS.DEITY_SLIDES, JSON.stringify(allSlides));
+
+    // Also update festival's primary heroImage to the #1 slide photo
+    if (slides.length > 0 && slides[0]?.imageUrl) {
+      const rawFests = localStorage.getItem(STORAGE_KEYS.FESTIVALS);
+      const parsedFests: Festival[] = rawFests ? JSON.parse(rawFests) : [...DEFAULT_FESTIVALS];
+      const updatedFests = parsedFests.map(f => {
+        if (f.id === festivalId) {
+          return { ...f, heroImage: slides[0].imageUrl };
+        }
+        return f;
+      });
+      localStorage.setItem(STORAGE_KEYS.FESTIVALS, JSON.stringify(updatedFests));
+    }
+
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
   } catch (e) {
     console.error('Failed to save deity slides:', e);

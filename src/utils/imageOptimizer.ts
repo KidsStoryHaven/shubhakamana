@@ -6,8 +6,8 @@
 
 export async function optimizeImageForWeb(
   file: File,
-  maxDimension = 1200,
-  quality = 0.82
+  maxDimension = 960,
+  quality = 0.78
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     // If SVG or small gif, return dataURL directly

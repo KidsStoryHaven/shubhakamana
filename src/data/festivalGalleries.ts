@@ -143,27 +143,48 @@ const AUTHENTIC_FESTIVAL_PHOTOS: Record<string, string[]> = {
  * followed by verified authentic photos matching that specific deity/celebration.
  */
 export function getFestivalImages(festivalId: string, defaultHero: string): string[] {
-  const artworks = DIVINE_ARTWORKS[festivalId] || [];
-  const photos = AUTHENTIC_FESTIVAL_PHOTOS[festivalId] || [];
-
   const combined: string[] = [];
 
-  // 1. Add authentic SVG artworks first (they NEVER break, 100% culturally accurate)
-  artworks.forEach(art => {
-    if (!combined.includes(art)) combined.push(art);
-  });
+  // 1. Stored Deity Slides first
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('shubhakamna_deity_slides_v2') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed[festivalId] && Array.isArray(parsed[festivalId])) {
+        parsed[festivalId].forEach((s: any) => {
+          if (s.imageUrl && !combined.includes(s.imageUrl)) combined.push(s.imageUrl);
+        });
+      }
+    }
+  } catch {}
 
-  // 2. Add default hero image if it's not already in list
+  // 2. Stored Festival Hero Image
+  try {
+    const rawFests = typeof window !== 'undefined' ? localStorage.getItem('shubhakamna_festivals_v2') : null;
+    if (rawFests) {
+      const parsedFests = JSON.parse(rawFests);
+      const f = parsedFests.find((x: any) => x.id === festivalId);
+      if (f?.heroImage && !combined.includes(f.heroImage)) {
+        combined.unshift(f.heroImage);
+      }
+    }
+  } catch {}
+
+  // 3. Add default hero image if not in list
   if (defaultHero && !combined.includes(defaultHero)) {
     combined.push(defaultHero);
   }
 
-  // 3. Add verified authentic photos for this exact festival
+  const artworks = DIVINE_ARTWORKS[festivalId] || [];
+  artworks.forEach(art => {
+    if (!combined.includes(art)) combined.push(art);
+  });
+
+  const photos = AUTHENTIC_FESTIVAL_PHOTOS[festivalId] || [];
   photos.forEach(photo => {
     if (!combined.includes(photo)) combined.push(photo);
   });
 
-  // If still empty, return defaultHero
   if (combined.length === 0) {
     return [defaultHero];
   }
