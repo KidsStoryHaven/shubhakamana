@@ -7,6 +7,7 @@ import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
 import { VideoStatusModal } from './VideoStatusModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
+import { NavratriKathaAudioSection } from './NavratriKathaAudioSection';
 import { DivineDeitySlide } from '../data/divineGodsData';
 import { getStoredFestivals, getStoredDeitySlides } from '../data/festivalStore';
 import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
@@ -50,7 +51,8 @@ import {
   Play,
   Pause,
   PartyPopper,
-  Film
+  Film,
+  Edit3
 } from 'lucide-react';
 import { getUploadedAudioFile } from '../utils/audioStorage';
 
@@ -708,51 +710,91 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
             {/* 1. If BIRTHDAY: Dedicated Celebrant Photo Frame with Golden Crown */}
             {isBirthday ? (
-              <div className="my-3 flex flex-col items-center justify-center">
-                <div className="relative">
-                  {/* Golden Birthday Crown */}
-                  <div className="text-3xl sm:text-4xl text-center -mb-2 select-none animate-bounce">
-                    👑
-                  </div>
-                  <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1.5 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl shadow-amber-500/40">
-                    {birthdayPhoto ? (
-                      <img
-                        src={birthdayPhoto}
-                        alt={birthdayPerson}
-                        className="w-full h-full rounded-full object-cover border-4 border-stone-950"
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-full bg-stone-900 border-4 border-stone-950 flex flex-col items-center justify-center text-amber-300 p-2">
-                        <span className="text-3xl">🎂</span>
-                        <span className="text-[9px] text-stone-400 text-center font-bold mt-1">फोटो जोड़ें</span>
+              <div className="my-4 flex flex-col items-center justify-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 flex-wrap">
+                  
+                  {/* Celebrant Photo (बड़ा व स्पष्ट) */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative">
+                      {/* Golden Birthday Crown */}
+                      <div className="text-4xl sm:text-5xl text-center -mb-3 select-none animate-bounce">
+                        👑
                       </div>
-                    )}
+                      <div className="relative w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-3xl p-2 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl shadow-amber-500/40 border-2 border-yellow-300">
+                        {birthdayPhoto ? (
+                          <img
+                            src={birthdayPhoto}
+                            alt={birthdayPerson}
+                            className="w-full h-full rounded-2xl object-cover border-4 border-stone-950 shadow-inner"
+                          />
+                        ) : (
+                          <div className="w-full h-full rounded-2xl bg-stone-900 border-4 border-stone-950 flex flex-col items-center justify-center text-amber-300 p-3 text-center">
+                            <span className="text-4xl sm:text-5xl mb-1">🎂</span>
+                            <span className="text-xs sm:text-sm text-stone-200 font-bold">जन्मदिन वाले की फोटो</span>
+                            <span className="text-[10px] text-stone-400 mt-1">नीचे बटन से फोटो लगाएँ</span>
+                          </div>
+                        )}
 
-                    {birthdayPhoto && (
+                        {birthdayPhoto && (
+                          <button
+                            onClick={handleRemoveBirthdayPhoto}
+                            title="फोटो हटाएँ"
+                            className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-2 text-xs shadow-lg cursor-pointer transition border border-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Celebrant Name Ribbon */}
+                    <div className="mt-3 flex flex-col items-center gap-1.5">
+                      <span className="text-sm sm:text-base text-yellow-300 font-black bg-black/80 px-5 py-1.5 rounded-full border border-yellow-400/50 shadow-xl">
+                        🎂 {birthdayPerson} (जन्मदिन)
+                      </span>
                       <button
-                        onClick={handleRemoveBirthdayPhoto}
-                        title="फोटो हटाएँ"
-                        className="absolute top-2 right-0 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 text-[10px] shadow-md cursor-pointer transition"
+                        type="button"
+                        onClick={() => birthdayFileInputRef.current?.click()}
+                        className="text-xs text-amber-300 hover:text-white underline flex items-center gap-1.5 cursor-pointer font-bold mt-0.5 bg-stone-900/80 px-3 py-1 rounded-xl border border-stone-800"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <Camera className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{birthdayPhoto ? 'फोटो बदलें' : 'जन्मदिन वाले की फोटो लगाएँ 📷'}</span>
                       </button>
-                    )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Celebrant Name Ribbon */}
-                <div className="mt-2 flex flex-col items-center gap-1">
-                  <span className="text-xs sm:text-sm text-yellow-300 font-extrabold bg-black/70 px-4 py-1 rounded-full border border-yellow-400/40 shadow-lg">
-                    ✨ {birthdayPerson} की पावन छवि ✨
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => birthdayFileInputRef.current?.click()}
-                    className="text-[11px] text-amber-300 hover:text-white underline flex items-center gap-1 cursor-pointer font-medium mt-0.5"
-                  >
-                    <Camera className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{birthdayPhoto ? 'फोटो बदलें' : 'जन्मदिन वाले की फोटो लगाएँ 📷'}</span>
-                  </button>
+                  {/* If Sender also added their photo in Birthday mode, show sender photo */}
+                  {userPhoto && (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-3xl p-1.5 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl shadow-amber-500/30">
+                        <img
+                          src={userPhoto}
+                          alt={senderName}
+                          className="w-full h-full rounded-2xl object-cover border-4 border-stone-950"
+                        />
+                        <button
+                          onClick={handleRemovePhoto}
+                          title="फोटो हटाएँ"
+                          className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1.5 text-xs shadow-md cursor-pointer transition border border-white"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="mt-2.5 flex flex-col items-center gap-1">
+                        <span className="text-xs sm:text-sm text-amber-300 font-bold bg-black/80 px-3.5 py-1 rounded-full border border-amber-500/40">
+                          💐 प्रेषक: {senderName}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-[11px] text-amber-300 hover:text-white underline cursor-pointer"
+                        >
+                          प्रेषक फोटो बदलें
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             ) : (
@@ -767,42 +809,43 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                   />
                 </div>
 
+                {/* Sender Photo Card - Big, Clean, Elegant Portrait */}
                 {userPhoto ? (
-                  <div className="flex flex-col items-center justify-center my-3">
-                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-xl shadow-amber-500/30 animate-pulse">
+                  <div className="flex flex-col items-center justify-center my-4">
+                    <div className="relative w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-3xl p-2 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl shadow-amber-500/40 border-2 border-yellow-300 animate-pulse">
                       <img
                         src={userPhoto}
                         alt={senderName}
-                        className="w-full h-full rounded-full object-cover border-2 border-stone-950"
+                        className="w-full h-full rounded-2xl object-cover border-4 border-stone-950 shadow-inner"
                       />
                       <button
                         onClick={handleRemovePhoto}
                         title="फोटो हटाएँ"
-                        className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 text-[10px] shadow-md cursor-pointer transition"
+                        className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-2 text-xs shadow-lg cursor-pointer transition border border-white"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <span className="text-[11px] text-amber-300 font-semibold bg-black/60 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                        ✨ {senderName} की पावन छवि ✨
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs sm:text-sm text-amber-200 font-extrabold bg-stone-900/90 px-4 py-1.5 rounded-full border border-amber-400/50 shadow-lg">
+                        ✨ {senderName} (शुभकामना प्रेषक) ✨
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                        className="text-xs text-amber-300 hover:text-white underline font-bold bg-stone-900/80 px-3 py-1 rounded-xl border border-stone-700 cursor-pointer"
                       >
-                        बदलें
+                        फोटो बदलें
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="my-2">
+                  <div className="my-3 flex justify-center">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-medium transition cursor-pointer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 border-2 border-amber-400/50 text-amber-200 text-xs sm:text-sm font-bold transition cursor-pointer shadow-md"
                     >
-                      <Camera className="w-3.5 h-3.5 text-amber-400" />
-                      <span>अपनी फोटो लगाएँ (Upload Photo)</span>
+                      <Camera className="w-4 h-4 text-amber-400" />
+                      <span>अपनी बड़ी फोटो जोड़ें (Upload Your Photo) 📷</span>
                     </button>
                   </div>
                 )}
@@ -914,6 +957,18 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               <p className="text-[11px] text-amber-300/70 mt-0.5">
                 {isBirthday ? `की ओर से ${birthdayPerson} को जन्मदिन की लख-लख बधाई` : 'की ओर से आपको एवं आपके पूरे परिवार को'}
               </p>
+            </div>
+
+            {/* 📢 Mobile-First Quick "Change Name" Button directly below Sender Name Plate */}
+            <div className="mt-2.5 mb-2">
+              <button
+                type="button"
+                onClick={handleScrollToNameInput}
+                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition transform active:scale-95 cursor-pointer border-2 border-yellow-200 animate-pulse"
+              >
+                <Edit3 className="w-4 h-4 text-stone-950" />
+                <span>👇 आप भी अपने नाम से ऐसी विश भेजें (यहाँ नाम बदलें) ✨</span>
+              </button>
             </div>
 
             {/* Festival Grand Title */}
@@ -1036,22 +1091,25 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                   ✍️ अपना नाम और फोटो जोड़कर विश तैयार करें:
                 </label>
 
-                {/* Name input */}
-                <form onSubmit={handleApplyName} className="flex gap-2">
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    value={inputName}
-                    onChange={(e) => setInputName(e.target.value)}
-                    placeholder="अपना नाम यहाँ लिखें (उदा. राहुल, सुधा)..."
-                    maxLength={40}
-                    className="flex-1 bg-stone-900 border border-amber-500/40 rounded-xl px-3.5 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/50"
-                  />
+                {/* Name input - Full Width Input with Button Directly Underneath on Mobile */}
+                <form onSubmit={handleApplyName} className="flex flex-col gap-2.5">
+                  <div className="relative">
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={inputName}
+                      onChange={(e) => setInputName(e.target.value)}
+                      placeholder="अपना नाम यहाँ लिखें (उदा. राहुल, सुधा, शर्मा परिवार)..."
+                      maxLength={40}
+                      className="w-full bg-stone-900 border-2 border-amber-500/50 rounded-2xl px-4 py-3 text-sm sm:text-base text-white placeholder-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/50 shadow-inner"
+                    />
+                  </div>
                   <button
                     type="submit"
-                    className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition flex items-center gap-1 shadow-md cursor-pointer shrink-0"
+                    className="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black py-3 px-5 rounded-2xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 cursor-pointer active:scale-98 border border-yellow-200"
                   >
-                    <span>नाम बदलें</span>
+                    <Check className="w-4 h-4 text-stone-950" />
+                    <span>✨ अपना नाम सेट करें / नाम बदलें (Save Name) ✨</span>
                   </button>
                 </form>
 
@@ -1186,6 +1244,11 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
             {festival.significance}
           </p>
         </div>
+
+        {/* 🌸 Navratri Mythological Katha Audio Player & Do's and Don'ts 🌸 */}
+        {(festival.id === 'navratri' || festival.slug.includes('navratri') || festival.id.includes('durga')) && (
+          <NavratriKathaAudioSection />
+        )}
 
         {/* Top Copy-Paste Wishes */}
         <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-5 shadow-lg">

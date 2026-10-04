@@ -30,7 +30,7 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
   const SLIDE_INTERVAL_MS = 6000; // 6 seconds auto-slide
   const TICK_MS = 100;
 
-  // Auto-advance slide on timer (clean, non-nested callback)
+  // Auto-advance slide on timer
   useEffect(() => {
     if (!isPlaying || slides.length <= 1) return;
 
@@ -89,11 +89,11 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
   const currentSlide = slides[safeIndex] || slides[0];
 
   return (
-    <div className="w-full space-y-3">
-      {/* Main Slideshow Frame */}
+    <div className="w-full space-y-2.5">
+      {/* 🖼️ Main Photo Frame (100% CLEAN - No Text Obstructing Deity Face/Darshan) */}
       <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-3xl overflow-hidden border-2 border-amber-400/60 shadow-2xl bg-black group select-none">
         
-        {/* Active Deity Image / Divine Artwork with smooth transition */}
+        {/* Active Deity Image / Divine Artwork - Completely unobstructed */}
         <img
           key={currentSlide.id}
           src={resolveDirectImageUrl(currentSlide.imageUrl)}
@@ -110,77 +110,81 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
           className="w-full h-full object-cover transition duration-700 ease-out animate-fade-in"
         />
 
-        {/* Subtle Vignette Gradient for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/50 pointer-events-none" />
-
-        {/* Top Header Overlay: Deity Badge & Slide Counter */}
-        <div className="absolute top-0 inset-x-0 p-3 sm:p-4 flex items-center justify-between z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/80 border border-amber-400/50 text-xs font-bold text-amber-300 backdrop-blur-md shadow-xl">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-            <span>{currentSlide.badge} • साक्षात दर्शन</span>
-          </div>
-
-          {/* Controls: Play/Pause & Counter */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={togglePlay}
-              title={isPlaying ? 'ऑटो-स्लाइड रोकें' : 'ऑटो-स्लाइड चलाएँ'}
-              className="p-1.5 rounded-full bg-black/80 border border-amber-400/50 text-amber-300 hover:text-white backdrop-blur-md transition cursor-pointer"
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
-            <span className="px-2.5 py-1 rounded-full bg-black/80 border border-stone-700 text-xs text-stone-200 backdrop-blur-md font-mono font-bold">
-              {currentIndex + 1} / {slides.length}
-            </span>
-          </div>
-        </div>
-
-        {/* Progress Bar (6s Auto-slide indicator) */}
+        {/* Minimal Thin Auto-slide Progress Indicator at top edge */}
         {isPlaying && (
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-black/50 z-20 overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-black/40 z-20 overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 transition-all duration-100 ease-linear shadow-lg shadow-amber-400/50"
+              className="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 transition-all duration-100 ease-linear shadow-sm"
               style={{ width: `${progress}%` }}
             />
           </div>
         )}
 
-        {/* Left & Right Navigation Arrows */}
+        {/* Left & Right Subtle Navigation Arrows */}
         <button
           onClick={handlePrev}
-          title="पिछले भगवान/स्वरूप"
-          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 border border-amber-400/60 text-amber-300 hover:text-white flex items-center justify-center transition backdrop-blur-sm cursor-pointer z-10 shadow-lg"
+          title="पिछली फ़ोटो / स्वरूप"
+          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/80 border border-amber-400/50 text-amber-300 hover:text-white flex items-center justify-center transition backdrop-blur-sm cursor-pointer z-10 shadow-lg opacity-80 group-hover:opacity-100"
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
         <button
           onClick={handleNext}
-          title="अगले भगवान/स्वरूप"
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 border border-amber-400/60 text-amber-300 hover:text-white flex items-center justify-center transition backdrop-blur-sm cursor-pointer z-10 shadow-lg"
+          title="अगली फ़ोटो / स्वरूप"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/80 border border-amber-400/50 text-amber-300 hover:text-white flex items-center justify-center transition backdrop-blur-sm cursor-pointer z-10 shadow-lg opacity-80 group-hover:opacity-100"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-
-        {/* Bottom Deity Title & Mantra Bar */}
-        <div className="absolute bottom-0 inset-x-0 p-3 sm:p-4 text-left z-10 space-y-1">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="text-sm sm:text-base font-extrabold text-amber-200 font-serif truncate drop-shadow-md">
-              {currentSlide.title}
-            </h4>
-            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 font-semibold">
-              <Check className="w-3 h-3" />
-              <span>कार्ड पर सेट है</span>
-            </span>
-          </div>
-          <p className="text-[11px] text-stone-300 truncate">
-            {currentSlide.tagline}
-          </p>
-        </div>
-
       </div>
 
-      {/* Horizontal Deity Selector Tabs (All Gods of this Festival) */}
-      <div className="space-y-1.5">
+      {/* 🌸 Dedicated Info & Jhanki Bar (Positioned Completely BELOW the Photo) */}
+      <div className="w-full rounded-2xl bg-gradient-to-r from-stone-900 via-amber-950/40 to-stone-900 border border-amber-500/30 p-3 sm:p-3.5 shadow-lg flex flex-col gap-1.5 text-left">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          
+          {/* Deity Name & Jhanki Title */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-600/90 text-white text-[11px] font-extrabold border border-amber-400/40 shadow-sm shrink-0">
+              <Sparkles className="w-3 h-3 text-yellow-300" />
+              <span>{currentSlide.badge}</span>
+            </span>
+            <h4 className="text-sm sm:text-base font-extrabold text-amber-200 font-serif truncate">
+              {currentSlide.title}
+            </h4>
+          </div>
+
+          {/* Controls: Counter & Play/Pause */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
+              <Check className="w-3 h-3" />
+              <span className="hidden sm:inline">कार्ड पर सेट है</span>
+            </span>
+
+            <button
+              onClick={togglePlay}
+              title={isPlaying ? 'ऑटो-स्लाइड रोकें' : 'ऑटो-स्लाइड चलाएँ'}
+              className="p-1 rounded-lg bg-black/60 border border-amber-500/40 text-amber-300 hover:text-white transition cursor-pointer text-xs flex items-center gap-1 px-2"
+            >
+              {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              <span className="text-[10px]">{isPlaying ? 'रोकें' : 'चलाएँ'}</span>
+            </button>
+
+            <span className="px-2 py-0.5 rounded-lg bg-black/60 border border-stone-700 text-[11px] text-amber-400 font-mono font-bold">
+              {safeIndex + 1} / {slides.length}
+            </span>
+          </div>
+
+        </div>
+
+        {/* Tagline / Significance under photo */}
+        {currentSlide.tagline && (
+          <p className="text-xs text-stone-300 leading-snug">
+            {currentSlide.tagline}
+          </p>
+        )}
+      </div>
+
+      {/* 🧭 Horizontal Deity Selector Tabs (All Gods of this Festival) */}
+      <div className="space-y-1.5 pt-1">
         <div className="flex items-center justify-between text-xs text-stone-300 px-1 font-medium">
           <span className="text-amber-300 font-semibold">
             👇 अपने इष्टदेव का स्वरूप चुनें ({slides.length} पावन दर्शन):
