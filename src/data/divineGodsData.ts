@@ -668,6 +668,16 @@ export const FESTIVAL_DEITY_GALLERIES: Record<string, DivineDeitySlide[]> = {
  * Guarantees that every slide depicts the real God/Deity/Personality.
  */
 export function getFestivalDeitySlides(festivalId: string): DivineDeitySlide[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('shubhakamna_deity_slides_v2') : null;
+    if (raw) {
+      const parsed: Record<string, DivineDeitySlide[]> = JSON.parse(raw);
+      if (parsed[festivalId] && Array.isArray(parsed[festivalId]) && parsed[festivalId].length > 0) {
+        return parsed[festivalId];
+      }
+    }
+  } catch {}
+
   if (FESTIVAL_DEITY_GALLERIES[festivalId]) {
     return FESTIVAL_DEITY_GALLERIES[festivalId];
   }

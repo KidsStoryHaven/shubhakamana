@@ -3,6 +3,7 @@ import { WishCategory, HindiWish } from '../data/wishesData';
 import { generateWishCardBlob } from '../utils/canvasCardGenerator';
 import { festiveAudio } from '../utils/festiveAudio';
 import { getUploadedAudioFile } from '../utils/audioStorage';
+import { awardUserPoints } from '../data/userStore';
 import { 
   Sparkles, 
   Download, 
@@ -250,6 +251,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      awardUserPoints('download_card', category.nameHi);
     } catch (err) {
       alert('इमेज डाउनलोड करने में समस्या आई, कृपया पुनः प्रयास करें।');
     } finally {
@@ -258,6 +260,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
   };
 
   const handleWhatsAppShare = async () => {
+    awardUserPoints('whatsapp_share', category.nameHi);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
     const pageUrl = `${origin}/${category.slug}/`;
     const fromDisplayName = senderName.trim() || 'आपके शुभचिंतक';
@@ -293,6 +296,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
   };
 
   const handleFacebookShare = () => {
+    awardUserPoints('whatsapp_share', category.nameHi);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
     const pageUrl = `${origin}/${category.slug}/`;
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
@@ -300,6 +304,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
   };
 
   const handleCopyLink = () => {
+    awardUserPoints('link_copy', category.nameHi);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
     const pageUrl = `${origin}/${category.slug}/`;
     navigator.clipboard.writeText(pageUrl).then(() => {

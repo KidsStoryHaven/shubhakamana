@@ -6,7 +6,7 @@ import { SurpriseUnbox } from './SurpriseUnbox';
 import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
-import { getFestivalDeitySlides } from '../data/divineGodsData';
+import { getFestivalDeitySlides, DivineDeitySlide } from '../data/divineGodsData';
 import { AdBanner } from './AdBanner';
 import { awardUserPoints } from '../data/userStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
@@ -142,8 +142,17 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusModalImage, setStatusModalImage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>(() => getFestivalDeitySlides(festival.id));
 
-  const deitySlides = getFestivalDeitySlides(festival.id);
+  useEffect(() => {
+    const handleDataChanged = () => {
+      setDeitySlides(getFestivalDeitySlides(festival.id));
+    };
+    handleDataChanged();
+    window.addEventListener('shubhakamna_data_changed', handleDataChanged);
+    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+  }, [festival.id]);
+
   const safeActiveIndex = (activeImageIndex >= 0 && activeImageIndex < deitySlides.length) ? activeImageIndex : 0;
   const activeHeroImage = deitySlides[safeActiveIndex]?.imageUrl || festival.heroImage;
 
@@ -517,6 +526,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      awardUserPoints('download_card', festival.nameHi);
     } catch (err) {
       console.error('Canvas export error:', err);
     } finally {

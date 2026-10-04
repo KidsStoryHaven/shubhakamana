@@ -11,6 +11,8 @@ import { AdminPanel } from './components/AdminPanel';
 import { AdBanner } from './components/AdBanner';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { UserAuthModal } from './components/UserAuthModal';
+import { LoginPromptPopup } from './components/LoginPromptPopup';
+import { LivePointsTickerBanner } from './components/LivePointsTickerBanner';
 import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
 import { getStoredFestivals, getStoredCategories } from './data/festivalStore';
 import { getStoredAdSettings } from './data/adStore';

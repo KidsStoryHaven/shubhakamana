@@ -20,7 +20,7 @@ export interface PointActivity {
   id: string;
   userId: string;
   userName: string;
-  activityType: 'whatsapp_share' | 'status_share' | 'link_copy' | 'signup_bonus' | 'admin_bonus';
+  activityType: 'whatsapp_share' | 'status_share' | 'link_copy' | 'download_card' | 'signup_bonus' | 'admin_bonus';
   pointsEarned: number;
   festivalName: string;
   timestamp: string;
@@ -30,6 +30,7 @@ export interface PointRules {
   whatsappShare: number;
   statusShare: number;
   copyLink: number;
+  downloadCard: number; // e.g. 15 points
   signupBonus: number;
   maxDailyPoints: number; // Maximum points a user can earn per day (anti-manipulation)
   shareCooldownSeconds: number; // Cooldown in seconds between share clicks
@@ -65,6 +66,7 @@ export const DEFAULT_POINT_RULES: PointRules = {
   whatsappShare: 25,
   statusShare: 40,
   copyLink: 10,
+  downloadCard: 15,
   signupBonus: 50,
   maxDailyPoints: 200, // Anti-abuse limit: 200 points max per day
   shareCooldownSeconds: 8, // 8-second cooldown between share clicks
@@ -328,6 +330,20 @@ export function registerUser(params: {
   saveStoredUsers(updatedUsers);
   setCurrentUser(newUser);
 
+  // Emit live points activity event
+  try {
+    const act: PointActivity = {
+      id: `act_${Date.now()}`,
+      userId: newUser.id,
+      userName: newUser.name,
+      activityType: 'signup_bonus',
+      pointsEarned: rules.signupBonus,
+      festivalName: 'Shubhakamna',
+      timestamp: 'अभी'
+    };
+    window.dispatchEvent(new CustomEvent('shubhakamna_new_point_activity', { detail: act }));
+  } catch {}
+
   return { success: true, message: `खाता सफलतापूर्वक बन गया! आपको मुफ़्त ${rules.signupBonus} बोनस अंक मिले 🎉`, user: newUser };
 }
 
@@ -359,7 +375,7 @@ export function logoutUser(): void {
  * Award points with Anti-Abuse, Rate-Limiting & Daily Caps
  */
 export function awardUserPoints(
-  activityType: 'whatsapp_share' | 'status_share' | 'link_copy',
+  activityType: 'whatsapp_share' | 'status_share' | 'link_copy' | 'download_card' | 'signup_bonus',
   festivalName: string
 ): { awarded: boolean; points: number; newTotal: number; userName?: string; message?: string } {
   const current = getCurrentUser();
@@ -406,6 +422,8 @@ export function awardUserPoints(
   if (activityType === 'whatsapp_share') pointsToAdd = rules.whatsappShare;
   else if (activityType === 'status_share') pointsToAdd = rules.statusShare;
   else if (activityType === 'link_copy') pointsToAdd = rules.copyLink;
+  else if (activityType === 'download_card') pointsToAdd = rules.downloadCard || 15;
+  else if (activityType === 'signup_bonus') pointsToAdd = rules.signupBonus || 50;
 
   // Cap at remaining daily allowance
   const remainingToday = rules.maxDailyPoints - currentDayPoints;
@@ -444,6 +462,20 @@ export function awardUserPoints(
 
   const updatedCurrentUser = updatedUsers.find(u => u.id === current.id) || current;
   setCurrentUser(updatedCurrentUser);
+
+  // Emit live points activity event for right-to-left floating banner & ticker
+  try {
+    const act: PointActivity = {
+      id: `act_${Date.now()}`,
+      userId: updatedCurrentUser.id,
+      userName: updatedCurrentUser.name,
+      activityType,
+      pointsEarned: pointsToAdd,
+      festivalName: festivalName || 'शुभकामना',
+      timestamp: 'अभी'
+    };
+    window.dispatchEvent(new CustomEvent('shubhakamna_new_point_activity', { detail: act }));
+  } catch {}
 
   return {
     awarded: true,

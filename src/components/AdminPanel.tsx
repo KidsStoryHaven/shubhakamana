@@ -83,6 +83,7 @@ import {
   getUploadedAudioFileName,
   deleteUploadedAudioFile
 } from '../utils/audioStorage';
+import { optimizeImageForWeb } from '../utils/imageOptimizer';
 import { 
   WishCategory, 
   HindiWish, 
@@ -456,18 +457,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  const handleImageUploadForFestival = (e: React.ChangeEvent<HTMLInputElement>, targetField: 'heroImage') => {
+  const handleImageUploadForFestival = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'heroImage') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
+    try {
+      showToast('फ़ोटो ऑप्टिमाइज़ हो रही है... ⏳');
+      const optimizedBase64 = await optimizeImageForWeb(file, 1200, 0.82);
       if (editingFestival) {
-        setEditingFestival({ ...editingFestival, [targetField]: base64 });
+        setEditingFestival({ ...editingFestival, [targetField]: optimizedBase64 });
       }
-    };
-    reader.readAsDataURL(file);
+      showToast('फ़ोटो लोड हो गई! "सेव करें" दबाकर पक्का करें।');
+    } catch (err) {
+      console.error('Image optimization failed:', err);
+      showToast('फ़ोटो अपलोड करने में समस्या आई!');
+    }
   };
 
   // ==========================================
@@ -670,18 +674,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsAddingSlide(false);
   };
 
-  const handleUploadSlideImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadSlideImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
+    try {
+      showToast('फ़ोटो ऑप्टिमाइज़ हो रही है... ⏳');
+      const optimizedBase64 = await optimizeImageForWeb(file, 1200, 0.82);
       if (editingSlide) {
-        setEditingSlide({ ...editingSlide, imageUrl: base64 });
+        setEditingSlide({ ...editingSlide, imageUrl: optimizedBase64 });
       }
-    };
-    reader.readAsDataURL(file);
+      showToast('फ़ोटो लोड हो गई! "सेव करें" दबाएँ।');
+    } catch (err) {
+      console.error('Slide image optimization failed:', err);
+      showToast('फ़ोटो अपलोड करने में समस्या आई!');
+    }
   };
 
   // ==========================================

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Festival, FestivalCategory, CategoryInfo } from '../data/festivals';
 import { getStoredFestivals, getStoredCategories } from '../data/festivalStore';
 import { PanchangWidget } from './PanchangWidget';
+import { FestivalCountdownTimer } from './FestivalCountdownTimer';
+import { DailyMantraWidget } from './DailyMantraWidget';
 import { AdBanner } from './AdBanner';
 import { 
   Sparkles, 
@@ -64,6 +66,18 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
 
   return (
     <div className="space-y-8 pb-12">
+      {/* 1. Dynamic Live Countdown Timer for Upcoming Mega Festival */}
+      <FestivalCountdownTimer 
+        festivals={festivals} 
+        onSelectFestival={onSelectFestival} 
+      />
+
+      {/* 2. Daily Mantra Sanskrit Shloka Widget (24h daily refresh) */}
+      <DailyMantraWidget />
+
+      {/* 3. Daily Hindu Panchang & Shubh Muhurat Widget */}
+      <PanchangWidget />
+
       {/* Domain Acquisition Celebration Banner */}
       <div className="bg-gradient-to-r from-amber-950/80 via-yellow-950/60 to-stone-950 border border-amber-500/40 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
