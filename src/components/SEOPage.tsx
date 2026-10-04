@@ -3,6 +3,7 @@ import { WishCategory, HindiWish, getBreadcrumbTrail, getCategoryBySlug, getChil
 import { Breadcrumbs } from './Breadcrumbs';
 import { WishCardGenerator } from './WishCardGenerator';
 import { updatePageSEO } from '../utils/seoManager';
+import { resolveDirectImageUrl } from '../utils/googleDriveHelper';
 import { 
   Copy, 
   Check, 
@@ -88,7 +89,7 @@ export const SEOPage: React.FC<SEOPageProps> = ({ category, onNavigate }) => {
         {/* Hero Banner Image */}
         <div className="relative rounded-3xl overflow-hidden aspect-[21/9] border border-stone-800 shadow-xl">
           <img
-            src={category.heroImageUrl}
+            src={resolveDirectImageUrl(category.heroImageUrl)}
             alt={category.nameHi}
             className="w-full h-full object-cover"
             loading="eager"

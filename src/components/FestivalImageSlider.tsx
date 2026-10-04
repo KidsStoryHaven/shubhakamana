@@ -8,6 +8,7 @@ import {
   Check
 } from 'lucide-react';
 import { DivineDeitySlide } from '../data/divineGodsData';
+import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from '../utils/googleDriveHelper';
 
 interface FestivalImageSliderProps {
   slides: DivineDeitySlide[];
@@ -95,8 +96,17 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
         {/* Active Deity Image / Divine Artwork with smooth transition */}
         <img
           key={currentSlide.id}
-          src={currentSlide.imageUrl}
+          src={resolveDirectImageUrl(currentSlide.imageUrl)}
           alt={currentSlide.title}
+          onError={(e) => {
+            const fallbacks = getGoogleDriveFallbackUrls(currentSlide.imageUrl);
+            const target = e.currentTarget;
+            const currentSrc = target.src;
+            const next = fallbacks.find(url => url !== currentSrc);
+            if (next) {
+              target.src = next;
+            }
+          }}
           className="w-full h-full object-cover transition duration-700 ease-out animate-fade-in"
         />
 
@@ -201,8 +211,14 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
               >
                 <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-amber-500/30">
                   <img
-                    src={slide.imageUrl}
+                    src={resolveDirectImageUrl(slide.imageUrl)}
                     alt={slide.godName}
+                    onError={(e) => {
+                      const fallbacks = getGoogleDriveFallbackUrls(slide.imageUrl);
+                      const target = e.currentTarget;
+                      const next = fallbacks.find(url => url !== target.src);
+                      if (next) target.src = next;
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </div>

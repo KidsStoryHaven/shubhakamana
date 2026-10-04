@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Festival, FestivalCategory, CategoryInfo } from '../data/festivals';
 import { getStoredFestivals, getStoredCategories } from '../data/festivalStore';
+import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from '../utils/googleDriveHelper';
 import { PanchangWidget } from './PanchangWidget';
 import { FestivalCountdownTimer } from './FestivalCountdownTimer';
 import { DailyMantraWidget } from './DailyMantraWidget';
@@ -152,7 +153,7 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] border border-amber-500/30 shadow-2xl group cursor-pointer"
                  onClick={() => onSelectFestival(featuredFestival)}>
               <img
-                src={featuredFestival.heroImage}
+                src={resolveDirectImageUrl(featuredFestival.heroImage)}
                 alt={featuredFestival.nameHi}
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
               />
@@ -231,7 +232,7 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
             {/* Image Header with Countdown Badge */}
             <div className="relative aspect-[16/9] overflow-hidden">
               <img
-                src={fest.heroImage}
+                src={resolveDirectImageUrl(fest.heroImage)}
                 alt={fest.nameHi}
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
               />

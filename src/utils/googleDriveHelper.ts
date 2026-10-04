@@ -8,8 +8,8 @@ export function extractGoogleDriveFileId(urlOrId: string): string | null {
   if (!urlOrId || typeof urlOrId !== 'string') return null;
   const trimmed = urlOrId.trim();
 
-  // Pattern 1: /file/d/FILE_ID/view or /d/FILE_ID/
-  const matchFileD = trimmed.match(/\/(?:file\/)?d\/([a-zA-Z0-9_-]{15,})/i);
+  // Pattern 1: /file/d/FILE_ID/view, /file/u/0/d/FILE_ID, /d/FILE_ID/
+  const matchFileD = trimmed.match(/\/(?:file\/)?(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]{15,})/i);
   if (matchFileD && matchFileD[1]) {
     return matchFileD[1];
   }
@@ -26,8 +26,20 @@ export function extractGoogleDriveFileId(urlOrId: string): string | null {
     return matchDocs[1];
   }
 
-  // Pattern 4: Raw file ID directly pasted (starts with alphanumeric, 25+ chars)
-  if (/^[a-zA-Z0-9_-]{25,50}$/.test(trimmed)) {
+  // Pattern 4: Google User Content direct format (lh3.googleusercontent.com/d/FILE_ID)
+  const matchLh3 = trimmed.match(/googleusercontent\.com\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]{15,})/i);
+  if (matchLh3 && matchLh3[1]) {
+    return matchLh3[1];
+  }
+
+  // Pattern 5: drive.google.com/thumbnail?id=FILE_ID
+  const matchThumbnail = trimmed.match(/thumbnail\?(?:[^&]*&)*id=([a-zA-Z0-9_-]{15,})/i);
+  if (matchThumbnail && matchThumbnail[1]) {
+    return matchThumbnail[1];
+  }
+
+  // Pattern 6: Raw file ID directly pasted (starts with alphanumeric, 25+ chars)
+  if (/^[a-zA-Z0-9_-]{25,60}$/.test(trimmed)) {
     return trimmed;
   }
 
@@ -36,7 +48,7 @@ export function extractGoogleDriveFileId(urlOrId: string): string | null {
 
 /**
  * Resolves any image URL to a high-speed direct CDN URL.
- * If a Google Drive URL is provided, returns Google's ultra-fast `lh3.googleusercontent.com/d/{id}` direct image stream.
+ * If a Google Drive URL is provided, returns Google's direct high-speed thumbnail/CDN stream.
  */
 export function resolveDirectImageUrl(url: string | null | undefined): string {
   if (!url || typeof url !== 'string') return '';
@@ -44,7 +56,7 @@ export function resolveDirectImageUrl(url: string | null | undefined): string {
 
   const gDriveId = extractGoogleDriveFileId(trimmed);
   if (gDriveId) {
-    // lh3.googleusercontent.com is Google's official direct high-speed CDN that allows CORS, full-res, and instant loading
+    // lh3.googleusercontent.com/d/ is Google's ultra fast CORS-enabled direct asset renderer
     return `https://lh3.googleusercontent.com/d/${gDriveId}`;
   }
 
@@ -60,7 +72,7 @@ export function resolveDirectAudioUrl(url: string | null | undefined): string {
 
   const gDriveId = extractGoogleDriveFileId(trimmed);
   if (gDriveId) {
-    // Google Drive direct MP3 stream URL
+    // Google Drive direct MP3 streaming endpoint
     return `https://docs.google.com/uc?export=download&id=${gDriveId}`;
   }
 
@@ -76,7 +88,7 @@ export function getGoogleDriveFallbackUrls(urlOrId: string): string[] {
   return [
     `https://lh3.googleusercontent.com/d/${gDriveId}`,
     `https://drive.google.com/thumbnail?id=${gDriveId}&sz=w1600`,
-    `https://drive.google.com/uc?export=view&id=${gDriveId}`
+    `https://docs.google.com/uc?export=view&id=${gDriveId}`
   ];
 }
 
@@ -85,5 +97,10 @@ export function getGoogleDriveFallbackUrls(urlOrId: string): string[] {
  */
 export function isGoogleDriveUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false;
-  return url.includes('drive.google.com') || url.includes('docs.google.com/uc') || url.includes('googleusercontent.com/d/');
+  return (
+    url.includes('drive.google.com') || 
+    url.includes('docs.google.com/uc') || 
+    url.includes('googleusercontent.com/d/') ||
+    url.includes('googleusercontent.com')
+  );
 }

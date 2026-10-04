@@ -23,6 +23,7 @@ import { AboutPage } from './components/AboutPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { ContactPage } from './components/ContactPage';
 import { SiteFooter } from './components/SiteFooter';
+import { StickyWhatsAppChannel } from './components/StickyWhatsAppChannel';
 import { WishCategory, getCategoryBySlug, getAllCategories } from './data/wishesData';
 
 export default function App() {
@@ -411,6 +412,9 @@ export default function App() {
         {/* Sticky Bottom Ad Banner */}
         <AdBanner slotId="sticky_bottom" />
 
+        {/* Sticky WhatsApp Channel Button */}
+        <StickyWhatsAppChannel channelUrl="https://whatsapp.com/channel/0029VbCzmQCHrDZfjZlBGR3U" />
+
         {/* Unified Site Footer */}
         <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
@@ -461,6 +465,9 @@ export default function App() {
         {/* Sticky Bottom Ad Banner */}
         <AdBanner slotId="sticky_bottom" />
 
+        {/* Sticky WhatsApp Channel Button */}
+        <StickyWhatsAppChannel channelUrl="https://whatsapp.com/channel/0029VbCzmQCHrDZfjZlBGR3U" />
+
         {/* Unified Site Footer */}
         <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
@@ -502,6 +509,9 @@ export default function App() {
 
         {/* Sticky Bottom Ad Banner */}
         <AdBanner slotId="sticky_bottom" />
+
+        {/* Sticky WhatsApp Channel Button */}
+        <StickyWhatsAppChannel channelUrl="https://whatsapp.com/channel/0029VbCzmQCHrDZfjZlBGR3U" />
 
         {/* Unified Site Footer */}
         <SiteFooter onNavigateToPath={handleNavigateToPath} />
@@ -587,6 +597,9 @@ export default function App() {
 
       {/* Sticky Bottom Mobile/Desktop Ad Banner */}
       <AdBanner slotId="sticky_bottom" />
+
+      {/* Sticky WhatsApp Channel Button */}
+      <StickyWhatsAppChannel channelUrl="https://whatsapp.com/channel/0029VbCzmQCHrDZfjZlBGR3U" />
 
       {/* Unified Professional Site Footer */}
       <SiteFooter onNavigateToPath={handleNavigateToPath} />

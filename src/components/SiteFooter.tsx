@@ -90,6 +90,16 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onNavigateToPath }) => {
                   <span>Contact Us</span>
                 </a>
               </li>
+              <li className="pt-2">
+                <a
+                  href="https://whatsapp.com/channel/0029VbCzmQCHrDZfjZlBGR3U"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition shadow-md"
+                >
+                  <span>🟢 WhatsApp चैनल</span>
+                </a>
+              </li>
             </ul>
           </div>
 

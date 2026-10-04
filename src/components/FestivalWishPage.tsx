@@ -7,8 +7,9 @@ import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
 import { VideoStatusModal } from './VideoStatusModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
-import { getFestivalDeitySlides, DivineDeitySlide } from '../data/divineGodsData';
-import { getStoredFestivals } from '../data/festivalStore';
+import { DivineDeitySlide } from '../data/divineGodsData';
+import { getStoredFestivals, getStoredDeitySlides } from '../data/festivalStore';
+import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
 import { AdBanner } from './AdBanner';
 import { awardUserPoints } from '../data/userStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
@@ -160,9 +161,17 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const getResolvedDeitySlides = (fest: Festival): DivineDeitySlide[] => {
-    const rawSlides = getFestivalDeitySlides(fest.id);
+    const rawSlides = getStoredDeitySlides(fest.id);
+    const resolvedHero = resolveDirectImageUrl(fest.heroImage);
+
     if (rawSlides && rawSlides.length > 0) {
-      if (fest.heroImage && rawSlides[0].imageUrl !== fest.heroImage) {
+      // Map stored slides with resolved image URLs
+      const mapped = rawSlides.map(s => ({
+        ...s,
+        imageUrl: resolveDirectImageUrl(s.imageUrl)
+      }));
+
+      if (resolvedHero && mapped[0]?.imageUrl !== resolvedHero) {
         const customSlide: DivineDeitySlide = {
           id: `${fest.id}-hero-main`,
           godName: fest.nameHi,
@@ -170,14 +179,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           tagline: fest.taglineHi || 'पावन ईश्वरीय दर्शन',
           badge: fest.badge || '✨ पावन दर्शन',
           mantra: fest.mantraOrShloka || '॥ ॐ श्रीं ह्रीं क्लीं ॥',
-          imageUrl: fest.heroImage
+          imageUrl: resolvedHero
         };
-        const others = rawSlides.filter(s => s.imageUrl !== fest.heroImage);
+        const others = mapped.filter(s => s.imageUrl !== resolvedHero);
         return [customSlide, ...others];
       }
-      return rawSlides;
+      return mapped;
     }
-    if (fest.heroImage) {
+    if (resolvedHero) {
       return [
         {
           id: `${fest.id}-hero-custom`,
@@ -186,7 +195,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           tagline: fest.taglineHi || 'पावन ईश्वरीय दर्शन',
           badge: fest.badge || '✨ पावन दर्शन',
           mantra: fest.mantraOrShloka || '॥ ॐ श्रीं ह्रीं क्लीं ॥',
-          imageUrl: fest.heroImage
+          imageUrl: resolvedHero
         }
       ];
     }
