@@ -32,6 +32,40 @@ export default function App() {
 
   const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
+  
+  const [selectedFestival, setSelectedFestival] = useState<Festival | null>(() => {
+    try {
+      const clean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (clean && clean !== 'admin' && getCategoryBySlug(clean)) {
+        return null;
+      }
+
+      const parsed = parseWishUrl(window.location.search, window.location.pathname);
+      const allFests = getStoredFestivals();
+      if (parsed.festivalId) {
+        const match = allFests.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
+        if (match) return match;
+      }
+      if (parsed.senderName && allFests.length > 0) {
+        return allFests[0];
+      }
+    } catch {
+      // Ignored
+    }
+    return null;
+  });
+
+  const [selectedWishCategory, setSelectedWishCategory] = useState<WishCategory | null>(() => {
+    try {
+      const clean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (clean && clean !== 'admin') {
+        const cat = getCategoryBySlug(clean);
+        if (cat) return cat;
+      }
+    } catch {}
+    return null;
+  });
+
   const checkIsAdminRoute = () => {
     try {
       const hostname = (window.location.hostname || '').toLowerCase();
@@ -70,11 +104,26 @@ export default function App() {
 
   useEffect(() => {
     const handleDataChanged = () => {
-      setFestivals(getStoredFestivals());
+      const storedFests = getStoredFestivals();
+      setFestivals(storedFests);
       setCategories(getStoredCategories());
+      setSelectedFestival(prev => {
+        if (!prev) return null;
+        const updated = storedFests.find(f => f.id === prev.id || f.slug === prev.slug);
+        return updated || prev;
+      });
+      setSelectedWishCategory(prevCat => {
+        if (!prevCat) return null;
+        const updatedCat = getCategoryBySlug(prevCat.slug);
+        return updatedCat || prevCat;
+      });
     };
     window.addEventListener('shubhakamna_data_changed', handleDataChanged);
-    return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+    window.addEventListener('shubhakamna_wish_categories_changed', handleDataChanged);
+    return () => {
+      window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
+      window.removeEventListener('shubhakamna_wish_categories_changed', handleDataChanged);
+    };
   }, []);
 
   // Dynamically inject Google AdSense Auto Ads / Global Header Script into <head>
@@ -111,39 +160,6 @@ export default function App() {
       window.removeEventListener('shubhakamna_ads_changed', applyHeaderScript);
     };
   }, []);
-
-  const [selectedFestival, setSelectedFestival] = useState<Festival | null>(() => {
-    try {
-      const clean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-      if (clean && clean !== 'admin' && getCategoryBySlug(clean)) {
-        return null;
-      }
-
-      const parsed = parseWishUrl(window.location.search, window.location.pathname);
-      const allFests = getStoredFestivals();
-      if (parsed.festivalId) {
-        const match = allFests.find(f => f.id === parsed.festivalId || f.slug === parsed.festivalId);
-        if (match) return match;
-      }
-      if (parsed.senderName && allFests.length > 0) {
-        return allFests[0];
-      }
-    } catch {
-      // Ignored
-    }
-    return null;
-  });
-
-  const [selectedWishCategory, setSelectedWishCategory] = useState<WishCategory | null>(() => {
-    try {
-      const clean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-      if (clean && clean !== 'admin') {
-        const cat = getCategoryBySlug(clean);
-        if (cat) return cat;
-      }
-    } catch {}
-    return null;
-  });
 
   const [activeCategory, setActiveCategory] = useState<FestivalCategory | 'all'>('all');
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);

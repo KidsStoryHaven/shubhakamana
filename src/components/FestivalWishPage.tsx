@@ -7,6 +7,7 @@ import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
 import { getFestivalDeitySlides, DivineDeitySlide } from '../data/divineGodsData';
+import { getStoredFestivals } from '../data/festivalStore';
 import { AdBanner } from './AdBanner';
 import { awardUserPoints } from '../data/userStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
@@ -60,13 +61,25 @@ interface FestivalWishPageProps {
 }
 
 export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
-  festival,
+  festival: initialFestival,
   initialSenderName = '',
   initialLang = '',
   onBackToPortal,
   onSelectAnotherFestival,
   allFestivals
 }) => {
+  const [festival, setFestival] = useState<Festival>(() => {
+    const all = getStoredFestivals();
+    return all.find(f => f.id === initialFestival.id || f.slug === initialFestival.slug) || initialFestival;
+  });
+
+  useEffect(() => {
+    const all = getStoredFestivals();
+    const updated = all.find(f => f.id === initialFestival.id || f.slug === initialFestival.slug);
+    if (updated) setFestival(updated);
+    else setFestival(initialFestival);
+  }, [initialFestival]);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const birthdayFileInputRef = useRef<HTMLInputElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -142,16 +155,40 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusModalImage, setStatusModalImage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>(() => getFestivalDeitySlides(festival.id));
+
+  const getResolvedDeitySlides = (fest: Festival): DivineDeitySlide[] => {
+    const rawSlides = getFestivalDeitySlides(fest.id);
+    if (fest.heroImage && !rawSlides.some(s => s.imageUrl === fest.heroImage)) {
+      return [
+        {
+          id: `${fest.id}-hero-custom`,
+          godName: fest.nameHi,
+          title: fest.greetingTitle || fest.nameHi,
+          tagline: fest.taglineHi || 'पावन ईश्वरीय दर्शन',
+          badge: fest.badge || '✨ पावन दर्शन',
+          mantra: fest.mantraOrShloka || '॥ ॐ श्रीं ह्रीं क्लीं ॥',
+          imageUrl: fest.heroImage
+        },
+        ...rawSlides
+      ];
+    }
+    return rawSlides;
+  };
+
+  const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>(() => getResolvedDeitySlides(festival));
 
   useEffect(() => {
     const handleDataChanged = () => {
-      setDeitySlides(getFestivalDeitySlides(festival.id));
+      const all = getStoredFestivals();
+      const updated = all.find(f => f.id === initialFestival.id || f.slug === initialFestival.slug);
+      const currentFest = updated || initialFestival;
+      if (updated) setFestival(updated);
+      setDeitySlides(getResolvedDeitySlides(currentFest));
     };
     handleDataChanged();
     window.addEventListener('shubhakamna_data_changed', handleDataChanged);
     return () => window.removeEventListener('shubhakamna_data_changed', handleDataChanged);
-  }, [festival.id]);
+  }, [initialFestival.id, initialFestival.slug]);
 
   const safeActiveIndex = (activeImageIndex >= 0 && activeImageIndex < deitySlides.length) ? activeImageIndex : 0;
   const activeHeroImage = deitySlides[safeActiveIndex]?.imageUrl || festival.heroImage;
