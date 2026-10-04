@@ -5,6 +5,7 @@ import { festiveAudio } from '../utils/festiveAudio';
 import { SurpriseUnbox } from './SurpriseUnbox';
 import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
+import { VideoStatusModal } from './VideoStatusModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
 import { getFestivalDeitySlides, DivineDeitySlide } from '../data/divineGodsData';
 import { getStoredFestivals } from '../data/festivalStore';
@@ -47,7 +48,8 @@ import {
   Trophy,
   Play,
   Pause,
-  PartyPopper
+  PartyPopper,
+  Film
 } from 'lucide-react';
 import { getUploadedAudioFile } from '../utils/audioStorage';
 
@@ -153,6 +155,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [isDownloadingCard, setIsDownloadingCard] = useState(false);
   const [isGenerating8K, setIsGenerating8K] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [statusModalImage, setStatusModalImage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -1100,6 +1103,15 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                 </span>
               </button>
 
+              {/* 🎬 Download 8K Video Status (.MP4) Button with Handwriting & Marquee */}
+              <button
+                onClick={() => setIsVideoModalOpen(true)}
+                className="w-full bg-gradient-to-r from-purple-700 via-indigo-600 to-amber-600 hover:from-purple-600 hover:to-amber-500 text-white font-extrabold py-3.5 px-4 rounded-xl text-xs sm:text-sm shadow-xl shadow-purple-950/50 flex items-center justify-center gap-2 transition cursor-pointer active:scale-98 border border-purple-400/40"
+              >
+                <Film className="w-4 h-4 text-yellow-300 animate-pulse" />
+                <span>🎬 WhatsApp 8K Video Status बनाएं व डाउनलोड करें (.MP4) ✨</span>
+              </button>
+
               {/* Copy Link Button */}
               <button
                 onClick={handleCopyLink}
@@ -1273,6 +1285,21 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         onClose={() => setIsStatusModalOpen(false)}
         imageUrl={statusModalImage}
         captionText={`🪔 *${activeTranslation.greetingTitle}* 🪔\n\n"${activeTranslation.greetingPoem}"\n\n— *${senderName}* की ओर से हार्दिक शुभकामनाएँ ✨\n\n👇 अपने नाम का जादुई कार्ड यहाँ बनाएँ:\n${getShareUrl()}`}
+      />
+
+      {/* 🎬 Ultra HD 8K WhatsApp Video Status Generator Modal */}
+      <VideoStatusModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        festival={festival}
+        senderName={senderName}
+        userPhoto={userPhoto}
+        birthdayPerson={isBirthday ? birthdayPerson : undefined}
+        birthdayPhoto={isBirthday ? birthdayPhoto : undefined}
+        poem={activeTranslation.greetingPoem || festival.defaultPoem}
+        greetingTitle={isBirthday ? `Happy Birthday ${birthdayPerson}` : (activeTranslation.greetingTitle || festival.nameHi)}
+        heroImageOverride={activeHeroImage}
+        shareUrl={getShareUrl()}
       />
 
       {/* Floating Loyalty Reward Points Celebration Toast */}
