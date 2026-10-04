@@ -25,12 +25,14 @@ interface FestivalsPortalProps {
   onOpenDomainGuide?: () => void;
   currentCategory?: FestivalCategory | 'all';
   onCategoryChange?: (category: FestivalCategory | 'all') => void;
+  onNavigateToPath?: (path: string) => void;
 }
 
 export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
   onSelectFestival,
   currentCategory = 'all',
-  onCategoryChange
+  onCategoryChange,
+  onNavigateToPath
 }) => {
   const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
@@ -279,6 +281,47 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Short About This Website Information Section */}
+      <section className="bg-gradient-to-r from-stone-900/90 via-amber-950/20 to-stone-900/90 border border-amber-500/20 rounded-3xl p-5 sm:p-7 space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <h2 className="text-sm sm:text-base font-bold text-amber-300 font-serif">
+            About This Website (वेबसाइट के बारे में)
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+          Shubhakamna.in is an independent, user-friendly digital platform created to provide culturally authentic festival greetings, relationship wishing cards, daily Hindu Panchang, and auspicious muhurats for readers across India and worldwide. We focus on publishing simple, accessible, and regularly updated content to help you share joyous blessings with loved ones effortlessly.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+          <a
+            href="/about/"
+            onClick={(e) => {
+              if (onNavigateToPath) {
+                e.preventDefault();
+                onNavigateToPath('/about/');
+              }
+            }}
+            className="text-amber-400 hover:text-amber-300 font-semibold underline inline-flex items-center gap-1"
+          >
+            <span>Learn more on our About Us page</span>
+            <span>→</span>
+          </a>
+          <span className="text-stone-600">•</span>
+          <a
+            href="/privacy-policy/"
+            onClick={(e) => {
+              if (onNavigateToPath) {
+                e.preventDefault();
+                onNavigateToPath('/privacy-policy/');
+              }
+            }}
+            className="text-stone-400 hover:text-amber-300 underline"
+          >
+            Read our Privacy Policy
+          </a>
+        </div>
+      </section>
 
       {/* AdSense In-Portal Banner */}
       <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-3 text-center text-stone-500 text-xs">

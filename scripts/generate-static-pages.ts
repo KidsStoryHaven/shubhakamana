@@ -314,11 +314,94 @@ function run() {
     console.log(`✅ Generated: /${cat.slug}/index.html (${(html.length / 1024).toFixed(1)} KB)`);
   });
 
+  // 1B. Generate Static Pages for About Us, Privacy Policy, Contact Us
+  const staticPages = [
+    {
+      slug: 'about',
+      title: 'About Us | Shubhakamna.in - Independent Festive & Greeting Platform',
+      description: 'Learn about Shubhakamna.in, an independent online platform dedicated to providing easy-to-understand festival greetings, cultural guides, and helpful content.',
+      h1: 'About Shubhakamna.in',
+      body: `
+        <article class="max-w-4xl mx-auto py-8 px-4 text-stone-200 space-y-6">
+          <nav aria-label="Breadcrumb" class="text-xs text-stone-400 mb-4"><a href="/" class="hover:underline">Home</a> &gt; <span class="text-amber-300">About Us</span></nav>
+          <h1 class="text-3xl font-bold text-white font-serif">About Shubhakamna.in</h1>
+          <p class="text-stone-300 leading-relaxed">Shubhakamna.in is an independent, digital platform dedicated to making festive greetings, cultural traditions, shubh muhurats, and meaningful messages simple, accessible, and enjoyable for everyone.</p>
+          <h2 class="text-xl font-bold text-amber-300 font-serif">Our Mission and Purpose</h2>
+          <p class="text-stone-300 leading-relaxed">Shubhakamna.in was created with a clear objective: to offer a clean, reliable, and user-friendly destination where visitors can find thoughtfully written festival wishes, heartfelt greeting messages for personal milestones, and accurate cultural insights.</p>
+          <h2 class="text-xl font-bold text-amber-300 font-serif">Independence & Third-Party Disclosure</h2>
+          <p class="text-stone-300 leading-relaxed">Shubhakamna.in is an independently created and operated informational website. We are not affiliated with, endorsed by, or partnered with Google LLC, Meta, or any other corporation unless explicitly mentioned.</p>
+          <p class="text-stone-300 leading-relaxed">Official Contact Email: <a href="mailto:mthawkar72@gmail.com" class="text-amber-400 underline">mthawkar72@gmail.com</a></p>
+        </article>
+      `
+    },
+    {
+      slug: 'privacy-policy',
+      title: 'Privacy Policy | Shubhakamna.in - Transparent Data & Cookie Policy',
+      description: 'Read the official Privacy Policy for Shubhakamna.in. Learn how we handle visitor information, cookies, Google AdSense, analytics, and user privacy rights.',
+      h1: 'Privacy Policy',
+      body: `
+        <article class="max-w-4xl mx-auto py-8 px-4 text-stone-200 space-y-6">
+          <nav aria-label="Breadcrumb" class="text-xs text-stone-400 mb-4"><a href="/" class="hover:underline">Home</a> &gt; <span class="text-amber-300">Privacy Policy</span></nav>
+          <h1 class="text-3xl font-bold text-white font-serif">Privacy Policy</h1>
+          <p class="text-stone-300 leading-relaxed">At Shubhakamna.in, accessible from https://shubhakamna.in, protecting the privacy and personal data of our visitors is one of our primary priorities. This Privacy Policy document outlines the types of information that may be collected, recorded, and how we use it.</p>
+          <h2 class="text-xl font-bold text-amber-300 font-serif">1. Information We May Collect</h2>
+          <p class="text-stone-300 leading-relaxed">We may collect information provided voluntarily (such as names entered into greeting cards or emails sent to our contact address) and standard log file information including browser type, device type, approximate geographic location, IP address, and date/time stamps.</p>
+          <h2 class="text-xl font-bold text-amber-300 font-serif">2. Google AdSense & Third-Party Advertising</h2>
+          <p class="text-stone-300 leading-relaxed">Advertisements may be displayed on our website through third-party advertising partners, including Google AdSense. Google uses cookies, including DART cookies, to serve ads based upon visits to this and other websites on the internet. Visitors may manage ad preferences at <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener" class="text-amber-400 underline">policies.google.com/technologies/ads</a>.</p>
+          <h2 class="text-xl font-bold text-amber-300 font-serif">3. Contact Information</h2>
+          <p class="text-stone-300 leading-relaxed">For questions regarding our Privacy Policy, contact us at: <a href="mailto:mthawkar72@gmail.com" class="text-amber-400 underline">mthawkar72@gmail.com</a></p>
+        </article>
+      `
+    },
+    {
+      slug: 'contact',
+      title: 'Contact Us | Shubhakamna.in - Official Support & Feedback',
+      description: 'Contact the Shubhakamna.in team for questions regarding website content, corrections, feedback, technical assistance, privacy, or advertising inquiries.',
+      h1: 'Contact Us',
+      body: `
+        <article class="max-w-4xl mx-auto py-8 px-4 text-stone-200 space-y-6">
+          <nav aria-label="Breadcrumb" class="text-xs text-stone-400 mb-4"><a href="/" class="hover:underline">Home</a> &gt; <span class="text-amber-300">Contact Us</span></nav>
+          <h1 class="text-3xl font-bold text-white font-serif">Contact Us</h1>
+          <p class="text-stone-300 leading-relaxed">We welcome questions, suggestions, feedback, and inquiries from our readers and partners.</p>
+          <div class="bg-stone-900 p-6 rounded-2xl border border-stone-800 space-y-2">
+            <h2 class="text-lg font-bold text-amber-300">Official Contact Email</h2>
+            <p class="text-stone-200 text-lg font-mono"><a href="mailto:mthawkar72@gmail.com" class="text-amber-400 underline">mthawkar72@gmail.com</a></p>
+            <p class="text-xs text-stone-400">Please email us for content questions, factual corrections, technical support, privacy inquiries, or advertising concerns.</p>
+          </div>
+        </article>
+      `
+    }
+  ];
+
+  staticPages.forEach(sp => {
+    const pageDir = path.join(distDir, sp.slug);
+    if (!fs.existsSync(pageDir)) {
+      fs.mkdirSync(pageDir, { recursive: true });
+    }
+
+    let html = baseHtml;
+    const canonicalUrl = `${SITE_ORIGIN}/${sp.slug}/`;
+
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(sp.title)}</title>`);
+    html = html.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${escapeHtml(sp.description)}" />`);
+    html = html.replace(/<link\s+rel=["']canonical["'][\s\S]*?>/i, `<link rel="canonical" href="${canonicalUrl}" />`);
+    html = html.replace(/<meta\s+property=["']og:title["'][\s\S]*?>/i, `<meta property="og:title" content="${escapeHtml(sp.title)}" />`);
+    html = html.replace(/<meta\s+property=["']og:description["'][\s\S]*?>/i, `<meta property="og:description" content="${escapeHtml(sp.description)}" />`);
+    html = html.replace(/<div id="root"><\/div>/, `<div id="root">${sp.body}</div>`);
+
+    const outPath = path.join(pageDir, 'index.html');
+    fs.writeFileSync(outPath, html, 'utf-8');
+    console.log(`✅ Generated: /${sp.slug}/index.html (${(html.length / 1024).toFixed(1)} KB)`);
+  });
+
   // 2. Generate sitemap.xml
   console.log('📄 Generating sitemap.xml...');
   const today = new Date().toISOString().slice(0, 10);
   const sitemapUrls = [
     `  <url>\n    <loc>${SITE_ORIGIN}/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`,
+    `  <url>\n    <loc>${SITE_ORIGIN}/about/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
+    `  <url>\n    <loc>${SITE_ORIGIN}/privacy-policy/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
+    `  <url>\n    <loc>${SITE_ORIGIN}/contact/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
     ...WISH_CATEGORIES.map(
       cat => `  <url>\n    <loc>${SITE_ORIGIN}/${cat.slug}/</loc>\n    <lastmod>${cat.updatedAt || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${cat.parentSlug ? '0.8' : '0.9'}</priority>\n  </url>`
     )
@@ -326,7 +409,7 @@ function run() {
 
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls.join('\n')}\n</urlset>\n`;
   fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemapXml, 'utf-8');
-  console.log(`✅ Generated: sitemap.xml (${WISH_CATEGORIES.length + 1} indexable URLs)`);
+  console.log(`✅ Generated: sitemap.xml (${sitemapUrls.length} indexable URLs)`);
 
   // 3. Generate robots.txt
   console.log('🤖 Generating robots.txt...');

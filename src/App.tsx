@@ -19,6 +19,10 @@ import { getStoredAdSettings } from './data/adStore';
 import { parseWishUrl } from './utils/shortUrl';
 import { updatePageSEO, getFestivalSEOMetadata, resetPortalSEO } from './utils/seoManager';
 import { SEOPage } from './components/SEOPage';
+import { AboutPage } from './components/AboutPage';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { ContactPage } from './components/ContactPage';
+import { SiteFooter } from './components/SiteFooter';
 import { WishCategory, getCategoryBySlug, getAllCategories } from './data/wishesData';
 
 export default function App() {
@@ -33,10 +37,26 @@ export default function App() {
   const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
   
+  const resolveStaticRoute = (pathStr: string): 'about' | 'privacy-policy' | 'contact' | null => {
+    const clean = pathStr.replace(/^\/+|\/+$/g, '').toLowerCase();
+    if (clean === 'about' || clean === 'about-us') return 'about';
+    if (clean === 'privacy-policy' || clean === 'privacy') return 'privacy-policy';
+    if (clean === 'contact' || clean === 'contact-us') return 'contact';
+    return null;
+  };
+
+  const [staticPageRoute, setStaticPageRoute] = useState<'about' | 'privacy-policy' | 'contact' | null>(() => {
+    try {
+      return resolveStaticRoute(window.location.pathname || '');
+    } catch {
+      return null;
+    }
+  });
+
   const [selectedFestival, setSelectedFestival] = useState<Festival | null>(() => {
     try {
       const clean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-      if (clean && clean !== 'admin' && getCategoryBySlug(clean)) {
+      if (clean && (clean === 'admin' || resolveStaticRoute(clean) || getCategoryBySlug(clean))) {
         return null;
       }
 
@@ -58,7 +78,7 @@ export default function App() {
   const [selectedWishCategory, setSelectedWishCategory] = useState<WishCategory | null>(() => {
     try {
       const clean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-      if (clean && clean !== 'admin') {
+      if (clean && clean !== 'admin' && !resolveStaticRoute(clean)) {
         const cat = getCategoryBySlug(clean);
         if (cat) return cat;
       }
@@ -207,6 +227,16 @@ export default function App() {
       setIsAdminOpen(false);
 
       const pathClean = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+      
+      const staticMatch = resolveStaticRoute(pathClean);
+      if (staticMatch) {
+        setStaticPageRoute(staticMatch);
+        setSelectedWishCategory(null);
+        setSelectedFestival(null);
+        return;
+      }
+      setStaticPageRoute(null);
+
       if (pathClean && pathClean !== 'admin') {
         const catMatch = getCategoryBySlug(pathClean);
         if (catMatch) {
@@ -241,6 +271,7 @@ export default function App() {
 
   // 3. Centralized Navigation Handler: Updates View, URL (via pushState) & Dynamic SEO
   const handleSelectFestival = (fest: Festival, senderName?: string, lang?: string, updateUrl: boolean = true) => {
+    setStaticPageRoute(null);
     setSelectedWishCategory(null);
     setSelectedFestival(fest);
     
@@ -263,6 +294,7 @@ export default function App() {
 
   // 4. Centralized Go Home Handler
   const handleGoHome = (updateUrl: boolean = true) => {
+    setStaticPageRoute(null);
     setSelectedWishCategory(null);
     setSelectedFestival(null);
     setActiveCategory('all');
@@ -277,7 +309,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 5. Universal Path Navigator (for clean URLs like /birthday-wishes-for-mother/)
+  // 5. Universal Path Navigator (for clean URLs like /about/ or /birthday-wishes-for-mother/)
   const handleNavigateToPath = (url: string) => {
     const clean = url.replace(/^\/+|\/+$/g, '').toLowerCase();
     if (!clean) {
@@ -289,6 +321,16 @@ export default function App() {
       const targetUrl = url.startsWith('/') ? url : `/${url}/`;
       window.history.pushState({}, '', targetUrl);
     } catch {}
+
+    const staticMatch = resolveStaticRoute(clean);
+    if (staticMatch) {
+      setStaticPageRoute(staticMatch);
+      setSelectedWishCategory(null);
+      setSelectedFestival(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setStaticPageRoute(null);
 
     const cat = getCategoryBySlug(clean);
     if (cat) {
@@ -328,9 +370,72 @@ export default function App() {
     );
   }
 
+  // 1. Static Informational Pages (About Us, Privacy Policy, Contact Us)
+  if (staticPageRoute) {
+    return (
+      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
+        {/* Top Navbar */}
+        <Navbar
+          onSelectCategory={(cat) => {
+            setStaticPageRoute(null);
+            setSelectedWishCategory(null);
+            setActiveCategory(cat);
+          }}
+          onSelectFestival={(fest) => {
+            setStaticPageRoute(null);
+            handleSelectFestival(fest);
+          }}
+          onGoHome={() => handleGoHome()}
+          onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+          onOpenAuth={() => setIsAuthOpen(true)}
+        />
+
+        {/* Top Header Ad Banner */}
+        <div className="max-w-4xl mx-auto w-full px-4 pt-2">
+          <AdBanner slotId="header" />
+        </div>
+
+        {/* Static Page Body */}
+        <main className="flex-1 w-full">
+          {staticPageRoute === 'about' && (
+            <AboutPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+          )}
+          {staticPageRoute === 'privacy-policy' && (
+            <PrivacyPolicyPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+          )}
+          {staticPageRoute === 'contact' && (
+            <ContactPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+          )}
+        </main>
+
+        {/* Sticky Bottom Ad Banner */}
+        <AdBanner slotId="sticky_bottom" />
+
+        {/* Unified Site Footer */}
+        <SiteFooter onNavigateToPath={handleNavigateToPath} />
+
+        {/* Monthly Rewards Leaderboard Modal */}
+        <LeaderboardModal
+          isOpen={isLeaderboardOpen}
+          onClose={() => setIsLeaderboardOpen(false)}
+          onOpenAuth={() => setIsAuthOpen(true)}
+        />
+
+        {/* User Login & Signup Modal */}
+        <UserAuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={() => {
+            setIsAuthOpen(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   if (selectedWishCategory) {
     return (
-      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white pb-14">
+      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
         {/* Top Navbar */}
         <Navbar
           onSelectCategory={(cat) => {
@@ -356,6 +461,9 @@ export default function App() {
         {/* Sticky Bottom Ad Banner */}
         <AdBanner slotId="sticky_bottom" />
 
+        {/* Unified Site Footer */}
+        <SiteFooter onNavigateToPath={handleNavigateToPath} />
+
         {/* Monthly Rewards Leaderboard Modal */}
         <LeaderboardModal
           isOpen={isLeaderboardOpen}
@@ -377,7 +485,7 @@ export default function App() {
 
   if (selectedFestival) {
     return (
-      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white pb-14">
+      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
         {/* Top Header Ad Banner */}
         <div className="max-w-4xl mx-auto w-full px-4 pt-2">
           <AdBanner slotId="header" />
@@ -394,6 +502,9 @@ export default function App() {
 
         {/* Sticky Bottom Ad Banner */}
         <AdBanner slotId="sticky_bottom" />
+
+        {/* Unified Site Footer */}
+        <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
         {/* Monthly Rewards Leaderboard Modal */}
         <LeaderboardModal
@@ -415,7 +526,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white pb-14">
+    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
       {/* Top Navbar with Dropdown Menus */}
       <Navbar
         onSelectCategory={(cat) => setActiveCategory(cat)}
@@ -470,11 +581,15 @@ export default function App() {
           onSelectFestival={(fest) => handleSelectFestival(fest)}
           currentCategory={activeCategory}
           onCategoryChange={(cat) => setActiveCategory(cat)}
+          onNavigateToPath={handleNavigateToPath}
         />
       </main>
 
       {/* Sticky Bottom Mobile/Desktop Ad Banner */}
       <AdBanner slotId="sticky_bottom" />
+
+      {/* Unified Professional Site Footer */}
+      <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
       {/* Monthly Rewards Leaderboard Modal */}
       <LeaderboardModal
@@ -491,58 +606,6 @@ export default function App() {
           setIsAuthOpen(false);
         }}
       />
-
-      {/* Editorial Festive Footer with SEO Pillar Links */}
-      <footer className="mt-12 border-t border-amber-500/20 bg-stone-950/90 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-            <div className="space-y-1">
-              <img 
-                src="/logo.svg" 
-                alt="Shubhakamna - Festival Wishes" 
-                className="h-10 sm:h-12 w-auto max-w-[240px] object-contain mx-auto md:mx-0 drop-shadow-[0_2px_8px_rgba(245,158,11,0.2)] mb-1"
-              />
-              <p className="text-xs text-stone-400 max-w-xl">
-                सभी भारतीय पर्वों (दीपावली, होली, रक्षाबंधन) व व्यक्तिगत उत्सवों पर अपने नाम व फोटो का 9:16 विशिंग कार्ड बनाएं और 1-क्लिक में WhatsApp पर भेजें।
-              </p>
-            </div>
-          </div>
-
-          {/* Canonical Indexable Category Links Grid for Bots & Users */}
-          <div className="border-t border-stone-800/80 pt-4">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-2 text-center sm:text-left">
-              सदाबहार शुभकामना संग्रह:
-            </span>
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-xs text-stone-400">
-              {getAllCategories().map(cat => (
-                <a
-                  key={cat.slug}
-                  href={`/${cat.slug}/`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavigateToPath(`/${cat.slug}/`);
-                  }}
-                  className="hover:text-amber-300 transition-colors"
-                >
-                  {cat.theme.accentEmoji} {cat.nameHi}
-                </a>
-              ))}
-              <span aria-hidden="true">·</span>
-              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="hover:text-amber-300">
-                Sitemap.xml
-              </a>
-              <span aria-hidden="true">·</span>
-              <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="hover:text-amber-300">
-                Robots.txt
-              </a>
-            </div>
-          </div>
-
-          <div className="text-center text-xs text-stone-600">
-            © 2026 Shubhakamna.in · All rights reserved.
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
