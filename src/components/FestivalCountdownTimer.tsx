@@ -15,28 +15,48 @@ interface TimeRemaining {
   isToday: boolean;
 }
 
+// Exact 2026 Festival Muhurat Target Dates (ISO 8601)
+const FESTIVAL_TARGET_DATES_2026: Record<string, string> = {
+  diwali: '2026-11-08T18:15:00', // 8 November 2026 सायं 06:15 (कार्तिक अमावस्या - महालक्ष्मी पूजन)
+  dhanteras: '2026-11-06T17:45:00', // 6 November 2026 सायं 05:45 (धनतेरस व कुबेर पूजा)
+  govardhan: '2026-11-09T06:30:00', // 9 November 2026 (गोवर्धन पूजा व अन्नकूट)
+  bhai_dooj: '2026-11-10T13:15:00', // 10 November 2026 (भाई दूज)
+  chhath_puja: '2026-11-15T17:30:00', // 15 November 2026 (छठ महापर्व संध्या अर्घ्य)
+  karwa_chauth: '2026-10-29T20:15:00', // 29 October 2026 (करवा चौथ चंद्र दर्शन)
+  sharad_purnima: '2026-10-25T19:00:00', // 25 October 2026 (शरद पूर्णिमा)
+};
+
 export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
   festivals,
   onSelectFestival
 }) => {
-  // Find the top upcoming Hindu festival or first major festival with countdown
-  const targetFestival = festivals.find(f => f.category === 'hindu' && (f.countdownDays ?? 0) >= 0) || festivals[0];
+  // Top upcoming major festivals for quick switching
+  const majorFestivals = festivals.filter(f => 
+    ['diwali', 'dhanteras', 'chhath_puja', 'karwa_chauth'].includes(f.id) || f.category === 'hindu'
+  ).slice(0, 4);
+
+  const [selectedId, setSelectedId] = useState<string>('diwali');
+
+  const targetFestival = festivals.find(f => f.id === selectedId) || 
+    festivals.find(f => f.id === 'diwali') || 
+    festivals[0];
 
   const calculateTimeLeft = (): TimeRemaining => {
     if (!targetFestival) {
       return { days: 0, hours: 0, minutes: 0, seconds: 0, isToday: false };
     }
 
-    const daysFromData = targetFestival.countdownDays ?? 0;
-    if (daysFromData <= 0) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, isToday: true };
-    }
-
     const now = new Date();
-    // Simulate target midnight
-    const targetDate = new Date();
-    targetDate.setDate(now.getDate() + daysFromData);
-    targetDate.setHours(18, 0, 0, 0); // 6:00 PM evening auspicious muhurat
+    let targetDate: Date;
+
+    if (FESTIVAL_TARGET_DATES_2026[targetFestival.id]) {
+      targetDate = new Date(FESTIVAL_TARGET_DATES_2026[targetFestival.id]);
+    } else {
+      const daysFromData = targetFestival.countdownDays ?? 0;
+      targetDate = new Date();
+      targetDate.setDate(now.getDate() + daysFromData);
+      targetDate.setHours(18, 0, 0, 0);
+    }
 
     const diffMs = targetDate.getTime() - now.getTime();
     if (diffMs <= 0) {
@@ -54,11 +74,12 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
   const [timeLeft, setTimeLeft] = useState<TimeRemaining>(calculateTimeLeft);
 
   useEffect(() => {
+    setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
     return () => clearInterval(timer);
-  }, [targetFestival]);
+  }, [targetFestival?.id]);
 
   if (!targetFestival) return null;
 
@@ -67,9 +88,34 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
       aria-label="महापर्व काउंटडाउन टाइमर"
       className="relative overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-950/80 via-stone-950 to-orange-950/80 p-5 sm:p-7 shadow-2xl shadow-amber-500/20 text-stone-100"
     >
-      {/* Background Ambient Glow & Mandala */}
+      {/* Background Ambient Glow & Decorative Elements */}
       <div className="absolute -top-16 -left-16 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Quick Festival Selector Pills */}
+      {majorFestivals.length > 1 && (
+        <div className="relative z-10 flex flex-wrap items-center gap-1.5 pb-4 mb-4 border-b border-amber-500/20">
+          <span className="text-[11px] font-bold text-amber-400 mr-1 flex items-center gap-1">
+            <span>⏱️</span>
+            <span>काउंटडाउन देखें:</span>
+          </span>
+          {majorFestivals.map(fest => (
+            <button
+              key={fest.id}
+              type="button"
+              onClick={() => setSelectedId(fest.id)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                targetFestival.id === fest.id
+                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20 scale-105'
+                  : 'bg-stone-900/80 text-stone-300 border border-stone-800 hover:border-amber-500/40'
+              }`}
+            >
+              <span>{fest.id === 'diwali' ? '🪔' : fest.id === 'dhanteras' ? '🪙' : '☀️'}</span>
+              <span>{fest.nameHi.split('•')[0].trim()}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
         
@@ -85,18 +131,17 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
           </h3>
 
           <p className="text-xs sm:text-sm text-stone-300 max-w-xl line-clamp-2">
-            {targetFestival.taglineHi} • {targetFestival.dateLabel}
+            {targetFestival.taglineHi}
           </p>
 
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1 text-xs text-amber-200/90 font-medium">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-lg border border-amber-500/30">
               <Calendar className="w-3.5 h-3.5 text-amber-400" />
               <span>{targetFestival.dateLabel}</span>
             </span>
-            <span className="text-stone-600">•</span>
-            <span className="flex items-center gap-1 text-emerald-300 font-semibold">
+            <span className="flex items-center gap-1 text-emerald-300 font-semibold bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/30">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>मुहूर्त: {targetFestival.shubhMuhurat.slice(0, 30)}...</span>
+              <span>{targetFestival.shubhMuhurat}</span>
             </span>
           </div>
         </div>

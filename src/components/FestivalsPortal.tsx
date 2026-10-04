@@ -107,9 +107,6 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
         </div>
       </div>
 
-      {/* Daily Hindu Panchang & Shubh Muhurat Widget */}
-      <PanchangWidget />
-
       {/* Featured Upcoming Grand Festival Spotlight */}
       <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-950 via-stone-900 to-stone-950 p-6 sm:p-8 shadow-2xl">
         <div className="grid md:grid-cols-12 gap-6 items-center">
