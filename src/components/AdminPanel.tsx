@@ -84,7 +84,7 @@ import {
   deleteUploadedAudioFile
 } from '../utils/audioStorage';
 import { optimizeImageForWeb } from '../utils/imageOptimizer';
-import { resolveDirectImageUrl } from '../utils/googleDriveHelper';
+import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
 import { 
   WishCategory, 
   HindiWish, 
@@ -1652,16 +1652,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               )}
                             </div>
 
-                            {/* Optional Custom Audio URL Input */}
+                            {/* Optional Custom Audio URL Input with Google Drive Support */}
                             <div className="mt-2 space-y-1">
-                              <label className="block text-[10px] font-bold text-stone-400">
-                                या ऑनलाइन MP3 लिंक डालें (Optional Audio URL):
-                              </label>
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[10px] font-bold text-stone-400">
+                                  या MP3 लिंक डालें (Google Drive / Direct URL):
+                                </label>
+                                <span className="text-[9px] text-purple-300 font-mono">⚡ Drive MP3 सपोर्टेड</span>
+                              </div>
                               <input
                                 type="url"
                                 value={fest.customAudioUrl || ''}
-                                onChange={(e) => handleUpdateFestivalAudio(fest.id, 'custom_url', e.target.value)}
-                                placeholder="https://.../song.mp3"
+                                onChange={(e) => handleUpdateFestivalAudio(fest.id, 'custom_url', resolveDirectAudioUrl(e.target.value))}
+                                placeholder="Google Drive शेयर लिंक या MP3 लिंक डालें..."
                                 className="w-full px-2.5 py-1.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-400"
                               />
                             </div>
@@ -3047,14 +3050,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-stone-300 mb-1">
-                      कस्टम MP3 URL (वैकल्पिक):
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-semibold text-stone-300">
+                        कस्टम MP3 URL (वैकल्पिक):
+                      </label>
+                      <span className="text-[9px] text-purple-300 font-mono">⚡ Drive MP3 लिंक सपोर्टेड</span>
+                    </div>
                     <input
                       type="url"
                       value={editingFestival.customAudioUrl || ''}
-                      onChange={(e) => setEditingFestival({ ...editingFestival, customAudioUrl: e.target.value })}
-                      placeholder="https://.../audio.mp3"
+                      onChange={(e) => setEditingFestival({ ...editingFestival, customAudioUrl: resolveDirectAudioUrl(e.target.value) })}
+                      placeholder="Google Drive शेयर लिंक या MP3 URL डालें..."
                       className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-purple-400"
                     />
                   </div>
@@ -3626,14 +3632,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-stone-300 mb-1">
-                      कस्टम MP3 URL (वैकल्पिक):
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-semibold text-stone-300">
+                        कस्टम MP3 URL (वैकल्पिक):
+                      </label>
+                      <span className="text-[9px] text-purple-300 font-mono">⚡ Drive MP3 लिंक सपोर्टेड</span>
+                    </div>
                     <input
                       type="url"
                       value={editingWishCategory.customAudioUrl || ''}
-                      onChange={(e) => setEditingWishCategory({ ...editingWishCategory, customAudioUrl: e.target.value })}
-                      placeholder="https://.../song.mp3"
+                      onChange={(e) => setEditingWishCategory({ ...editingWishCategory, customAudioUrl: resolveDirectAudioUrl(e.target.value) })}
+                      placeholder="Google Drive शेयर लिंक या MP3 URL डालें..."
                       className="w-full p-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-200 font-mono focus:outline-none focus:border-purple-400"
                     />
                   </div>

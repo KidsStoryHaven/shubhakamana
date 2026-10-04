@@ -52,6 +52,35 @@ export function resolveDirectImageUrl(url: string | null | undefined): string {
 }
 
 /**
+ * Resolves any audio URL (including Google Drive MP3 sharing links) into a direct streaming audio URL.
+ */
+export function resolveDirectAudioUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+
+  const gDriveId = extractGoogleDriveFileId(trimmed);
+  if (gDriveId) {
+    // Google Drive direct MP3 stream URL
+    return `https://docs.google.com/uc?export=download&id=${gDriveId}`;
+  }
+
+  return trimmed;
+}
+
+/**
+ * Returns alternative CDN URLs for a Google Drive file in case of rate limiting or domain blocks
+ */
+export function getGoogleDriveFallbackUrls(urlOrId: string): string[] {
+  const gDriveId = extractGoogleDriveFileId(urlOrId);
+  if (!gDriveId) return [];
+  return [
+    `https://lh3.googleusercontent.com/d/${gDriveId}`,
+    `https://drive.google.com/thumbnail?id=${gDriveId}&sz=w1600`,
+    `https://drive.google.com/uc?export=view&id=${gDriveId}`
+  ];
+}
+
+/**
  * Checks if a URL is a Google Drive link
  */
 export function isGoogleDriveUrl(url: string): boolean {
