@@ -110,7 +110,7 @@ export const FESTIVALS: Festival[] = [
     dateLabel: '8 नवंबर 2026 (कार्तिक अमावस्या)',
     countdownDays: 35,
     badge: '🔥 सबसे बड़ा महापर्व',
-    heroImage: 'https://images.unsplash.com/photo-1576872381149-7847515ce5d8?auto=format&fit=crop&w=1200&q=80',
+    heroImage: 'https://lh3.googleusercontent.com/d/1mLyYKb96lCLRgx2n0ELPI8m2OOvsR6fs',
     themeColor: {
       gradient: 'from-amber-950 via-yellow-900 to-stone-950',
       border: 'border-amber-500/40',
