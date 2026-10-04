@@ -20,6 +20,7 @@ const STORAGE_KEYS = {
   DEITY_SLIDES: 'shubhakamna_deity_slides_v2',
   WISH_CATEGORIES: 'shubhakamna_wish_categories_v2',
   LAST_SYNC_TIME: 'shubhakamna_last_sync_time_v2',
+  LOCAL_MODIFIED: 'shubhakamna_local_last_modified_v2',
   ADMIN_USER: 'shubhakamna_admin_user_v2',
   ADMIN_PASS: 'shubhakamna_admin_pass_v2',
   ADMIN_SESSION: 'shubhakamna_admin_session_v2'
@@ -27,6 +28,15 @@ const STORAGE_KEYS = {
 
 const DEFAULT_USERNAME = 'maahi32';
 const DEFAULT_PASSWORD = 'Sk951951';
+
+/**
+ * Marks local changes as freshly modified by admin
+ */
+function touchLocalModified(): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LOCAL_MODIFIED, Date.now().toString());
+  } catch {}
+}
 
 /**
  * Initializes and retrieves stored festivals
@@ -48,6 +58,7 @@ export function getStoredFestivals(): Festival[] {
 
 export function saveStoredFestivals(festivals: Festival[]): void {
   try {
+    touchLocalModified();
     localStorage.setItem(STORAGE_KEYS.FESTIVALS, JSON.stringify(festivals));
     // Trigger custom event so any listener updates automatically
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
@@ -78,6 +89,7 @@ export function getStoredCategories(): CategoryInfo[] {
 
 export function saveStoredCategories(categories: CategoryInfo[]): void {
   try {
+    touchLocalModified();
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
     syncSiteDataToServer();
@@ -133,6 +145,7 @@ export function getAllStoredDeitySlides(): Record<string, DivineDeitySlide[]> {
  */
 export function saveStoredDeitySlides(festivalId: string, slides: DivineDeitySlide[]): void {
   try {
+    touchLocalModified();
     let allSlides: Record<string, DivineDeitySlide[]> = {};
     const raw = localStorage.getItem(STORAGE_KEYS.DEITY_SLIDES);
     if (raw) {
@@ -172,6 +185,9 @@ export function saveStoredDeitySlides(festivalId: string, slides: DivineDeitySli
  */
 export async function initGlobalSiteDataSync(): Promise<boolean> {
   try {
+    // Check if user has made local edits on this browser
+    const localModified = parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_MODIFIED) || '0', 10);
+
     // Try /api/site-data first, then fallback to /site-data.json
     let response: Response | null = null;
     try {
@@ -190,6 +206,14 @@ export async function initGlobalSiteDataSync(): Promise<boolean> {
 
     const data = await response.json();
     if (!data || typeof data !== 'object') return false;
+
+    const serverModified = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+
+    // If this browser has newer local admin edits than the static file, preserve local edits!
+    if (localModified > 0 && localModified >= serverModified) {
+      console.log('ℹ️ [Global Sync] Preserving recent local admin edits.');
+      return true;
+    }
 
     let hasChanges = false;
 
