@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WISH_CATEGORIES, WishCategory, getBreadcrumbTrail, getChildCategories, getCategoryBySlug } from '../src/data/wishesData.js';
+import { FESTIVALS, FESTIVAL_CATEGORIES } from '../src/data/festivals.js';
+import { FESTIVAL_DEITY_GALLERIES } from '../src/data/divineGodsData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -448,6 +450,33 @@ function run() {
   if (fs.existsSync(legacyRedirectsPath)) {
     fs.unlinkSync(legacyRedirectsPath);
   }
+
+  // 5. Generate / Sync Global site-data.json
+  console.log('📦 Bundling Global site-data.json for instant multi-device sync...');
+  const publicSiteDataPath = path.resolve(__dirname, '../public/site-data.json');
+  let siteDataContent: any = null;
+
+  if (fs.existsSync(publicSiteDataPath)) {
+    try {
+      siteDataContent = JSON.parse(fs.readFileSync(publicSiteDataPath, 'utf-8'));
+    } catch {}
+  }
+
+  if (!siteDataContent) {
+    siteDataContent = {
+      version: '2.0',
+      updatedAt: new Date().toISOString(),
+      festivals: FESTIVALS,
+      categories: FESTIVAL_CATEGORIES,
+      deitySlides: FESTIVAL_DEITY_GALLERIES,
+      wishCategories: WISH_CATEGORIES
+    };
+    fs.writeFileSync(publicSiteDataPath, JSON.stringify(siteDataContent, null, 2), 'utf-8');
+  }
+
+  // Ensure dist has a copy too
+  fs.writeFileSync(path.join(distDir, 'site-data.json'), JSON.stringify(siteDataContent, null, 2), 'utf-8');
+  console.log('✅ Generated: site-data.json in dist/ & public/');
 
   console.log('🎉 Static Site Generation (SSG) Completed Successfully!');
 }

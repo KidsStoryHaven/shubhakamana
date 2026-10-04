@@ -14,7 +14,7 @@ import { UserAuthModal } from './components/UserAuthModal';
 import { LoginPromptPopup } from './components/LoginPromptPopup';
 import { LivePointsTickerBanner } from './components/LivePointsTickerBanner';
 import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
-import { getStoredFestivals, getStoredCategories } from './data/festivalStore';
+import { getStoredFestivals, getStoredCategories, initGlobalSiteDataSync } from './data/festivalStore';
 import { getStoredAdSettings } from './data/adStore';
 import { parseWishUrl } from './utils/shortUrl';
 import { updatePageSEO, getFestivalSEOMetadata, resetPortalSEO } from './utils/seoManager';
@@ -124,6 +124,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Synchronize latest site data from server/file on any visitor device load
+    initGlobalSiteDataSync();
+
     const handleDataChanged = () => {
       const storedFests = getStoredFestivals();
       setFestivals(storedFests);

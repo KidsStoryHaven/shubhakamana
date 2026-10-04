@@ -11,6 +11,7 @@ import {
   loginAdminSession,
   logoutAdminSession,
   updateAdminCredentials,
+  syncSiteDataToServer,
   exportFullBackup, 
   importFullBackup, 
   resetToDefaults 
@@ -899,6 +900,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={async () => {
+              showToast('सभी डिवाइस के लिए डेटा पब्लिश हो रहा है... ⏳');
+              const res = await syncSiteDataToServer();
+              showToast(res.message || 'सभी विज़िटर्स के लिए डेटा लाइव हो गया! 🚀');
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition cursor-pointer"
+            title="क्लिक करते ही आपकी सभी फ़ोटो, ऑडियो व त्योहार पूरी दुनिया के सभी विज़िटर्स के लिए तुरंत लाइव हो जाएंगे"
+          >
+            <Globe className="w-3.5 h-3.5 text-stone-950" />
+            <span>🌐 सभी डिवाइस पर पब्लिश करें</span>
+          </button>
           <button
             onClick={handleCloseOrExit}
             className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs flex items-center gap-1.5 border border-stone-700 transition cursor-pointer"

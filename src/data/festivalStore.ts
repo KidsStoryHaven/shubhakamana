@@ -9,11 +9,17 @@ import {
   FESTIVAL_DEITY_GALLERIES as DEFAULT_DEITY_GALLERIES, 
   DivineDeitySlide 
 } from './divineGodsData';
+import { 
+  WISH_CATEGORIES as DEFAULT_WISH_CATEGORIES, 
+  WishCategory 
+} from './wishesData';
 
 const STORAGE_KEYS = {
   FESTIVALS: 'shubhakamna_festivals_v2',
   CATEGORIES: 'shubhakamna_categories_v2',
   DEITY_SLIDES: 'shubhakamna_deity_slides_v2',
+  WISH_CATEGORIES: 'shubhakamna_wish_categories_v2',
+  LAST_SYNC_TIME: 'shubhakamna_last_sync_time_v2',
   ADMIN_USER: 'shubhakamna_admin_user_v2',
   ADMIN_PASS: 'shubhakamna_admin_pass_v2',
   ADMIN_SESSION: 'shubhakamna_admin_session_v2'
@@ -45,6 +51,8 @@ export function saveStoredFestivals(festivals: Festival[]): void {
     localStorage.setItem(STORAGE_KEYS.FESTIVALS, JSON.stringify(festivals));
     // Trigger custom event so any listener updates automatically
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
+    // Trigger background async sync to server / persistent file
+    syncSiteDataToServer();
   } catch (e) {
     console.error('Failed to save festivals to localStorage:', e);
   }
@@ -72,6 +80,7 @@ export function saveStoredCategories(categories: CategoryInfo[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
+    syncSiteDataToServer();
   } catch (e) {
     console.error('Failed to save categories to localStorage:', e);
   }
@@ -99,6 +108,24 @@ export function getStoredDeitySlides(festivalId: string): DivineDeitySlide[] {
   }
 
   return [];
+}
+
+/**
+ * Retrieves all stored deity slides map
+ */
+export function getAllStoredDeitySlides(): Record<string, DivineDeitySlide[]> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.DEITY_SLIDES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return { ...DEFAULT_DEITY_GALLERIES, ...parsed };
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to parse all stored deity slides:', e);
+  }
+  return DEFAULT_DEITY_GALLERIES;
 }
 
 /**
@@ -133,8 +160,111 @@ export function saveStoredDeitySlides(festivalId: string, slides: DivineDeitySli
     }
 
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
+    syncSiteDataToServer();
   } catch (e) {
     console.error('Failed to save deity slides:', e);
+  }
+}
+
+/**
+ * Global Site Data Sync - Fetches latest database / site-data.json from server / CDN
+ * Runs on every client device load so all visitors see the latest updates instantly!
+ */
+export async function initGlobalSiteDataSync(): Promise<boolean> {
+  try {
+    // Try /api/site-data first, then fallback to /site-data.json
+    let response: Response | null = null;
+    try {
+      response = await fetch('/api/site-data', { cache: 'no-store' });
+    } catch {
+      // Fallback
+    }
+
+    if (!response || !response.ok) {
+      try {
+        response = await fetch('/site-data.json', { cache: 'no-store' });
+      } catch {}
+    }
+
+    if (!response || !response.ok) return false;
+
+    const data = await response.json();
+    if (!data || typeof data !== 'object') return false;
+
+    let hasChanges = false;
+
+    if (data.festivals && Array.isArray(data.festivals) && data.festivals.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.FESTIVALS, JSON.stringify(data.festivals));
+      hasChanges = true;
+    }
+
+    if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(data.categories));
+      hasChanges = true;
+    }
+
+    if (data.deitySlides && typeof data.deitySlides === 'object') {
+      localStorage.setItem(STORAGE_KEYS.DEITY_SLIDES, JSON.stringify(data.deitySlides));
+      hasChanges = true;
+    }
+
+    if (data.wishCategories && Array.isArray(data.wishCategories) && data.wishCategories.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.WISH_CATEGORIES, JSON.stringify(data.wishCategories));
+      hasChanges = true;
+    }
+
+    if (data.updatedAt) {
+      localStorage.setItem(STORAGE_KEYS.LAST_SYNC_TIME, data.updatedAt);
+    }
+
+    if (hasChanges) {
+      window.dispatchEvent(new Event('shubhakamna_data_changed'));
+      window.dispatchEvent(new Event('shubhakamna_wish_categories_changed'));
+      console.log('✅ [Global Sync] Site data synchronized from server successfully!');
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Global site data sync skipped or offline:', err);
+    return false;
+  }
+}
+
+/**
+ * Persists current state to server /api/site-data (and saves into public/site-data.json)
+ */
+export async function syncSiteDataToServer(): Promise<{ success: boolean; message?: string }> {
+  try {
+    const payload = {
+      version: '2.0',
+      updatedAt: new Date().toISOString(),
+      festivals: getStoredFestivals(),
+      categories: getStoredCategories(),
+      deitySlides: getAllStoredDeitySlides(),
+      wishCategories: (() => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.WISH_CATEGORIES);
+          return raw ? JSON.parse(raw) : DEFAULT_WISH_CATEGORIES;
+        } catch {
+          return DEFAULT_WISH_CATEGORIES;
+        }
+      })()
+    };
+
+    const res = await fetch('/api/site-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return { success: true, message: json.message || 'सभी डिवाइस के लिए सफलतापूर्वक सेव हो गया!' };
+    }
+    return { success: false, message: 'सर्वर सिंक में समस्या आई (लोकल सेव्ड)' };
+  } catch (e) {
+    // Expected if running purely on static host without active backend API
+    return { success: false, message: 'लोकल स्टोरेज में सेव हो गया।' };
   }
 }
 
@@ -188,12 +318,13 @@ export function exportFullBackup(): string {
     exportDate: new Date().toISOString(),
     festivals: getStoredFestivals(),
     categories: getStoredCategories(),
-    deitySlides: (() => {
+    deitySlides: getAllStoredDeitySlides(),
+    wishCategories: (() => {
       try {
-        const raw = localStorage.getItem(STORAGE_KEYS.DEITY_SLIDES);
-        return raw ? JSON.parse(raw) : DEFAULT_DEITY_GALLERIES;
+        const raw = localStorage.getItem(STORAGE_KEYS.WISH_CATEGORIES);
+        return raw ? JSON.parse(raw) : DEFAULT_WISH_CATEGORIES;
       } catch {
-        return DEFAULT_DEITY_GALLERIES;
+        return DEFAULT_WISH_CATEGORIES;
       }
     })()
   };
@@ -215,7 +346,12 @@ export function importFullBackup(jsonString: string): boolean {
     if (data.deitySlides && typeof data.deitySlides === 'object') {
       localStorage.setItem(STORAGE_KEYS.DEITY_SLIDES, JSON.stringify(data.deitySlides));
     }
+    if (data.wishCategories && Array.isArray(data.wishCategories)) {
+      localStorage.setItem(STORAGE_KEYS.WISH_CATEGORIES, JSON.stringify(data.wishCategories));
+    }
     window.dispatchEvent(new Event('shubhakamna_data_changed'));
+    window.dispatchEvent(new Event('shubhakamna_wish_categories_changed'));
+    syncSiteDataToServer();
     return true;
   } catch (e) {
     console.error('Failed to import backup:', e);
@@ -230,8 +366,12 @@ export function resetToDefaults(): void {
   localStorage.removeItem(STORAGE_KEYS.FESTIVALS);
   localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
   localStorage.removeItem(STORAGE_KEYS.DEITY_SLIDES);
+  localStorage.removeItem(STORAGE_KEYS.WISH_CATEGORIES);
+  localStorage.removeItem(STORAGE_KEYS.LAST_SYNC_TIME);
   localStorage.removeItem(STORAGE_KEYS.ADMIN_USER);
   localStorage.removeItem(STORAGE_KEYS.ADMIN_PASS);
   localStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
   window.dispatchEvent(new Event('shubhakamna_data_changed'));
+  window.dispatchEvent(new Event('shubhakamna_wish_categories_changed'));
+  syncSiteDataToServer();
 }
