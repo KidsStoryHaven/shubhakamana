@@ -497,10 +497,11 @@ export default function App() {
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
             <div className="space-y-1">
-              <span className="text-base font-bold text-amber-400 font-serif flex items-center justify-center md:justify-start gap-1.5">
-                <span>🪔 Shubhakamna.in</span>
-                <span className="text-xs text-stone-400 font-sans">· भारत का आधिकारिक शुभकामना द्वार</span>
-              </span>
+              <img 
+                src="/logo.svg" 
+                alt="Shubhakamna - Festival Wishes" 
+                className="h-10 sm:h-12 w-auto max-w-[240px] object-contain mx-auto md:mx-0 drop-shadow-[0_2px_8px_rgba(245,158,11,0.2)] mb-1"
+              />
               <p className="text-xs text-stone-400 max-w-xl">
                 सभी भारतीय पर्वों (दीपावली, होली, रक्षाबंधन) व व्यक्तिगत उत्सवों पर अपने नाम व फोटो का 9:16 विशिंग कार्ड बनाएं और 1-क्लिक में WhatsApp पर भेजें।
               </p>

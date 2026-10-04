@@ -109,33 +109,21 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 w-full border-b border-amber-500/20 bg-stone-950/95 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
         
-        {/* Brand Logo & Name */}
+        {/* Official Brand Logo */}
         <button
           onClick={() => {
             onGoHome();
             onSelectCategory?.('all');
             setActiveDropdown(null);
           }}
-          className="group flex items-center gap-2.5 text-left focus-visible:outline-none cursor-pointer shrink-0"
+          className="group flex items-center gap-2 focus-visible:outline-none cursor-pointer shrink-0 py-1"
+          title="Shubhakamna.in - भारत का पावन शुभकामना पोर्टल"
         >
-          <div 
-            className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300 active:scale-95 transition-transform"
-          >
-            <span className="text-xl">🪔</span>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl font-extrabold tracking-tight text-white font-serif transition-colors group-hover:text-amber-300">
-                Shubhakamna.in
-              </span>
-              <span className="hidden sm:inline text-[10px] bg-amber-500/20 text-amber-300 font-sans font-bold px-1.5 py-0.5 rounded border border-amber-500/30">
-                शुभकामना
-              </span>
-            </div>
-            <span className="text-[10px] text-amber-200/70 font-sans truncate max-w-[170px] sm:max-w-none">
-              भारत का पावन शुभकामना पोर्टल
-            </span>
-          </div>
+          <img 
+            src="/logo.svg" 
+            alt="Shubhakamna - Festival Wishes" 
+            className="h-11 sm:h-13 w-auto max-w-[210px] sm:max-w-[270px] object-contain drop-shadow-[0_2px_12px_rgba(245,158,11,0.25)] group-hover:scale-105 transition-transform"
+          />
         </button>
 
         {/* Desktop Categorized Dropdowns */}

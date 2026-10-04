@@ -336,7 +336,28 @@ function run() {
 
   // 4. Generate Cloudflare Pages _headers
   console.log('⚡ Generating Cloudflare Pages _headers...');
-  const headersContent = `# Cloudflare Pages Performance & Security Headers\n/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n\n/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: SAMEORIGIN\n  Referrer-Policy: strict-origin-when-cross-origin\n`;
+  const headersContent = `# Cloudflare Pages Performance & Security Headers
+/ads.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
+
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+`;
   fs.writeFileSync(path.join(distDir, '_headers'), headersContent, 'utf-8');
 
   // If a legacy _redirects exists in dist, delete it to prevent Cloudflare redirect loop errors
