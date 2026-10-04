@@ -1,4 +1,5 @@
 import { Festival } from '../data/festivals';
+import { resolveDirectImageUrl } from './googleDriveHelper';
 
 export interface StatusCardOptions {
   festival: Festival;
@@ -143,7 +144,7 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
       resolve();
     };
     img.onerror = () => resolve(); // Proceed even if image fails
-    img.src = heroImageOverride || festival.heroImage;
+    img.src = resolveDirectImageUrl(heroImageOverride || festival.heroImage);
   });
 
   // 7. Blessing / Poetic Box

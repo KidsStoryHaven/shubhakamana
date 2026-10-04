@@ -84,6 +84,7 @@ import {
   deleteUploadedAudioFile
 } from '../utils/audioStorage';
 import { optimizeImageForWeb } from '../utils/imageOptimizer';
+import { resolveDirectImageUrl } from '../utils/googleDriveHelper';
 import { 
   WishCategory, 
   HindiWish, 
@@ -2920,14 +2921,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-stone-300 font-bold mb-1">मुख्य हीरो फ़ोटो (Hero Image)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone-300 font-bold">मुख्य हीरो फ़ोटो (Hero Image)</label>
+                  <span className="text-[10px] text-amber-300 font-mono">⚡ Google Drive / डायरेक्ट लिंक सपोर्टेड</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={editingFestival.heroImage}
-                    onChange={(e) => setEditingFestival({ ...editingFestival, heroImage: e.target.value })}
-                    placeholder="फ़ोटो URL पेस्ट करें..."
-                    className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white"
+                    onChange={(e) => setEditingFestival({ ...editingFestival, heroImage: resolveDirectImageUrl(e.target.value) })}
+                    placeholder="Google Drive शेयर लिंक या फ़ोटो URL पेस्ट करें..."
+                    className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
                   />
                   <input
                     type="file"
@@ -2939,12 +2943,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-bold shrink-0 flex items-center gap-1"
+                    className="px-3 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-bold shrink-0 flex items-center gap-1 cursor-pointer"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>अपलोड</span>
                   </button>
                 </div>
+                {editingFestival.heroImage && (
+                  <div className="mt-2 p-2 rounded-xl bg-black/60 border border-stone-800 flex items-center gap-3">
+                    <img 
+                      src={editingFestival.heroImage} 
+                      alt="Hero Preview" 
+                      className="w-16 h-11 object-cover rounded-lg border border-amber-500/30"
+                    />
+                    <span className="text-[11px] text-stone-400">फ़ोटो लाइव प्रीव्यू (Instant Display)</span>
+                  </div>
+                )}
               </div>
 
               <div className="sm:col-span-2">
@@ -3182,14 +3196,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               <div>
-                <label className="block text-stone-300 font-bold mb-1">फ़ोटो (Image File or URL)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone-300 font-bold">फ़ोटो (Google Drive Link, Image File or URL)</label>
+                  <span className="text-[10px] text-amber-300 font-mono">⚡ Drive लिंक तुरंत एक्टिव</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={editingSlide.imageUrl}
-                    onChange={(e) => setEditingSlide({ ...editingSlide, imageUrl: e.target.value })}
-                    placeholder="फ़ोटो URL या नीचे से अपलोड करें..."
-                    className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white"
+                    onChange={(e) => setEditingSlide({ ...editingSlide, imageUrl: resolveDirectImageUrl(e.target.value) })}
+                    placeholder="Google Drive शेयर लिंक या फ़ोटो URL डालें..."
+                    className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
                   />
                   <input
                     type="file"
@@ -3201,7 +3218,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => document.getElementById('slideFileInput')?.click()}
-                    className="px-3.5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold shrink-0 flex items-center gap-1"
+                    className="px-3.5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold shrink-0 flex items-center gap-1 cursor-pointer"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>गैलरी से चुनें</span>
@@ -3524,15 +3541,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               {/* 10. Hero Image URL & Upload */}
               <div className="sm:col-span-2">
-                <label className="block text-stone-300 font-bold mb-1">
-                  हेरो बैनर इमेज (Hero Banner Image)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone-300 font-bold">
+                    हेरो बैनर इमेज (Hero Banner Image)
+                  </label>
+                  <span className="text-[10px] text-amber-300 font-mono">⚡ Drive / Direct Link Supported</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={editingWishCategory.heroImageUrl}
-                    onChange={(e) => setEditingWishCategory({ ...editingWishCategory, heroImageUrl: e.target.value })}
-                    placeholder="फ़ोटो URL या नीचे से अपलोड करें..."
+                    onChange={(e) => setEditingWishCategory({ ...editingWishCategory, heroImageUrl: resolveDirectImageUrl(e.target.value) })}
+                    placeholder="Google Drive शेयर लिंक या फ़ोटो URL पेस्ट करें..."
                     className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white focus:outline-none focus:border-amber-400"
                   />
                   <label className="px-3.5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold shrink-0 flex items-center gap-1 cursor-pointer transition">
