@@ -5,7 +5,8 @@ import {
   Play, 
   Pause, 
   Sparkles, 
-  Check
+  Check,
+  RefreshCw
 } from 'lucide-react';
 import { DivineDeitySlide } from '../data/divineGodsData';
 import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from '../utils/googleDriveHelper';
@@ -15,13 +16,17 @@ interface FestivalImageSliderProps {
   currentIndex: number;
   onSelectIndex: (index: number) => void;
   festivalName: string;
+  onRefreshFolder?: () => void;
+  isRefreshingFolder?: boolean;
 }
 
 export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
   slides,
   currentIndex,
   onSelectIndex,
-  festivalName
+  festivalName,
+  onRefreshFolder,
+  isRefreshingFolder
 }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -218,6 +223,18 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
               >
                 {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                 <span className="text-[10px]">{isPlaying ? 'रोकें' : 'चलाएँ'}</span>
+              </button>
+            )}
+
+            {onRefreshFolder && (
+              <button
+                onClick={onRefreshFolder}
+                disabled={isRefreshingFolder}
+                title="Google Drive फ़ोल्डर से नई फ़ोटो सिंक करें"
+                className="p-1 rounded-lg bg-black/60 border border-blue-400/40 text-blue-300 hover:text-white hover:border-blue-400 transition cursor-pointer text-xs flex items-center gap-1 px-2 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRefreshingFolder ? 'animate-spin text-amber-400' : ''}`} />
+                <span className="text-[10px]">{isRefreshingFolder ? 'सिंक...' : 'सिंक'}</span>
               </button>
             )}
 

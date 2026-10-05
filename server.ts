@@ -116,80 +116,70 @@ async function startServer() {
 
     const itemsMap = new Map<string, string>(); // fileId -> title
 
-    // Fetch targets: embedded view (fast & clean) & standard folder view
-    const targetUrls = [
-      `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`,
-      `https://drive.google.com/drive/folders/${folderId}`
-    ];
+    // 1. Fetch embedded view with no-cache (Primary, 100% accurate file listing)
+    try {
+      const embeddedUrl = `https://drive.google.com/embeddedfolderview?id=${folderId}&_t=${Date.now()}#grid`;
+      const fetchRes = await fetch(embeddedUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
 
-    for (const targetUrl of targetUrls) {
+      if (fetchRes.ok) {
+        const html = await fetchRes.text();
+
+        // Extract pattern: entry-FILE_ID paired with title in embedded grid view
+        const entryWithTitleMatches = html.matchAll(/id=["']entry-([a-zA-Z0-9_-]{20,50})["'][\s\S]*?<div[^>]*class=["']flip-entry-title["'][^>]*>([^<]+)<\/div>/g);
+        for (const m of entryWithTitleMatches) {
+          const fId = m[1];
+          const title = m[2]?.trim();
+          if (fId && fId !== folderId) {
+            itemsMap.set(fId, title || '');
+          }
+        }
+
+        // Secondary extract: all id="entry-FILE_ID"
+        const entryMatches = html.matchAll(/id=["']entry-([a-zA-Z0-9_-]{20,50})["']/g);
+        for (const m of entryMatches) {
+          if (m[1] && m[1] !== folderId && !itemsMap.has(m[1])) {
+            itemsMap.set(m[1], '');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching embeddedfolderview:', err);
+    }
+
+    // 2. Fallback to standard drive folder url only if embedded view found 0 files
+    if (itemsMap.size === 0) {
       try {
-        const fetchRes = await fetch(targetUrl, {
+        const standardUrl = `https://drive.google.com/drive/folders/${folderId}?_t=${Date.now()}`;
+        const fetchRes = await fetch(standardUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'hi,en-US,en;q=0.9'
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
           }
         });
 
         if (fetchRes.ok) {
           const html = await fetchRes.text();
 
-          // Extract pattern 0: entry-FILE_ID paired with title in embedded grid view
-          const entryWithTitleMatches = html.matchAll(/id=["']entry-([a-zA-Z0-9_-]{20,50})["'][\s\S]*?<div[^>]*class=["']flip-entry-title["'][^>]*>([^<]+)<\/div>/g);
-          for (const m of entryWithTitleMatches) {
-            const fId = m[1];
-            const title = m[2]?.trim();
-            if (fId && fId !== folderId) {
-              itemsMap.set(fId, title || '');
-            }
-          }
-
-          // Extract pattern 1: id="entry-FILE_ID"
-          const entryMatches = html.matchAll(/id=["']entry-([a-zA-Z0-9_-]{20,50})["']/g);
-          for (const m of entryMatches) {
-            if (m[1] && m[1] !== folderId && !itemsMap.has(m[1])) {
-              itemsMap.set(m[1], '');
-            }
-          }
-
-          // Extract pattern 2: lh3.googleusercontent.com/d/FILE_ID
           const lh3Matches = html.matchAll(/googleusercontent\.com\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]{20,50})/g);
           for (const m of lh3Matches) {
             if (m[1] && m[1] !== folderId && !itemsMap.has(m[1])) itemsMap.set(m[1], '');
           }
 
-          // Extract pattern 3: drive.google.com/thumbnail?id=FILE_ID
-          const thumbMatches = html.matchAll(/thumbnail\?(?:[^"'\s]*&)*id=([a-zA-Z0-9_-]{20,50})/g);
-          for (const m of thumbMatches) {
-            if (m[1] && m[1] !== folderId && !itemsMap.has(m[1])) itemsMap.set(m[1], '');
-          }
-
-          // Extract pattern 4: data-id="FILE_ID"
-          const dataIdMatches = html.matchAll(/data-id="([a-zA-Z0-9_-]{20,50})"/g);
-          for (const m of dataIdMatches) {
-            if (m[1] && m[1] !== folderId && !itemsMap.has(m[1])) itemsMap.set(m[1], '');
-          }
-
-          // Extract pattern 5: /file/d/FILE_ID
           const fileDMatches = html.matchAll(/\/file\/d\/([a-zA-Z0-9_-]{20,50})/g);
           for (const m of fileDMatches) {
             if (m[1] && m[1] !== folderId && !itemsMap.has(m[1])) itemsMap.set(m[1], '');
           }
-
-          // Extract pattern 6: Standard Drive ID patterns in JS arrays
-          const jsIdMatches = html.matchAll(/["']([a-zA-Z0-9_-]{28,45})["']/g);
-          for (const m of jsIdMatches) {
-            const id = m[1];
-            if (id !== folderId && !id.includes('http') && !id.includes('googleapis') && !id.includes('gstatic') && !id.includes('drive_') && !id.includes('viewer')) {
-              if (/^[a-zA-Z0-9_-]{28,40}$/.test(id) && !itemsMap.has(id)) {
-                itemsMap.set(id, '');
-              }
-            }
-          }
         }
-      } catch (fetchErr) {
-        console.warn(`Error fetching ${targetUrl}:`, fetchErr);
+      } catch (err) {
+        console.warn('Error fetching standard drive folder:', err);
       }
     }
 
@@ -206,7 +196,6 @@ async function startServer() {
     }
 
     const photos = entries.map(([fileId, customFileName], idx) => {
-      // Clean up title from filename if available
       let cleanTitle = customFileName ? customFileName.replace(/\.[a-zA-Z0-9]+$/, '').replace(/[_-]/g, ' ') : '';
       if (!cleanTitle || cleanTitle.length > 50) {
         cleanTitle = `${festivalNameInput} • पावन दर्शन #${idx + 1}`;
@@ -226,6 +215,32 @@ async function startServer() {
     });
 
     console.log(`[Google Drive Folder] Successfully extracted ${photos.length} photos for ${festivalNameInput} (Folder: ${folderId})`);
+
+    // Auto-update persistent cache in site-data.json for instant delivery
+    try {
+      const siteFiles = [path.join(__dirname, 'public', 'site-data.json'), path.join(__dirname, 'dist', 'site-data.json')];
+      for (const sf of siteFiles) {
+        if (fs.existsSync(sf)) {
+          const raw = fs.readFileSync(sf, 'utf-8');
+          const data = JSON.parse(raw);
+          if (!data.deitySlides) data.deitySlides = {};
+          // Find matching festival ID
+          let matchedFestId = 'dhammachakra_pravartan';
+          if (data.festivals && Array.isArray(data.festivals)) {
+            const f = data.festivals.find((x: any) => x.gdriveFolderUrl && x.gdriveFolderUrl.includes(folderId!));
+            if (f) {
+              matchedFestId = f.id;
+              f.heroImage = photos[0].imageUrl;
+            }
+          }
+          data.deitySlides[matchedFestId] = photos;
+          data.updatedAt = new Date().toISOString();
+          fs.writeFileSync(sf, JSON.stringify(data, null, 2), 'utf-8');
+        }
+      }
+    } catch (cacheErr) {
+      console.warn('Error updating site-data.json cache:', cacheErr);
+    }
 
     return {
       success: true,

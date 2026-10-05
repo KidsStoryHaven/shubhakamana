@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Festival } from '../data/festivals';
 import { FestiveCanvas } from './FestiveCanvas';
 import { festiveAudio } from '../utils/festiveAudio';
@@ -260,39 +260,49 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   };
 
   const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>(() => getResolvedDeitySlides(festival));
+  const [isRefreshingGDrive, setIsRefreshingGDrive] = useState(false);
 
-  // 🔄 Automatic Google Drive Folder Live-Sync (Fetches latest photos whenever folder is updated)
-  useEffect(() => {
-    const festGdriveUrl = festival.gdriveFolderUrl || (festival.id === 'dhammachakra_pravartan' ? 'https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo' : undefined);
-    
-    if (festGdriveUrl) {
-      let isMounted = true;
-      fetchPhotosFromGoogleDriveFolder(festGdriveUrl, festival.nameHi)
-        .then(res => {
-          if (isMounted && res.success && res.photos.length > 0) {
-            const driveSlides: DivineDeitySlide[] = res.photos.map((p, idx) => ({
-              id: p.id,
-              godName: festival.nameHi,
-              title: p.title || `${festival.nameHi} • पावन दर्शन #${idx + 1}`,
-              tagline: p.tagline || festival.taglineHi || 'पावन दर्शन',
-              badge: idx === 0 ? '✨ मुख्य दर्शन' : '☸️ पावन दर्शन',
-              mantra: festival.mantraOrShloka || '॥ नमो बुद्धाय जय भीम ॥',
-              imageUrl: p.imageUrl
-            }));
-            
-            setDeitySlides(driveSlides);
-            saveStoredDeitySlides(festival.id, driveSlides);
-          }
-        })
-        .catch(err => {
-          console.warn('Auto GDrive live sync error:', err);
-        });
+  const festGdriveUrl = festival.gdriveFolderUrl || (festival.id === 'dhammachakra_pravartan' ? 'https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo' : undefined);
 
-      return () => {
-        isMounted = false;
-      };
+  const refreshGDrivePhotos = useCallback(async () => {
+    if (!festGdriveUrl) return;
+    setIsRefreshingGDrive(true);
+    try {
+      const res = await fetchPhotosFromGoogleDriveFolder(festGdriveUrl, festival.nameHi);
+      if (res.success && res.photos.length > 0) {
+        const driveSlides: DivineDeitySlide[] = res.photos.map((p, idx) => ({
+          id: p.id,
+          godName: festival.nameHi,
+          title: p.title || `${festival.nameHi} • पावन दर्शन #${idx + 1}`,
+          tagline: p.tagline || festival.taglineHi || 'पावन दर्शन',
+          badge: idx === 0 ? '✨ मुख्य दर्शन' : '☸️ पावन दर्शन',
+          mantra: festival.mantraOrShloka || '॥ नमो बुद्धाय जय भीम ॥',
+          imageUrl: p.imageUrl
+        }));
+        
+        setDeitySlides(driveSlides);
+        saveStoredDeitySlides(festival.id, driveSlides);
+      }
+    } catch (e) {
+      console.warn('GDrive refresh error:', e);
+    } finally {
+      setIsRefreshingGDrive(false);
     }
-  }, [festival.id, festival.gdriveFolderUrl, festival.nameHi, festival.taglineHi, festival.mantraOrShloka]);
+  }, [festGdriveUrl, festival.id, festival.nameHi, festival.taglineHi, festival.mantraOrShloka]);
+
+  // 🔄 Automatic Google Drive Folder Live-Sync (Initial mount & window focus auto-scan)
+  useEffect(() => {
+    if (!festGdriveUrl) return;
+    refreshGDrivePhotos();
+
+    const handleWindowFocus = () => {
+      refreshGDrivePhotos();
+    };
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [festGdriveUrl, refreshGDrivePhotos]);
 
   useEffect(() => {
     const handleDataChanged = () => {
@@ -958,6 +968,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                     currentIndex={safeActiveIndex}
                     onSelectIndex={(idx) => setActiveImageIndex(idx)}
                     festivalName={festival.nameHi}
+                    onRefreshFolder={festGdriveUrl ? refreshGDrivePhotos : undefined}
+                    isRefreshingFolder={isRefreshingGDrive}
                   />
                 </div>
 
