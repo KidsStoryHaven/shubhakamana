@@ -27,6 +27,7 @@ import { awardUserPoints } from '../data/userStore';
 import { recordFestivalView, recordFestivalShare } from '../data/festivalEngagementStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
 import { generateStatusCardBlob } from '../utils/generateStatusCard';
+import { shareToWhatsAppWithPhoto } from '../utils/shareWithImageHelper';
 import { updatePageSEO, getFestivalSEOMetadata } from '../utils/seoManager';
 import { 
   SUPPORTED_LANGUAGES, 
@@ -562,7 +563,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     return createShortWishUrl(senderName, festival.id, selectedLanguage, isBirthday ? birthdayPerson : undefined);
   };
 
-  const handleWhatsAppShare = () => {
+  const handleWhatsAppShare = async () => {
     triggerFestivalSound();
     const url = getShareUrl();
     const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
@@ -570,21 +571,27 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       ? `🎂 *Happy Birthday ${birthdayPerson}!* 🎈🎉\n\n"${activeTranslation.greetingPoem || festival.defaultPoem}"\n\n— *${displayName}* की ओर से जन्मदिन की हार्दिक शुभकामनाएँ ✨\n\n👇 आपके नाम का बर्थडे स्पेशल सॉन्ग व कार्ड यहाँ देखें:\n${url}`
       : activeTranslation.whatsappMessage(displayName, url, !!userPhoto);
     
-    // Award loyalty reward points
-    const res = awardUserPoints('whatsapp_share', festival.nameHi);
-    if (res.awarded) {
-      setPointToast({ message: `+${res.points} पॉइंट्स मिले! कुल अंक: ${res.newTotal} 🎉`, points: res.points });
-      setTimeout(() => setPointToast(null), 4000);
-    }
+    // Active slide image from the festival slider
+    const currentSlideImg = activeHeroImage || (deitySlides && deitySlides[activeImageIndex]?.imageUrl) || deitySlides[0]?.imageUrl || festival.heroImage;
 
-    const waUrl = `whatsapp://send?text=${encodeURIComponent(text)}`;
-    const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = waUrl;
-    } else {
-      window.open(webWaUrl, '_blank');
-    }
+    await shareToWhatsAppWithPhoto({
+      imageUrl: currentSlideImg,
+      text,
+      title: activeTranslation.greetingTitle || festival.nameHi,
+      url,
+      fileName: `${festival.id}-${displayName.replace(/[^a-zA-Z0-9]/g, '')}-wish.jpg`,
+      onSuccess: () => {
+        const res = awardUserPoints('whatsapp_share', festival.nameHi);
+        if (res.awarded) {
+          setPointToast({ message: `+${res.points} पॉइंट्स मिले! कुल अंक: ${res.newTotal} 🎉`, points: res.points });
+          setTimeout(() => setPointToast(null), 4000);
+        }
+      },
+      onFallback: (msg) => {
+        setPointToast({ message: msg, points: 5 });
+        setTimeout(() => setPointToast(null), 4500);
+      }
+    });
   };
 
   // Direct WhatsApp Status Share with 8K Ultra-HD Photo Card

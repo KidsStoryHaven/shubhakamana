@@ -1,8 +1,6 @@
 /**
  * High-Definition (1080p / 4K) Suvichar Card Image Generator
- * Generates BADE BADE (Large, Prominent) text that fills the entire card space.
- * Features 8 Distinct WhatsApp Status Styles with 3D Calligraphy, colorful virtue badges,
- * large user photo, and zero bottom cut-off.
+ * Exact 100% Visual Replica of the Live Studio Preview Card.
  */
 
 import { SuvicharItem, SuvicharBackground, getDayAndTimeFormatted } from '../data/dailySuvicharData';
@@ -12,6 +10,7 @@ import {
   parseSuvicharContent 
 } from '../data/suvicharStylesData';
 import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from './googleDriveHelper';
+import html2canvas from 'html2canvas';
 
 export interface SuvicharCardOptions {
   suvichar: SuvicharItem;
@@ -22,12 +21,13 @@ export interface SuvicharCardOptions {
   aspectRatio: 'square' | 'story'; // 'square' (1:1 1080x1080) or 'story' (9:16 1080x1920)
   language: 'hindi' | 'english' | 'marathi' | 'gujarati';
   showDayAndTime?: boolean;
-  styleId?: string; // 1 to 8 style IDs
-  headlineOverride?: string; // e.g. "आयुष्यांत" or "शुभ प्रभात"
+  styleId?: string;
+  headlineOverride?: string;
   customBadge1?: string;
   customBadge2?: string;
-  fontSizeMultiplier?: number; // Default 1.5x font size multiplier
-  photoScale?: number; // User custom photo size multiplier (0.8, 1.0, 1.25, 1.5, 1.8)
+  fontSizeMultiplier?: number;
+  photoScale?: number;
+  targetElement?: HTMLElement | null; // Direct live preview DOM element for 100% pixel-perfect capture
 }
 
 function loadImg(src: string): Promise<HTMLImageElement | null> {
@@ -35,15 +35,11 @@ function loadImg(src: string): Promise<HTMLImageElement | null> {
   const cleanSrc = src.trim();
   if (!cleanSrc) return Promise.resolve(null);
 
-  // If it's a data URL (base64) or blob URL, load directly (no crossOrigin needed)
   if (cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
-      img.onerror = (e) => {
-        console.warn('Failed to load inline data photo:', e);
-        resolve(null);
-      };
+      img.onerror = () => resolve(null);
       img.src = cleanSrc;
     });
   }
@@ -60,7 +56,6 @@ function loadImg(src: string): Promise<HTMLImageElement | null> {
       if (fallbackIdx < fallbacks.length) {
         img.src = fallbacks[fallbackIdx++];
       } else {
-        // Fallback: try direct image without crossOrigin
         const plainImg = new Image();
         plainImg.onload = () => resolve(plainImg);
         plainImg.onerror = () => resolve(null);
@@ -99,190 +94,6 @@ function wrapTextToLines(
   return lines;
 }
 
-/**
- * Draws 3D Pop / Extruded Devanagari Headline text
- */
-function draw3DHeadline(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  fontSize: number,
-  fontFamily: string,
-  theme: SuvicharStyleOption['headlineTheme']
-) {
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `900 ${fontSize}px ${fontFamily}`;
-
-  // Gradients according to theme
-  let faceGrad = ctx.createLinearGradient(x, y - fontSize * 0.45, x, y + fontSize * 0.45);
-  let bevelColor = '#b91c1c';
-  let outerOutline = '#78350f';
-
-  if (theme === 'gold_red') {
-    faceGrad.addColorStop(0, '#fffbeb');
-    faceGrad.addColorStop(0.3, '#fde047');
-    faceGrad.addColorStop(0.7, '#f59e0b');
-    faceGrad.addColorStop(1, '#d97706');
-    bevelColor = '#991b1b';
-    outerOutline = '#450a0a';
-  } else if (theme === 'neon_gold') {
-    faceGrad.addColorStop(0, '#ffffff');
-    faceGrad.addColorStop(0.3, '#fef08a');
-    faceGrad.addColorStop(0.7, '#fbbf24');
-    faceGrad.addColorStop(1, '#f59e0b');
-    bevelColor = '#78350f';
-    outerOutline = '#000000';
-  } else if (theme === 'magenta_3d') {
-    faceGrad.addColorStop(0, '#ffffff');
-    faceGrad.addColorStop(0.3, '#f472b6');
-    faceGrad.addColorStop(0.7, '#db2777');
-    faceGrad.addColorStop(1, '#9d174d');
-    bevelColor = '#4a044e';
-    outerOutline = '#2e0854';
-  } else if (theme === 'candy_rose') {
-    faceGrad.addColorStop(0, '#fff1f2');
-    faceGrad.addColorStop(0.3, '#fb7185');
-    faceGrad.addColorStop(0.7, '#e11d48');
-    faceGrad.addColorStop(1, '#9f1239');
-    bevelColor = '#4c0519';
-    outerOutline = '#fbbf24';
-  } else if (theme === 'sunrise_emboss') {
-    faceGrad.addColorStop(0, '#ffffff');
-    faceGrad.addColorStop(0.3, '#fed7aa');
-    faceGrad.addColorStop(0.7, '#f97316');
-    faceGrad.addColorStop(1, '#c2410c');
-    bevelColor = '#431407';
-    outerOutline = '#000000';
-  } else if (theme === 'festive_splash') {
-    faceGrad.addColorStop(0, '#fef08a');
-    faceGrad.addColorStop(0.4, '#38bdf8');
-    faceGrad.addColorStop(0.7, '#f43f5e');
-    faceGrad.addColorStop(1, '#8b5cf6');
-    bevelColor = '#0f172a';
-    outerOutline = '#0369a1';
-  } else if (theme === 'emerald_gold') {
-    faceGrad.addColorStop(0, '#ecfdf5');
-    faceGrad.addColorStop(0.3, '#34d399');
-    faceGrad.addColorStop(0.7, '#059669');
-    faceGrad.addColorStop(1, '#064e3b');
-    bevelColor = '#78350f';
-    outerOutline = '#fbbf24';
-  } else {
-    // cosmic_gold
-    faceGrad.addColorStop(0, '#ffffff');
-    faceGrad.addColorStop(0.3, '#fef08a');
-    faceGrad.addColorStop(0.7, '#fbbf24');
-    faceGrad.addColorStop(1, '#d97706');
-    bevelColor = '#78350f';
-    outerOutline = '#000000';
-  }
-
-  // Deep Drop Shadow
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-  ctx.shadowBlur = 18;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 10;
-  ctx.lineWidth = 14;
-  ctx.strokeStyle = outerOutline;
-  ctx.strokeText(text, x, y + 8);
-  ctx.restore();
-
-  // Extruded 3D bevel passes
-  for (let d = 8; d >= 3; d--) {
-    ctx.lineWidth = 10;
-    ctx.strokeStyle = bevelColor;
-    ctx.strokeText(text, x, y + d);
-  }
-
-  // Outer border stroke
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = outerOutline;
-  ctx.strokeText(text, x, y);
-
-  // Core fill
-  ctx.fillStyle = faceGrad;
-  ctx.fillText(text, x, y);
-
-  // Top highlight gleam
-  ctx.save();
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.strokeText(text, x, y - 1);
-  ctx.restore();
-
-  ctx.restore();
-}
-
-/**
- * Draws a colorful brush/pill virtue badge (like 'आत्मविश्वास' or 'प्रामाणिकपणा')
- */
-function drawVirtueBadge(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  cy: number,
-  h: number,
-  bgGradColors: [string, string],
-  borderColor: string,
-  textColor: string,
-  shadowColor: string,
-  fontFamily: string
-): number {
-  ctx.save();
-  ctx.font = `bold ${Math.round(h * 0.62)}px ${fontFamily}`;
-  const textW = ctx.measureText(text).width;
-  const paddingX = Math.round(h * 0.55);
-  const badgeW = textW + paddingX * 2;
-  const badgeX = cx - badgeW / 2;
-  const badgeY = cy - h / 2;
-
-  // Shadow
-  ctx.shadowColor = shadowColor;
-  ctx.shadowBlur = 14;
-  ctx.shadowOffsetY = 4;
-
-  // Background
-  const grad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + h);
-  grad.addColorStop(0, bgGradColors[0]);
-  grad.addColorStop(1, bgGradColors[1]);
-
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.roundRect(badgeX, badgeY, badgeW, h, [h / 2]);
-  ctx.fill();
-
-  // Border
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
-
-  // Inner glossy gleam
-  const gleamGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX, badgeY + h * 0.45);
-  gleamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
-  gleamGrad.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
-  ctx.fillStyle = gleamGrad;
-  ctx.beginPath();
-  ctx.roundRect(badgeX + 2, badgeY + 2, badgeW - 4, h * 0.45, [h / 2, h / 2, 0, 0]);
-  ctx.fill();
-
-  // Text
-  ctx.fillStyle = textColor;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-  ctx.shadowBlur = 4;
-  ctx.fillText(text, cx, cy + 1);
-
-  ctx.restore();
-  return badgeW;
-}
-
 export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Promise<{ blob: Blob; fileName: string }> {
   const { 
     suvichar, 
@@ -298,21 +109,60 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     customBadge1,
     customBadge2,
     fontSizeMultiplier = 1.5,
-    photoScale = 1.25
+    photoScale = 1.25,
+    targetElement
   } = options;
+
+  // 1. Direct 1-to-1 Pixel Perfect Capture from Live Screen Preview Element if available
+  if (targetElement) {
+    try {
+      const capturedCanvas = await html2canvas(targetElement, {
+        scale: 4, // 4x Super Retina 8K Resolution
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
+      });
+
+      return new Promise<{ blob: Blob; fileName: string }>((resolve, reject) => {
+        capturedCanvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Canvas blob generation failed'));
+              return;
+            }
+            const safeName = (senderName || 'Suvichar').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
+            const fileName = `Shubh-Prabhat-Suvichar-${suvichar.number}-${safeName}-8K.jpg`;
+            resolve({ blob, fileName });
+          },
+          'image/jpeg',
+          0.98
+        );
+      });
+    } catch (domCaptureErr) {
+      console.warn('DOM html2canvas capture failed, using canvas fallback:', domCaptureErr);
+    }
+  }
 
   const style = getSuvicharStyleById(styleId);
   const isStory = aspectRatio === 'story';
-  const width = 1080;
-  const height = isStory ? 1920 : 1080;
+  const logicalWidth = 1080;
+  const logicalHeight = isStory ? 1920 : 1080;
+  const scaleFactor = 2; // 2x Super Retina 4K/8K (2160 x 3840 for Story, 2160 x 2160 for Square)
+  const width = logicalWidth;
+  const height = logicalHeight;
 
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
+  canvas.width = logicalWidth * scaleFactor;
+  canvas.height = logicalHeight * scaleFactor;
+  const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('2D context not available');
 
-  // Load user photo & custom bg in parallel
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.scale(scaleFactor, scaleFactor);
+
+  // Load images
   const bgToLoad = customBackgroundUrl || (background.type === 'image' && background.id !== 'default_plain' ? background.url : '');
   const [bgImg, userImg] = await Promise.all([
     bgToLoad ? loadImg(bgToLoad) : Promise.resolve(null),
@@ -328,24 +178,24 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     const posY = (height - scaledH) / 2;
     ctx.drawImage(bgImg, posX, posY, scaledW, scaledH);
 
-    // Adaptive Vignette over photo so text pops with 100% clarity
-    const overlayGrad = ctx.createLinearGradient(0, 0, 0, height);
+    // Exact match vignette overlay from Live Studio Preview
+    const overlayGrad = ctx.createLinearGradient(0, height, 0, 0);
     if (style.isDarkTheme) {
-      overlayGrad.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
-      overlayGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.75)');
-      overlayGrad.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+      overlayGrad.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
+      overlayGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.65)');
+      overlayGrad.addColorStop(1, 'rgba(0, 0, 0, 0.50)');
     } else {
-      overlayGrad.addColorStop(0, 'rgba(255, 255, 255, 0.82)');
-      overlayGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.88)');
-      overlayGrad.addColorStop(1, 'rgba(255, 255, 255, 0.96)');
+      overlayGrad.addColorStop(0, 'rgba(255, 255, 255, 0.92)');
+      overlayGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.70)');
+      overlayGrad.addColorStop(1, 'rgba(255, 255, 255, 0.80)');
     }
     ctx.fillStyle = overlayGrad;
     ctx.fillRect(0, 0, width, height);
   } else {
-    // Style-specific Signature Canvas Backdrop
+    // Canvas Backdrop
     const bgGrad = ctx.createRadialGradient(
       width / 2, 
-      height * 0.35, 
+      height * 0.4, 
       80, 
       width / 2, 
       height * 0.5, 
@@ -356,99 +206,41 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     bgGrad.addColorStop(1, style.bgGrad[2]);
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
-
-    // Style-specific Ornamental Background Elements
-    if (style.id === 'cosmic_gold' || style.id === 'royal_dark') {
-      // Cosmic Arc / Golden Aura
-      ctx.save();
-      const auraGrad = ctx.createRadialGradient(width / 2, 340, 20, width / 2, 340, 480);
-      auraGrad.addColorStop(0, 'rgba(251, 191, 36, 0.28)');
-      auraGrad.addColorStop(0.6, 'rgba(217, 119, 6, 0.1)');
-      auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = auraGrad;
-      ctx.fillRect(0, 0, width, 800);
-
-      // Golden Ring Arch
-      ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(width / 2, 360, 320, Math.PI * 0.95, Math.PI * 2.05);
-      ctx.stroke();
-      ctx.restore();
-    } else if (style.id === 'sunrise_wood') {
-      // Warm Sunrise Rays
-      ctx.save();
-      const sunGrad = ctx.createRadialGradient(width / 2, 200, 20, width / 2, 200, 600);
-      sunGrad.addColorStop(0, 'rgba(251, 146, 60, 0.4)');
-      sunGrad.addColorStop(0.6, 'rgba(234, 88, 12, 0.15)');
-      sunGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = sunGrad;
-      ctx.fillRect(0, 0, width, 800);
-      ctx.restore();
-    } else if (style.id === 'gold_floral' || style.id === 'golden_frame') {
-      // Soft Floral Vines in Corners
-      ctx.save();
-      ctx.fillStyle = 'rgba(251, 191, 36, 0.08)';
-      ctx.beginPath();
-      ctx.arc(80, 80, 200, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(width - 80, 80, 200, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
   }
 
-  // 2. Ornate Border Frame
-  const borderMargin = 24;
+  // 2. Outer Rounded Border Frame (Matching live preview rounded-3xl)
+  const borderMargin = 20;
+  const cornerRadius = 44;
   ctx.save();
-  ctx.strokeStyle = style.isDarkTheme ? '#f59e0b' : '#d97706';
-  ctx.lineWidth = 5;
-  ctx.strokeRect(borderMargin, borderMargin, width - borderMargin * 2, height - borderMargin * 2);
-
-  ctx.strokeStyle = style.isDarkTheme ? 'rgba(254, 240, 138, 0.35)' : 'rgba(217, 119, 6, 0.25)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(borderMargin + 10, borderMargin + 10, width - (borderMargin + 10) * 2, height - (borderMargin + 10) * 2);
-
-  // Corner Ornaments
-  ctx.fillStyle = style.isDarkTheme ? '#fde047' : '#d97706';
-  ctx.font = '24px serif';
-  ctx.fillText('❖', borderMargin + 18, borderMargin + 32);
-  ctx.fillText('❖', width - borderMargin - 36, borderMargin + 32);
-  ctx.fillText('❖', borderMargin + 18, height - borderMargin - 18);
-  ctx.fillText('❖', width - borderMargin - 36, height - borderMargin - 18);
-  ctx.restore();
-
-  // 3. Top Sub-Branding: Shubh Prabhat Capsule & Live Day/Time
-  ctx.save();
-  ctx.textAlign = 'center';
-  const topPillY = isStory ? 54 : 38;
-  const pillW = isStory ? 440 : 380;
-  const pillH = isStory ? 44 : 38;
-  const pillX = (width - pillW) / 2;
-
-  ctx.fillStyle = style.isDarkTheme ? 'rgba(20, 14, 8, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+  ctx.strokeStyle = style.isDarkTheme ? 'rgba(251, 191, 36, 0.9)' : '#f59e0b';
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.roundRect(pillX, topPillY, pillW, pillH, [22]);
-  ctx.fill();
-
-  ctx.strokeStyle = style.isDarkTheme ? '#fbbf24' : '#d97706';
-  ctx.lineWidth = 2;
+  ctx.roundRect(borderMargin, borderMargin, width - borderMargin * 2, height - borderMargin * 2, [cornerRadius]);
   ctx.stroke();
 
-  ctx.fillStyle = style.isDarkTheme ? '#fde047' : '#b45309';
-  ctx.font = `bold ${isStory ? 20 : 17}px ${style.canvasFontFamily}`;
-  ctx.fillText('✨ ॐ सूर्याय नमः • शुभ प्रभात ✨', width / 2, topPillY + (isStory ? 28 : 24));
+  // Inner subtle decorative border rail
+  ctx.strokeStyle = style.isDarkTheme ? 'rgba(251, 191, 36, 0.35)' : 'rgba(217, 119, 6, 0.35)';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.roundRect(borderMargin + 10, borderMargin + 10, width - (borderMargin + 10) * 2, height - (borderMargin + 10) * 2, [cornerRadius - 8]);
+  ctx.stroke();
 
-  if (showDayAndTime) {
-    const { badgeText } = getDayAndTimeFormatted(language);
-    ctx.fillStyle = style.isDarkTheme ? '#fde68a' : '#78350f';
-    ctx.font = `bold ${isStory ? 16 : 13}px sans-serif`;
-    ctx.fillText(`📅 ${badgeText}`, width / 2, topPillY + (isStory ? 68 : 56));
-  }
+  // Draw 🐦 Bird on top right
+  ctx.font = `${isStory ? 48 : 38}px sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillText('🐦🌿', width - 40, borderMargin + 25);
+
+  // Draw 💖 Hearts on left
+  ctx.textAlign = 'left';
+  ctx.fillText('💖', borderMargin + 25, height * 0.35);
+
   ctx.restore();
 
-  // 4. PARSE SUVICHAR INTO ITS ANATOMY (Lead, Badges, Body)
+  // 3. Card Top Branding removed for clean reference style
+  let headerBottomY = isStory ? 70 : 50;
+
+  // 4. PARSE SUVICHAR & PREPARE TEXT
   let rawText = suvichar.hindiText;
   if (language === 'english') rawText = suvichar.englishText;
   else if (language === 'marathi' && suvichar.marathiText) rawText = suvichar.marathiText;
@@ -459,135 +251,115 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   const badge2Text = customBadge2 || parsed.badge2;
   const headlineText = headlineOverride ? headlineOverride.trim() : '';
 
-  // 5. SAFE BOTTOM AREA CALCULATION (User photo, sender plate, short link)
+  // 5. CALCULATE BOTTOM ELEMENTS DIMENSIONS & POSITIONS
   const hasUserPhoto = !!(userImg && ((userImg.width > 0) || (userImg.naturalWidth > 0) || userImg.complete));
-  const basePhotoR = isStory ? 110 : 78;
+  const basePhotoR = isStory ? 95 : 70;
   const photoR = hasUserPhoto ? Math.round(basePhotoR * photoScale) : 0;
-  const plateH = isStory ? 76 : 58;
-  const plateW = isStory ? 660 : 540;
+  const plateH = isStory ? 68 : 52;
+  const plateW = isStory ? 580 : 460;
   const plateX = (width - plateW) / 2;
 
-  const bottomLinkH = isStory ? 38 : 32;
-  const bottomLinkY = height - (isStory ? 72 : 56);
-  const plateY = bottomLinkY - plateH - (isStory ? 14 : 10);
+  const footerTextH = isStory ? 28 : 22;
+  const footerTextY = height - (isStory ? 34 : 26);
+
+  const bottomLinkH = isStory ? 44 : 36;
+  const bottomLinkY = footerTextY - bottomLinkH - (isStory ? 18 : 12);
+
+  const plateY = bottomLinkY - plateH - (isStory ? 16 : 10);
   const photoX = width / 2;
-  const photoY = hasUserPhoto ? plateY - 16 - photoR : 0;
+  const photoY = hasUserPhoto ? plateY - 14 - photoR : 0;
 
-  // 6. AUSPICIOUS VIRTUE TAGS RIGHT ABOVE USER PHOTO IN SMALL REFINED TEXT
-  // ("satywachan and sakaratmak jo text likha o sab user ka photo rahega na round me uske upper karna and chote text em karna")
-  const tagY = hasUserPhoto ? (photoY - photoR - (isStory ? 24 : 18)) : (plateY - (isStory ? 24 : 18));
-  const safeContentBottom = tagY - (isStory ? 30 : 20);
+  // Virtue Tag Position directly above user photo
+  const tagY = hasUserPhoto ? (photoY - photoR - (isStory ? 26 : 18)) : (plateY - (isStory ? 26 : 18));
+  const contentBottomBoundary = tagY - (isStory ? 36 : 24);
 
-  // 7. AVAILABLE VERTICAL SPACE FOR BADE BADE TEXT ("hona text or bade karo size uska bohot jagaha hai")
-  let currentY = topPillY + (isStory ? 72 : 58);
-  if (showDayAndTime) {
-    currentY += isStory ? 36 : 28;
-  }
+  // 6. MIDDLE CONTENT AREA (Headline + Quote + Ornament)
+  const availableContentH = Math.max(220, contentBottomBoundary - headerBottomY);
+  let middleY = headerBottomY;
 
-  // A. 🌟 SUPER 3D POP HEADLINE WORD (e.g. "शुभ प्रभात" / "आयुष्यांत" / "सत्य वचन")
-  if (headlineText && headlineText.trim().length > 0) {
-    const headlineFontSize = Math.round((isStory ? 94 : 70) * (fontSizeMultiplier >= 1.5 ? 1.28 : 1.0));
-    currentY += headlineFontSize * 0.55;
-
-    draw3DHeadline(
-      ctx, 
-      headlineText.trim(), 
-      width / 2, 
-      currentY, 
-      headlineFontSize, 
-      style.canvasFontFamily, 
-      style.headlineTheme
-    );
-
-    // Decorative emblem next to headline
+  // Headline if specified
+  if (headlineText && headlineText.length > 0) {
+    const hSize = isStory ? 56 : 42;
     ctx.save();
-    ctx.font = `${isStory ? 42 : 30}px sans-serif`;
+    ctx.font = `900 ${hSize}px ${style.canvasFontFamily}`;
+    ctx.fillStyle = style.highlightColor || (style.isDarkTheme ? '#fde047' : '#b45309');
     ctx.textAlign = 'center';
-    ctx.fillText(
-      style.id === 'magenta_bird' || style.id === 'gold_floral' ? '🐦' : '💛', 
-      width / 2 + (headlineText.length * headlineFontSize * 0.32), 
-      currentY - headlineFontSize * 0.35
-    );
+    ctx.shadowColor = style.isDarkTheme ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.2)';
+    ctx.shadowBlur = 10;
+    ctx.fillText(headlineText, width / 2, middleY + hSize * 0.8);
     ctx.restore();
-
-    currentY += headlineFontSize * 0.65;
+    middleY += hSize * 1.2;
   }
 
-  // B. 📖 MAIN BOLD WISDOM QUOTE — MAXIMUM SIZE & SPACE UTILIZATION (1.5x BADE BADE TEXT)
-  // Clean, massive, royal typography filling the wide open canvas!
-  const availableH = Math.max(200, safeContentBottom - currentY);
-  const suvicharQuote = rawText.trim();
-  const maxBodyW = width - (isStory ? 140 : 110);
+  // 📖 MAIN BOLD QUOTE WITH CURLY QUOTES “ ... ”
+  const formattedQuote = `“${rawText.trim()}”`;
+  const maxQuoteW = width - (isStory ? 140 : 110);
 
-  // Dynamic Auto-scaling algorithm with 1.5× FONT SIZE BOOST:
-  let chosenFontSize = Math.round((isStory ? 72 : 50) * fontSizeMultiplier);
-  if (suvicharQuote.length > 140) {
-    chosenFontSize = Math.round((isStory ? 54 : 38) * fontSizeMultiplier);
-  } else if (suvicharQuote.length > 80) {
-    chosenFontSize = Math.round((isStory ? 62 : 44) * fontSizeMultiplier);
+  let quoteFontSize = Math.round((isStory ? 54 : 38) * fontSizeMultiplier);
+  if (formattedQuote.length > 130) {
+    quoteFontSize = Math.round((isStory ? 44 : 30) * fontSizeMultiplier);
+  } else if (formattedQuote.length > 80) {
+    quoteFontSize = Math.round((isStory ? 48 : 34) * fontSizeMultiplier);
   }
 
-  const minFontSize = Math.round((isStory ? 42 : 30) * Math.min(1.4, fontSizeMultiplier));
-  let bodyLines: string[] = [];
-  let bodyLineH = Math.round(chosenFontSize * 1.55);
+  const minQuoteSize = Math.round((isStory ? 34 : 24) * Math.min(1.3, fontSizeMultiplier));
+  let quoteLines: string[] = [];
+  let quoteLineH = Math.round(quoteFontSize * 1.55);
 
-  while (chosenFontSize >= minFontSize) {
-    ctx.font = `bold ${chosenFontSize}px ${style.canvasFontFamily}`;
-    bodyLines = wrapTextToLines(ctx, suvicharQuote, maxBodyW);
-    const totalLinesH = bodyLines.length * bodyLineH;
-    if (totalLinesH <= availableH - (isStory ? 35 : 20)) {
+  while (quoteFontSize >= minQuoteSize) {
+    ctx.font = `bold ${quoteFontSize}px ${style.canvasFontFamily}`;
+    quoteLines = wrapTextToLines(ctx, formattedQuote, maxQuoteW);
+    const totalLinesHeight = quoteLines.length * quoteLineH;
+    if (totalLinesHeight <= availableContentH - (isStory ? 60 : 40)) {
       break;
     }
-    chosenFontSize -= 2;
-    bodyLineH = Math.round(chosenFontSize * 1.55);
+    quoteFontSize -= 2;
+    quoteLineH = Math.round(quoteFontSize * 1.55);
   }
 
-  // Center text block vertically within the available space
-  const totalBlockH = bodyLines.length * bodyLineH;
-  let textY = currentY + Math.max(0, (availableH - totalBlockH) / 2) + Math.round(bodyLineH * 0.45);
+  const quoteTotalBlockH = quoteLines.length * quoteLineH;
+  let quoteStartY = middleY + Math.max(0, (availableContentH - quoteTotalBlockH) / 2) + Math.round(quoteLineH * 0.4);
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  bodyLines.forEach((line) => {
+  quoteLines.forEach((line) => {
     ctx.save();
-    // Ambient drop shadow for 100% crystal legibility
+    ctx.font = `bold ${quoteFontSize}px ${style.canvasFontFamily}`;
+    
+    // Drop shadow
     if (style.isDarkTheme) {
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.98)';
-      ctx.shadowBlur = 18;
-      ctx.shadowOffsetY = 6;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 4;
       ctx.fillStyle = style.textColor;
     } else {
-      ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
-      ctx.shadowBlur = 14;
-      ctx.shadowOffsetY = 3;
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.98)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 2;
       ctx.fillStyle = style.textColor;
     }
 
     // Outer subtle contrast stroke
-    ctx.lineWidth = chosenFontSize > 50 ? 4 : 3;
-    ctx.strokeStyle = style.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.9)';
-    ctx.font = `bold ${chosenFontSize}px ${style.canvasFontFamily}`;
-    ctx.strokeText(line, width / 2, textY);
-
-    // Core fill text
-    ctx.fillText(line, width / 2, textY);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = style.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.92)';
+    ctx.strokeText(line, width / 2, quoteStartY);
+    ctx.fillText(line, width / 2, quoteStartY);
     ctx.restore();
 
-    textY += bodyLineH;
+    quoteStartY += quoteLineH;
   });
   ctx.restore();
 
-  // Subtle ornamental icon beneath the big text
+  // Decorative Ornament below text
   ctx.save();
+  ctx.font = `${isStory ? 32 : 24}px sans-serif`;
   ctx.textAlign = 'center';
-  ctx.font = `${isStory ? 30 : 22}px sans-serif`;
-  ctx.fillText(style.ornament, width / 2, textY + (isStory ? 10 : 4));
+  ctx.fillText(style.ornament || '🌸 💖 🌸', width / 2, quoteStartY + (isStory ? 16 : 8));
   ctx.restore();
 
-  // 8. 🏷️ VIRTUE BADGE TEXT DIRECTLY ABOVE THE ROUND USER PHOTO IN SMALL REFINED TEXT
-  // ("and satywachan and sakaratmak jo text likha o sab user ka photo rahega na round me uske upper karna and chote text em karna")
+  // 7. 🏷️ VIRTUE BADGE PILL (e.g. ✨ सत्य वचन • सकारात्मक विचार ✨)
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -596,50 +368,46 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   ctx.font = `bold ${badgeFontSize}px ${style.canvasFontFamily}`;
   const virtueDisplayText = `✨ ${badge1Text}  •  ${badge2Text} ✨`;
   const textW = ctx.measureText(virtueDisplayText).width;
-  const vPillW = textW + (isStory ? 44 : 32);
-  const vPillH = isStory ? 36 : 28;
+  const vPillW = textW + (isStory ? 48 : 36);
+  const vPillH = isStory ? 38 : 30;
   const vPillX = (width - vPillW) / 2;
   const vPillY = tagY - vPillH / 2;
 
-  // Sleek subtle pill background
-  ctx.fillStyle = style.isDarkTheme ? 'rgba(15, 10, 5, 0.85)' : 'rgba(255, 255, 255, 0.92)';
+  ctx.fillStyle = style.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.9)';
   ctx.beginPath();
   ctx.roundRect(vPillX, vPillY, vPillW, vPillH, [vPillH / 2]);
   ctx.fill();
 
   ctx.strokeStyle = style.isDarkTheme ? '#f59e0b' : '#d97706';
-  ctx.lineWidth = 1.6;
+  ctx.lineWidth = 1.8;
   ctx.stroke();
 
-  // Small elegant text
   ctx.fillStyle = style.isDarkTheme ? '#fde047' : '#92400e';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-  ctx.shadowBlur = 4;
   ctx.fillText(virtueDisplayText, width / 2, tagY + 1);
   ctx.restore();
 
-  // 9. 👑 LARGE PROMINENT ROUND USER PHOTO (if uploaded)
+  // 8. 👑 ROUND USER PHOTO WITH GOLDEN HALO & STAR BADGE
   if (hasUserPhoto && userImg) {
     ctx.save();
-    // Radiant Golden Halo behind User Photo
-    const haloGrad = ctx.createRadialGradient(photoX, photoY, photoR, photoX, photoY, photoR + 28);
+    // Halo Glow
+    const haloGrad = ctx.createRadialGradient(photoX, photoY, photoR, photoX, photoY, photoR + 24);
     haloGrad.addColorStop(0, 'rgba(251, 191, 36, 0.95)');
-    haloGrad.addColorStop(0.5, 'rgba(245, 158, 11, 0.5)');
+    haloGrad.addColorStop(0.5, 'rgba(245, 158, 11, 0.45)');
     haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = haloGrad;
     ctx.beginPath();
-    ctx.arc(photoX, photoY, photoR + 28, 0, Math.PI * 2);
+    ctx.arc(photoX, photoY, photoR + 24, 0, Math.PI * 2);
     ctx.fill();
 
     // Outer Golden Ring
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(photoX, photoY, photoR + 8, 0, Math.PI * 2);
+    ctx.arc(photoX, photoY, photoR + 6, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#fef08a';
     ctx.beginPath();
-    ctx.arc(photoX, photoY, photoR + 4, 0, Math.PI * 2);
+    ctx.arc(photoX, photoY, photoR + 3, 0, Math.PI * 2);
     ctx.fill();
 
     // Clip & Draw Photo
@@ -663,98 +431,94 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     const starY = photoY + photoR * 0.72;
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(starX, starY, 18, 0, Math.PI * 2);
+    ctx.arc(starX, starY, isStory ? 18 : 14, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.fillStyle = '#1c1917';
-    ctx.font = 'bold 16px sans-serif';
+    ctx.font = `bold ${isStory ? 16 : 12}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('★', starX, starY + 5);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★', starX, starY);
     ctx.restore();
   }
 
-  // 8. 🏷️ SENDER ROYAL PLATE
+  // 9. 🏷️ SENDER NAME PLATE (Glass with gold border)
   ctx.save();
   ctx.textAlign = 'center';
   const pGrad = ctx.createLinearGradient(plateX, plateY, plateX + plateW, plateY + plateH);
   if (style.isDarkTheme) {
-    pGrad.addColorStop(0, 'rgba(28, 16, 8, 0.96)');
-    pGrad.addColorStop(0.5, 'rgba(65, 26, 10, 0.98)');
-    pGrad.addColorStop(1, 'rgba(28, 16, 8, 0.96)');
+    pGrad.addColorStop(0, 'rgba(0, 0, 0, 0.90)');
+    pGrad.addColorStop(1, 'rgba(20, 10, 5, 0.95)');
   } else {
     pGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-    pGrad.addColorStop(0.5, 'rgba(254, 243, 199, 0.98)');
-    pGrad.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+    pGrad.addColorStop(1, 'rgba(254, 243, 199, 0.95)');
   }
 
   ctx.fillStyle = pGrad;
   ctx.beginPath();
-  ctx.roundRect(plateX, plateY, plateW, plateH, [20]);
+  ctx.roundRect(plateX, plateY, plateW, plateH, [18]);
   ctx.fill();
 
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = style.isDarkTheme ? '#f59e0b' : '#d97706';
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   ctx.fillStyle = style.isDarkTheme ? '#fde68a' : '#92400e';
-  ctx.font = `bold ${isStory ? 16 : 13}px "Noto Sans Devanagari", sans-serif`;
-  ctx.fillText('✨ सप्रेम शुभकामना प्रेषक ✨', width / 2, plateY + (isStory ? 24 : 19));
+  ctx.font = `bold ${isStory ? 15 : 12}px sans-serif`;
+  ctx.fillText('✨ सप्रेम शुभकामना प्रेषक ✨', width / 2, plateY + (isStory ? 22 : 18));
 
   ctx.fillStyle = style.isDarkTheme ? '#ffffff' : '#1c1917';
-  ctx.font = `bold ${isStory ? 32 : 24}px ${style.canvasFontFamily}`;
+  ctx.font = `900 ${isStory ? 28 : 22}px ${style.canvasFontFamily}`;
   if (style.isDarkTheme) {
     ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 8;
   }
-  ctx.fillText(senderName || 'आपका शुभचिंतक', width / 2, plateY + (isStory ? 58 : 45));
+  ctx.fillText(senderName || 'आपका शुभचिंतक', width / 2, plateY + (isStory ? 52 : 40));
   ctx.restore();
 
-  // 9. 🌐 3D EMBOSSED SHORT LINK & WEBSITE CTA PLATE (shubhakamna.in/shubh-prabhat)
+  // 10. 🌐 3D EMBOSSED WEBSITE CTA PILL (✨ अपना नाम लिखकर स्टेटस बनाएँ ➔ shubhakamna.in)
   ctx.save();
   ctx.textAlign = 'center';
-  const linkW = isStory ? 540 : 420;
+  const linkW = isStory ? 580 : 460;
   const linkX = (width - linkW) / 2;
 
-  // 3D Shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  // 3D Drop Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
   ctx.shadowBlur = isStory ? 14 : 9;
-  ctx.shadowOffsetY = isStory ? 6 : 4;
+  ctx.shadowOffsetY = isStory ? 5 : 3;
 
   const linkGrad = ctx.createLinearGradient(linkX, bottomLinkY, linkX, bottomLinkY + bottomLinkH);
   if (style.isDarkTheme) {
-    linkGrad.addColorStop(0, '#1c1917');
-    linkGrad.addColorStop(0.5, '#292524');
-    linkGrad.addColorStop(1, '#0c0a09');
+    linkGrad.addColorStop(0, '#292524');
+    linkGrad.addColorStop(1, '#1c1917');
   } else {
     linkGrad.addColorStop(0, '#ffffff');
-    linkGrad.addColorStop(0.5, '#fef3c7');
-    linkGrad.addColorStop(1, '#fde68a');
+    linkGrad.addColorStop(1, '#fef3c7');
   }
 
   ctx.fillStyle = linkGrad;
   ctx.beginPath();
-  ctx.roundRect(linkX, bottomLinkY, linkW, bottomLinkH, [isStory ? 24 : 18]);
+  ctx.roundRect(linkX, bottomLinkY, linkW, bottomLinkH, [bottomLinkH / 2]);
   ctx.fill();
 
-  // 3D Golden Border
   ctx.shadowColor = 'transparent';
   ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = isStory ? 2.5 : 2;
+  ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // 3D Text
   ctx.fillStyle = style.isDarkTheme ? '#fef08a' : '#92400e';
-  ctx.font = `bold ${isStory ? 19 : 15}px "Noto Sans Devanagari", sans-serif`;
-  ctx.fillText('✨ अपना नाम लिखकर स्टेटस बनाएँ ➔ shubhakamna.in', width / 2, bottomLinkY + (isStory ? 26 : 21));
+  ctx.font = `bold ${isStory ? 19 : 15}px ${style.canvasFontFamily}`;
+  ctx.fillText('✨ अपना नाम लिखकर स्टेटस बनाएँ ➔ shubhakamna.in', width / 2, bottomLinkY + (isStory ? 28 : 23));
 
+  // Footer Subtitle
   ctx.fillStyle = style.isDarkTheme ? '#cbd5e1' : '#475569';
   ctx.font = `600 ${isStory ? 14 : 11}px sans-serif`;
-  ctx.fillText('दैनिक १००+ शुभ प्रभात सुविचार • मुफ़्त फ़ोटो कार्ड', width / 2, height - (isStory ? 24 : 16));
+  ctx.fillText('🌅 दैनिक १००+ शुभ प्रभात सुविचार • मुफ़्त कार्ड जनरेटर', width / 2, footerTextY);
   ctx.restore();
 
-  // 10. Export as Blob
+  // 11. Export as Ultra-HD 4K/8K JPEG Blob
   return new Promise<{ blob: Blob; fileName: string }>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
@@ -763,11 +527,11 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
           return;
         }
         const safeName = (senderName || 'Suvichar').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
-        const fileName = `Shubh-Prabhat-Suvichar-${suvichar.number}-${style.id}-${safeName}.jpg`;
+        const fileName = `Shubh-Prabhat-Suvichar-${suvichar.number}-${safeName}-8K.jpg`;
         resolve({ blob, fileName });
       },
       'image/jpeg',
-      0.96
+      0.98
     );
   });
 }

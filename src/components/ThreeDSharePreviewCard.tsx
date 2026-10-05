@@ -117,11 +117,16 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
   const handleDownloadCardImage = async () => {
     try {
       setIsDownloadingImage(true);
+      const scaleFactor = 2; // 2x 2400x1800 Ultra-HD resolution
       const canvas = document.createElement('canvas');
-      canvas.width = 1200;
-      canvas.height = 900;
-      const ctx = canvas.getContext('2d');
+      canvas.width = 1200 * scaleFactor;
+      canvas.height = 900 * scaleFactor;
+      const ctx = canvas.getContext('2d', { alpha: false });
       if (!ctx) return;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.scale(scaleFactor, scaleFactor);
 
       // Dark Luxury Background
       ctx.fillStyle = '#0c0a09';
@@ -204,7 +209,7 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
           URL.revokeObjectURL(url);
         }
         setIsDownloadingImage(false);
-      }, 'image/jpeg', 0.95);
+      }, 'image/jpeg', 0.98);
     } catch {
       setIsDownloadingImage(false);
     }

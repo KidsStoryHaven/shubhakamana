@@ -393,6 +393,27 @@ async function startServer() {
     }
   };
 
+  // Middleware to handle Social Crawlers (WhatsApp, Facebook, Twitter, etc.) in both Dev and Prod
+  app.use(async (req, res, next) => {
+    const userAgent = (req.headers['user-agent'] || req.headers['x-forwarded-user-agent'] || '') as string;
+    const isCrawler = isSocialCrawler(userAgent);
+    const hasShareQuery = !!(req.query.w || req.query.n || req.query.f || req.query.festival || req.query.bname || req.query.from);
+
+    if (isCrawler || (hasShareQuery && req.headers.accept?.includes('text/html'))) {
+      const templatePath = hasDist 
+        ? path.join(distPath, 'index.html') 
+        : path.join(__dirname, 'index.html');
+
+      if (fs.existsSync(templatePath)) {
+        let rawHtml = fs.readFileSync(templatePath, 'utf-8');
+        const dynamicHtml = getDynamicOGHtml(req.originalUrl || req.url, userAgent, rawHtml);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(dynamicHtml);
+      }
+    }
+    next();
+  });
+
   if (!isProduction && !hasDist) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -408,13 +429,10 @@ async function startServer() {
       const targetFile = path.join(distPath, 'index.html');
       if (fs.existsSync(targetFile)) {
         const rawHtml = fs.readFileSync(targetFile, 'utf-8');
-        const userAgent = req.headers['user-agent'] || '';
-        if (isSocialCrawler(userAgent) || req.query.n || req.query.f) {
-          const html = getDynamicOGHtml(req.url, userAgent, rawHtml);
-          res.setHeader('Content-Type', 'text/html; charset=utf-8');
-          return res.send(html);
-        }
-        res.sendFile(targetFile);
+        const userAgent = (req.headers['user-agent'] || '') as string;
+        const html = getDynamicOGHtml(req.originalUrl || req.url, userAgent, rawHtml);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
       } else {
         res.status(200).send('<!DOCTYPE html><html><head><title>Shubhakamna</title></head><body><div id="root"></div></body></html>');
       }

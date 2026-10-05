@@ -99,6 +99,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
   const fileInputRef = useRef<HTMLInputElement>(null);
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
+  const previewCardRef = useRef<HTMLDivElement>(null);
 
   // Filtered Suvichar List
   const filteredSuvicharList = useMemo(() => {
@@ -188,7 +189,8 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
         customBadge1: customBadge1.trim() || undefined,
         customBadge2: customBadge2.trim() || undefined,
         fontSizeMultiplier: fontScale,
-        photoScale: photoSizeOption
+        photoScale: photoSizeOption,
+        targetElement: previewCardRef.current
       });
 
       // 1. Download file
@@ -242,7 +244,8 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
             customBadge1: customBadge1.trim() || undefined,
             customBadge2: customBadge2.trim() || undefined,
             fontSizeMultiplier: fontScale,
-            photoScale: photoSizeOption
+            photoScale: photoSizeOption,
+            targetElement: previewCardRef.current
           });
 
           const file = new File([blob], fileName, { type: 'image/jpeg' });
@@ -440,6 +443,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
             {/* Left: Live Visual Card Preview (Zero Cut-Off Guarantee) */}
             <div className="lg:col-span-6 flex flex-col items-center">
               <div 
+                ref={previewCardRef}
                 className={`relative w-full max-w-[340px] sm:max-w-[390px] rounded-3xl overflow-hidden border-2 border-amber-400/90 shadow-2xl flex flex-col justify-between text-center select-none transition-all ${
                   aspectRatio === 'story' 
                     ? 'aspect-[9/16] p-4 sm:p-5' 
@@ -474,24 +478,44 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   style={{ borderColor: activeStyle.isDarkTheme ? 'rgba(251, 191, 36, 0.4)' : 'rgba(217, 119, 6, 0.35)' }}
                 />
 
-                {/* Card Top Branding */}
-                <div className="relative z-10 space-y-1 shrink-0">
-                  <div 
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold backdrop-blur-md shadow-md border"
-                    style={{
-                      backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.95)',
-                      borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
-                      color: activeStyle.isDarkTheme ? '#fde047' : '#92400e'
-                    }}
-                  >
-                    <span>✨ ॐ सूर्याय नमः • शुभ प्रभात ✨</span>
+                {/* 🐦 Top Right Bird & Golden Branch Decoration (Like Reference Image) */}
+                <div className="absolute top-3 right-3 z-20 text-3xl sm:text-4xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] select-none pointer-events-none animate-bounce-slow">
+                  🐦🌿
+                </div>
+
+                {/* 💖 Left Side Glossy 3D Hearts Decoration */}
+                <div className="absolute top-1/3 left-2.5 z-20 text-2xl sm:text-3xl filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] select-none pointer-events-none space-y-1">
+                  <div>💖</div>
+                  <div className="text-xs sm:text-sm pl-1">✨</div>
+                </div>
+
+                {/* Card Top: MASSIVE 3D EMBOSSED CALLIGRAPHIC TITLE (Like reference styles 1-8) */}
+                <div className="relative z-10 space-y-1.5 shrink-0 pt-2">
+                  {/* MASSIVE 3D EMBOSSED TITLE (आयुष्यांत / शुभ प्रभात) */}
+
+                  {/* MASSIVE 3D EMBOSSED TITLE (आयुष्यांत / शुभ प्रभात) */}
+                  <div className="relative py-1 flex items-center justify-center">
+                    <span 
+                      className="text-4xl sm:text-6xl font-black tracking-wide drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
+                      style={{
+                        fontFamily: activeStyle.fontFamily,
+                        background: activeStyle.headlineTheme === 'magenta_3d' 
+                          ? 'linear-gradient(180deg, #ffffff 0%, #f472b6 40%, #db2777 80%, #9d174d 100%)'
+                          : activeStyle.headlineTheme === 'candy_rose'
+                            ? 'linear-gradient(180deg, #fff1f2 0%, #fb7185 40%, #e11d48 80%, #9f1239 100%)'
+                            : 'linear-gradient(180deg, #ffffff 0%, #fde047 35%, #f59e0b 75%, #d97706 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.6))',
+                        WebkitTextStroke: '2px #78350f'
+                      }}
+                    >
+                      {headlineWord?.trim() || activeStyle.defaultHeadline || 'शुभ प्रभात'}
+                    </span>
+                    {/* Floating decorative elements around title */}
+                    <span className="absolute -top-1 right-12 sm:right-16 text-xl sm:text-2xl animate-pulse">💛</span>
+                    <span className="absolute -bottom-2 left-12 sm:left-16 text-lg sm:text-xl">🕊️</span>
                   </div>
-                  <p 
-                    className="text-[10px] font-mono font-bold"
-                    style={{ color: activeStyle.isDarkTheme ? '#fde68a' : '#78350f' }}
-                  >
-                    दैनिक सुविचार #{selectedSuvichar.number} • {selectedSuvichar.categoryLabel}
-                  </p>
 
                   {/* 🕒 Small Day & Time Badge on Card */}
                   {showDayAndTime && (
