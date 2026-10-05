@@ -1,5 +1,6 @@
 import { Festival } from '../data/festivals';
 import { DivineDeitySlide } from '../data/divineGodsData';
+import { WishFontOption } from '../data/wishFontsData';
 import { resolveDirectImageUrl, resolveDirectAudioUrl, getGoogleDriveFallbackUrls } from './googleDriveHelper';
 
 export interface VideoStatusOptions {
@@ -14,6 +15,7 @@ export interface VideoStatusOptions {
   customAudioUrl?: string;
   slides?: DivineDeitySlide[];
   totalDuration?: number;
+  font?: WishFontOption;
 }
 
 export interface LoadedDeitySlide {
@@ -316,29 +318,60 @@ export function initParticles(width: number, height: number, isBirthday: boolean
 }
 
 /**
- * Pre-computes wrapped lines of text.
+ * Pre-computes wrapped lines of text, safely splitting on newlines and spaces.
  */
 function wrapTextLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-  const words = text.split(' ');
+  if (!text) return [];
+  const rawParagraphs = text.split(/\r?\n/);
   const lines: string[] = [];
-  let currentLine = '';
 
-  for (let w = 0; w < words.length; w++) {
-    const testLine = currentLine ? `${currentLine} ${words[w]}` : words[w];
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = words[w];
-    } else {
-      currentLine = testLine;
+  for (const para of rawParagraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) continue;
+    const words = trimmed.split(/\s+/);
+    let currentLine = '';
+
+    for (let w = 0; w < words.length; w++) {
+      const word = words[w];
+
+      // If a single word itself exceeds maxWidth, break character-by-character
+      if (ctx.measureText(word).width > maxWidth) {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = '';
+        }
+        let chunk = '';
+        for (const char of word) {
+          if (ctx.measureText(chunk + char).width > maxWidth) {
+            lines.push(chunk);
+            chunk = char;
+          } else {
+            chunk += char;
+          }
+        }
+        if (chunk) {
+          currentLine = chunk;
+        }
+        continue;
+      }
+
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
     }
+    if (currentLine) lines.push(currentLine);
   }
-  if (currentLine) lines.push(currentLine);
   return lines;
 }
 
 /**
  * Ultra-Impact 3D Pop-Out Extruded Text (Mega Sale / Trending 3D Style)
+ * Supports dynamic font family and auto-scaling to maxWidth.
  */
 export function drawMega3DPopText(
   ctx: CanvasRenderingContext2D,
@@ -346,16 +379,27 @@ export function drawMega3DPopText(
   x: number,
   y: number,
   fontSize: number,
-  theme: 'gold' | 'white' | 'ruby' = 'gold'
+  theme: 'gold' | 'white' | 'ruby' = 'gold',
+  maxWidth?: number,
+  customFontFamily?: string
 ): void {
   if (!text) return;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
-  ctx.font = `900 ${fontSize}px "Noto Sans Devanagari", "Montserrat", "Arial Black", sans-serif`;
+  const chosenFont = customFontFamily || '"Noto Sans Devanagari", "Montserrat", "Arial Black", sans-serif';
+  let activeFontSize = fontSize;
+  ctx.font = `900 ${activeFontSize}px ${chosenFont}`;
 
-  const faceGradient = ctx.createLinearGradient(x, y - fontSize * 0.45, x, y + fontSize * 0.45);
+  if (maxWidth) {
+    while (ctx.measureText(text).width > maxWidth && activeFontSize > 16) {
+      activeFontSize -= 2;
+      ctx.font = `900 ${activeFontSize}px ${chosenFont}`;
+    }
+  }
+
+  const faceGradient = ctx.createLinearGradient(x, y - activeFontSize * 0.45, x, y + activeFontSize * 0.45);
   if (theme === 'gold') {
     faceGradient.addColorStop(0, '#fff59d');
     faceGradient.addColorStop(0.3, '#ffca28');
@@ -439,15 +483,16 @@ function drawCrispShiningText(
     shadowColor?: string;
     isSerif?: boolean;
     fontWeight?: string;
+    customFontFamily?: string;
   }
 ) {
   const align = options?.align || 'center';
   const color = options?.textColor || '#ffffff';
   const shadow = options?.shadowColor || 'rgba(0, 0, 0, 0.95)';
   const weight = options?.fontWeight || 'bold';
-  const fontFamily = options?.isSerif
+  const fontFamily = options?.customFontFamily || (options?.isSerif
     ? '"Noto Serif Devanagari", "Georgia", serif'
-    : '"Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    : '"Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
 
   ctx.save();
   ctx.textAlign = align;
@@ -520,6 +565,7 @@ export function drawVideoStatusFrame(
   const isBirthday = festival.id === 'birthday' || festival.soundType === 'birthday' || !!birthdayPerson;
   const fullPoem = poem || festival.defaultPoem;
   const totalDuration = options.totalDuration || 30;
+  const chosenFont = options.font?.canvasFontFamily || '"Rozha One", "Noto Sans Devanagari", serif';
 
   // 1. Deep Dark Background with Ambient Warm Radial Light
   const bgGrad = ctx.createRadialGradient(
@@ -556,9 +602,9 @@ export function drawVideoStatusFrame(
 
   // 3. Multi-Photo 3-Second Slideshow & Jhanki Title
   const cardW = width - 44; // 676
-  const cardH = 430;
+  const cardH = 390;
   const cardX = 22;
-  const cardY = 95;
+  const cardY = 85;
 
   // Determine current active slide image
   let activeImgToDraw = heroImg;
@@ -698,30 +744,30 @@ export function drawVideoStatusFrame(
 
   // Top subline
   ctx.fillStyle = '#fef08a';
-  ctx.font = 'bold 12px "Noto Sans Devanagari", sans-serif';
+  ctx.font = 'bold 11px "Noto Sans Devanagari", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✨ भारत का आधिकारिक 8K शुभकामना स्टेटस ✨', width / 2, 85);
+  ctx.fillText('✨ भारत का आधिकारिक 8K शुभकामना स्टेटस ✨', width / 2, 74);
 
-  // 5. User / Celebrant Photo if available (Prominently Large & Beautifully Framed)
+  // 5. User / Celebrant Photo & Sender Name (Clean non-overlapping vertical slot)
+  const sCardY = 466;
+  const sCardH = 76;
+  const photoR = 40; // 80px diameter portrait
+  const photoX = 66;
+  const photoY = sCardY + sCardH / 2;
+
   if (userImg && userImg.complete) {
     ctx.save();
-    const photoX = 94;
-    const photoY = 584;
-    const photoR = 62; // Significantly larger (124px diameter)
-
-    // Outer warm gold aura
-    const auraGrad = ctx.createRadialGradient(photoX, photoY, photoR, photoX, photoY, photoR + 14);
+    const auraGrad = ctx.createRadialGradient(photoX, photoY, photoR, photoX, photoY, photoR + 10);
     auraGrad.addColorStop(0, 'rgba(251, 191, 36, 0.6)');
     auraGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
     ctx.fillStyle = auraGrad;
     ctx.beginPath();
-    ctx.arc(photoX, photoY, photoR + 14, 0, Math.PI * 2);
+    ctx.arc(photoX, photoY, photoR + 10, 0, Math.PI * 2);
     ctx.fill();
 
-    // Multi-layer Golden Metallic Border Ring
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(photoX, photoY, photoR + 5, 0, Math.PI * 2);
+    ctx.arc(photoX, photoY, photoR + 4, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#fef08a';
@@ -729,7 +775,6 @@ export function drawVideoStatusFrame(
     ctx.arc(photoX, photoY, photoR + 2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Clip & Draw Portrait
     ctx.beginPath();
     ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
     ctx.clip();
@@ -738,54 +783,54 @@ export function drawVideoStatusFrame(
   }
 
   // 6. Sender Name 3D Royal Plate
-  const sCardX = userImg ? 172 : 20;
-  const sCardY = 540;
-  const sCardW = userImg ? width - 192 : width - 40;
-  const sCardH = 90;
+  const sCardX = userImg ? 122 : 20;
+  const sCardW = userImg ? width - 142 : width - 40;
 
   ctx.save();
   const sBoxGrad = ctx.createLinearGradient(sCardX, sCardY, sCardX + sCardW, sCardY + sCardH);
-  sBoxGrad.addColorStop(0, 'rgba(42, 20, 8, 0.98)');
-  sBoxGrad.addColorStop(0.5, 'rgba(60, 28, 10, 0.98)');
-  sBoxGrad.addColorStop(1, 'rgba(32, 15, 6, 0.98)');
+  sBoxGrad.addColorStop(0, 'rgba(38, 18, 8, 0.98)');
+  sBoxGrad.addColorStop(0.5, 'rgba(56, 26, 10, 0.98)');
+  sBoxGrad.addColorStop(1, 'rgba(30, 14, 6, 0.98)');
   ctx.fillStyle = sBoxGrad;
   ctx.beginPath();
   ctx.roundRect(sCardX, sCardY, sCardW, sCardH, [18]);
   ctx.fill();
 
   ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 2.2;
   ctx.stroke();
 
   ctx.fillStyle = '#fde68a';
-  ctx.font = 'bold 12px "Noto Sans Devanagari", sans-serif';
+  ctx.font = 'bold 11px "Noto Sans Devanagari", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('✨ 👑 सप्रेम एवं मंगलमय प्रेषक 👑 ✨', sCardX + 18, sCardY + 26);
+  ctx.fillText('✨ 👑 सप्रेम एवं मंगलमय प्रेषक 👑 ✨', sCardX + 16, sCardY + 22);
 
   // 3D Mega Pop Sender Name
   drawMega3DPopText(
     ctx, 
     senderName || 'आपका शुभचिंतक', 
     sCardX + (sCardW / 2), 
-    sCardY + 58, 
-    26, 
-    'gold'
+    sCardY + 50, 
+    22, 
+    'gold',
+    sCardW - 24,
+    chosenFont
   );
   ctx.restore();
 
-  // 7. MAIN WISHES 3D MEGA POP-OUT HEADLINE
-  const wishHeadlineY = 665;
+  // 7. MAIN WISHES 3D MEGA POP-OUT HEADLINE (Starts cleanly at 574px - 46px gap prevents bevel collision!)
+  const wishHeadlineY = 574;
   
   if (isBirthday) {
-    drawMega3DPopText(ctx, 'HAPPY', width / 2, wishHeadlineY, 36, 'gold');
-    drawMega3DPopText(ctx, `BIRTHDAY ${birthdayPerson || 'AKASH'}`, width / 2, wishHeadlineY + 44, 30, 'white');
+    drawMega3DPopText(ctx, 'HAPPY BIRTHDAY', width / 2, wishHeadlineY, 28, 'gold', width - 44, chosenFont);
+    drawMega3DPopText(ctx, `${birthdayPerson || 'AKASH'}`, width / 2, wishHeadlineY + 46, 24, 'white', width - 44, chosenFont);
   } else {
     const festTitle = festival.nameHi || 'शुभ दीपावली';
-    drawMega3DPopText(ctx, `✨ ${festTitle} ✨`, width / 2, wishHeadlineY, 34, 'gold');
-    drawMega3DPopText(ctx, 'की मंगलमय शुभकामनाएँ', width / 2, wishHeadlineY + 44, 28, 'white');
+    drawMega3DPopText(ctx, `✨ ${festTitle} ✨`, width / 2, wishHeadlineY, 27, 'gold', width - 44, chosenFont);
+    drawMega3DPopText(ctx, 'की मंगलमय शुभकामनाएँ', width / 2, wishHeadlineY + 46, 22, 'white', width - 44, chosenFont);
   }
 
-  // 8. Glowing Wishes Poetry Box
+  // 8. Glowing Wishes Poetry Box (Positioned at 672px - ZERO OVERLAP!)
   const typingDuration = Math.min(Math.max(time * 0.6, 3.5), 8.0);
   const typingProgress = Math.min(Math.max((time - 0.2) / typingDuration, 0), 1);
   const charsToShow = Math.floor(typingProgress * fullPoem.length);
@@ -793,49 +838,68 @@ export function drawVideoStatusFrame(
 
   ctx.save();
   const textBoxX = 20;
-  const textBoxY = 750;
+  const textBoxY = 672;
   const textBoxW = width - 40;
-  const textBoxH = 235;
+  const textBoxH = 260;
 
-  ctx.fillStyle = 'rgba(20, 15, 12, 0.97)';
+  ctx.fillStyle = 'rgba(18, 13, 10, 0.97)';
   ctx.beginPath();
   ctx.roundRect(textBoxX, textBoxY, textBoxW, textBoxH, [20]);
   ctx.fill();
 
   ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 2.4;
   ctx.stroke();
 
   const maxLineW = textBoxW - 36;
-  ctx.font = 'bold 23px "Noto Sans Devanagari", -apple-system, sans-serif';
-  const lines = wrapTextLines(ctx, poemSlice, maxLineW);
-  const lineH = 38;
-  const startTextY = textBoxY + 46;
+  let poemFontSize = 23;
+  let lineH = 38;
+  ctx.font = `bold ${poemFontSize}px ${chosenFont}`;
+  let lines = wrapTextLines(ctx, poemSlice, maxLineW);
 
-  lines.slice(0, 5).forEach((l, idx) => {
+  // Auto-scale font size if lines > 5 so everything fits comfortably inside 260px height
+  while (lines.length > 5 && poemFontSize > 15) {
+    poemFontSize -= 1.5;
+    lineH = Math.round(poemFontSize * 1.50);
+    ctx.font = `bold ${poemFontSize}px ${chosenFont}`;
+    lines = wrapTextLines(ctx, poemSlice, maxLineW);
+  }
+
+  const displayedLines = lines.slice(0, 5);
+  const totalTextBlockHeight = (displayedLines.length - 1) * lineH;
+  const startTextY = textBoxY + (textBoxH - totalTextBlockHeight) / 2 + 4;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(textBoxX + 4, textBoxY + 4, textBoxW - 8, textBoxH - 8, [16]);
+  ctx.clip();
+
+  displayedLines.forEach((l, idx) => {
     const lineY = startTextY + idx * lineH;
-    drawCrispShiningText(ctx, l, width / 2, lineY, 23, {
-      textColor: '#ffffff'
+    drawCrispShiningText(ctx, l, width / 2, lineY, poemFontSize, {
+      textColor: '#ffffff',
+      customFontFamily: chosenFont
     });
   });
 
   if (typingProgress < 1.0 && typingProgress > 0) {
     const cursorAlpha = (Math.sin(time * 12) + 1) / 2;
     ctx.fillStyle = `rgba(251, 191, 36, ${cursorAlpha})`;
-    ctx.font = 'bold 22px sans-serif';
-    const lastLine = lines[lines.length - 1] || '';
+    ctx.font = `bold ${poemFontSize}px ${chosenFont}`;
+    const lastLine = displayedLines[displayedLines.length - 1] || '';
     const lastLineW = ctx.measureText(lastLine).width;
-    ctx.fillText(' ✍️✨', width / 2 + lastLineW / 2 + 8, startTextY + (lines.length - 1) * lineH);
+    ctx.fillText(' ✍️✨', width / 2 + lastLineW / 2 + 8, startTextY + (displayedLines.length - 1) * lineH);
   }
+  ctx.restore();
   ctx.restore();
 
   // 9. Sacred Mantra Plate in Clear Gold
   if (festival.mantraOrShloka && !isBirthday) {
     ctx.save();
     const mantraX = 20;
-    const mantraY = 998;
+    const mantraY = 948;
     const mantraW = width - 40;
-    const mantraH = 72;
+    const mantraH = 64;
 
     ctx.fillStyle = 'rgba(28, 18, 12, 0.97)';
     ctx.beginPath();
@@ -850,19 +914,19 @@ export function drawVideoStatusFrame(
       ctx, 
       `🌸 ${festival.mantraOrShloka.slice(0, 46)}${festival.mantraOrShloka.length > 46 ? '...' : ''} 🌸`, 
       width / 2, 
-      mantraY + 44, 
-      20, 
+      mantraY + 39, 
+      19, 
       {
         textColor: '#fde047',
-        isSerif: true
+        customFontFamily: chosenFont
       }
     );
     ctx.restore();
   }
 
   // 10. Scrolling Marquee Ribbon
-  const tickerY = 1082;
-  const tickerH = 80;
+  const tickerY = 1024;
+  const tickerH = 72;
   const tickerText = isBirthday
     ? `🎉 HAPPY BIRTHDAY ${birthdayPerson || 'आकाश'} 🎉 • Wishing you boundless happiness & divine health • ${senderName} की ओर से ढेर सारी शुभकामनाएँ 🎂🎈✨ • `
     : `🪔 ${festival.nameHi} की हार्दिक शुभकामनाएँ 🪔 • ${festival.taglineHi} • ${festival.mantraOrShloka || '॥ ॐ श्रीं महालक्ष्म्यै नमः ॥'} • ${senderName} की ओर से सपरिवार मंगलकामनाएँ 🌸✨ • `;
@@ -884,7 +948,7 @@ export function drawVideoStatusFrame(
   ctx.lineTo(width, tickerY + tickerH);
   ctx.stroke();
 
-  ctx.font = 'bold 24px "Noto Sans Devanagari", sans-serif';
+  ctx.font = `bold 24px ${chosenFont}`;
   const textWidth = ctx.measureText(tickerText).width;
   const scrollOffset = (time * 85) % textWidth;
 
@@ -1100,17 +1164,46 @@ export async function recordFastVideoStatus(
   if (!ctx) throw new Error('Canvas 2D context not available');
 
   return new Promise<VideoStatusResult>((resolve) => {
-    recorder.start();
-    let frame = 0;
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const safeName = (senderName || 'Wishes').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
+      const fileName = isBirthday
+        ? `Happy-Birthday-${birthdayPerson || 'Akash'}-8K-Status.${extension}`
+        : `Shubhakamna-8K-Video-Status-${festival.id}-${safeName}.${extension}`;
+
+      resolve({
+        blob,
+        url,
+        mimeType,
+        extension,
+        fileName
+      });
+    };
+
+    recorder.start(500);
+    const startRecordTime = performance.now();
 
     const recordStep = () => {
-      frame++;
-      const time = frame / fps;
+      const now = performance.now();
+      const elapsedSec = (now - startRecordTime) / 1000;
+
+      if (elapsedSec >= durationSeconds) {
+        onProgress?.(100);
+        try {
+          if (recorder.state !== 'inactive') {
+            recorder.stop();
+          }
+        } catch {}
+        audio.cleanup();
+        return;
+      }
+
       drawVideoStatusFrame(
         ctx, 
         canvas.width, 
         canvas.height, 
-        time, 
+        elapsedSec, 
         heroImg, 
         userImg, 
         { ...options, totalDuration: durationSeconds }, 
@@ -1118,32 +1211,10 @@ export async function recordFastVideoStatus(
         loadedSlides
       );
 
-      const pct = Math.min(Math.floor((frame / totalFrames) * 100), 100);
+      const pct = Math.min(Math.floor((elapsedSec / durationSeconds) * 100), 99);
       onProgress?.(pct);
 
-      if (frame < totalFrames) {
-        requestAnimationFrame(recordStep);
-      } else {
-        recorder.stop();
-        audio.cleanup();
-
-        recorder.onstop = () => {
-          const blob = new Blob(chunks, { type: mimeType });
-          const url = URL.createObjectURL(blob);
-          const safeName = (senderName || 'Wishes').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
-          const fileName = isBirthday
-            ? `Happy-Birthday-${birthdayPerson || 'Akash'}-8K-Status.${extension}`
-            : `Shubhakamna-8K-Video-Status-${festival.id}-${safeName}.${extension}`;
-
-          resolve({
-            blob,
-            url,
-            mimeType,
-            extension,
-            fileName
-          });
-        };
-      }
+      requestAnimationFrame(recordStep);
     };
 
     recordStep();

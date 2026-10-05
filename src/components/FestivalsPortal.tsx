@@ -5,6 +5,7 @@ import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from '../utils/goog
 import { PanchangWidget } from './PanchangWidget';
 import { FestivalCountdownTimer } from './FestivalCountdownTimer';
 import { DailyMantraWidget } from './DailyMantraWidget';
+import { YouTubeStatsBar } from './YouTubeStatsBar';
 import { AdBanner } from './AdBanner';
 import { 
   Sparkles, 
@@ -182,6 +183,14 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
               </div>
             </div>
 
+            {/* YouTube Live Engagement Stats (Views, Likes, Shares) */}
+            <YouTubeStatsBar
+              festivalId={featuredFestival.id}
+              festivalTitle={featuredFestival.nameHi}
+              variant="spotlight"
+              className="pt-1"
+            />
+
             <div className="pt-2 flex flex-wrap gap-3">
               <button
                 onClick={() => onSelectFestival(featuredFestival)}
@@ -312,8 +321,17 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
                 </p>
               </div>
 
+              {/* YouTube Live Stats Bar (Views, Likes, Shares) */}
+              <div className="mt-3">
+                <YouTubeStatsBar
+                  festivalId={fest.id}
+                  festivalTitle={fest.nameHi}
+                  variant="card"
+                />
+              </div>
+
               {/* Action Button */}
-              <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between">
+              <div className="mt-2 pt-2 border-t border-stone-800/80 flex items-center justify-between">
                 <span className="text-[11px] text-stone-400 font-mono">
                   /{fest.slug}
                 </span>

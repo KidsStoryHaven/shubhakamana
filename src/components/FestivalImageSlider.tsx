@@ -25,26 +25,45 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
 }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [isInViewport, setIsInViewport] = useState(true);
+  const sliderRootRef = useRef<HTMLDivElement | null>(null);
   const thumbnailsRef = useRef<HTMLDivElement | null>(null);
 
-  const SLIDE_INTERVAL_MS = 6000; // 6 seconds auto-slide
+  const SLIDE_INTERVAL_MS = 7000; // 7 seconds auto-slide
   const TICK_MS = 100;
 
-  // Auto-advance slide on timer
+  // Track if slider is currently visible on screen.
+  // If user scrolls down to read the page, pause auto-slide to prevent any unwanted interruption or scroll jumping.
   useEffect(() => {
-    if (!isPlaying || slides.length <= 1) return;
+    const el = sliderRootRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-advance slide on timer ONLY when slider is visible in viewport and user hasn't paused
+  useEffect(() => {
+    if (!isPlaying || !isInViewport || slides.length <= 1) return;
 
     const timer = setInterval(() => {
       onSelectIndex((currentIndex + 1) % slides.length);
     }, SLIDE_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [isPlaying, currentIndex, slides.length, onSelectIndex]);
+  }, [isPlaying, isInViewport, currentIndex, slides.length, onSelectIndex]);
 
-  // Progress bar tracking based on elapsed time
+  // Progress bar tracking based on elapsed time (only when active in viewport)
   useEffect(() => {
     setProgress(0);
-    if (!isPlaying || slides.length <= 1) return;
+    if (!isPlaying || !isInViewport || slides.length <= 1) return;
 
     const startTime = Date.now();
     const interval = setInterval(() => {
@@ -54,17 +73,24 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
     }, TICK_MS);
 
     return () => clearInterval(interval);
-  }, [currentIndex, isPlaying, slides.length]);
+  }, [currentIndex, isPlaying, isInViewport, slides.length]);
 
-  // Auto-scroll thumbnail container to keep active thumbnail centered
+  // Safely adjust horizontal scroll of thumbnail container.
+  // CRITICAL: NEVER call container.scrollTo({ behavior: 'smooth' }) or activeEl.scrollIntoView(),
+  // because browsers will scroll the entire page/window to the top if the container is off-screen!
+  // Assigning container.scrollLeft directly is 100% safe and NEVER affects window scroll.
   useEffect(() => {
-    if (thumbnailsRef.current) {
-      const activeEl = thumbnailsRef.current.children[currentIndex] as HTMLElement;
+    if (!isInViewport) return; // Do not touch scroll if user is scrolled down reading wishes
+    const container = thumbnailsRef.current;
+    if (container) {
+      const activeEl = container.children[currentIndex] as HTMLElement;
       if (activeEl) {
-        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const targetScrollLeft = activeEl.offsetLeft - (container.clientWidth / 2) + (activeEl.clientWidth / 2);
+        // Direct scrollLeft assignment does NOT trigger browser window/page scrolling
+        container.scrollLeft = Math.max(0, targetScrollLeft);
       }
     }
-  }, [currentIndex]);
+  }, [currentIndex, isInViewport]);
 
   const safeIndex = (currentIndex >= 0 && currentIndex < slides.length) ? currentIndex : 0;
 
@@ -89,7 +115,7 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
   const currentSlide = slides[safeIndex] || slides[0];
 
   return (
-    <div className="w-full space-y-2.5">
+    <div ref={sliderRootRef} className="w-full space-y-2.5">
       {/* 🖼️ Main Photo Frame (100% CLEAN - No Text Obstructing Deity Face/Darshan) */}
       <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-3xl overflow-hidden border-2 border-amber-400/60 shadow-2xl bg-black group select-none">
         

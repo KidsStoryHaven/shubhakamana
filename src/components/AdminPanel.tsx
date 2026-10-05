@@ -73,7 +73,9 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  Radio
+  Radio,
+  ThumbsUp,
+  Share2
 } from 'lucide-react';
 import { 
   festiveAudio, 
@@ -86,7 +88,18 @@ import {
   deleteUploadedAudioFile
 } from '../utils/audioStorage';
 import { optimizeImageForWeb } from '../utils/imageOptimizer';
-import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
+import { 
+  resolveDirectImageUrl, 
+  resolveDirectAudioUrl,
+  fetchPhotosFromGoogleDriveFolder,
+  DriveFolderPhoto 
+} from '../utils/googleDriveHelper';
+import {
+  getFestivalEngagement,
+  updateAdminFestivalEngagement,
+  formatEngagementCount,
+  formatFullCount
+} from '../data/festivalEngagementStore';
 import { 
   WishCategory, 
   HindiWish, 
@@ -196,6 +209,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>([]);
   const [editingSlide, setEditingSlide] = useState<DivineDeitySlide | null>(null);
   const [isAddingSlide, setIsAddingSlide] = useState(false);
+
+  // Google Drive Folder Auto-Sync State
+  const [gdriveFolderInput, setGdriveFolderInput] = useState('');
+  const [isFetchingGdriveFolder, setIsFetchingGdriveFolder] = useState(false);
+  const [gdriveFetchResult, setGdriveFetchResult] = useState<{
+    photos: DriveFolderPhoto[];
+    message: string;
+    success: boolean;
+  } | null>(null);
+
+  // YouTube-Style Stats Input State for Festival Modal
+  const [editingViews, setEditingViews] = useState<number>(0);
+  const [editingLikes, setEditingLikes] = useState<number>(0);
+  const [editingShares, setEditingShares] = useState<number>(0);
 
   // Category Edit State
   const [editingCategory, setEditingCategory] = useState<CategoryInfo | null>(null);
@@ -424,18 +451,107 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  // Load deity slides whenever selected festival for photos changes
+  // Load deity slides and GDrive folder link whenever selected festival for photos changes
   useEffect(() => {
     if (selectedFestivalForPhotos) {
       const slides = getStoredDeitySlides(selectedFestivalForPhotos);
       setDeitySlides(slides);
+      const targetFest = festivals.find(f => f.id === selectedFestivalForPhotos);
+      setGdriveFolderInput(targetFest?.gdriveFolderUrl || '');
+      setGdriveFetchResult(null);
     }
-  }, [selectedFestivalForPhotos]);
+  }, [selectedFestivalForPhotos, festivals]);
+
+  // Sync YouTube stats inputs whenever editingFestival modal opens
+  useEffect(() => {
+    if (editingFestival) {
+      const stats = getFestivalEngagement(editingFestival.id);
+      setEditingViews(stats.views);
+      setEditingLikes(stats.likes);
+      setEditingShares(stats.shares);
+    }
+  }, [editingFestival?.id]);
+
+  // Google Drive Folder Fetch Handler
+  const handleFetchGDrivePhotos = async () => {
+    if (!gdriveFolderInput.trim()) {
+      showToast('कृपया पहले Google Drive फ़ोल्डर का लिंक दर्ज करें!');
+      return;
+    }
+    const currentFest = festivals.find(f => f.id === selectedFestivalForPhotos);
+    const festName = currentFest?.nameHi || 'पावन उत्सव';
+    setIsFetchingGdriveFolder(true);
+    setGdriveFetchResult(null);
+    showToast('गूगल ड्राइव फ़ोल्डर से फ़ोटो ढूंढी जा रही हैं... ⏳');
+
+    try {
+      const result = await fetchPhotosFromGoogleDriveFolder(gdriveFolderInput, festName);
+      setGdriveFetchResult({
+        photos: result.photos,
+        message: result.message,
+        success: result.success
+      });
+      if (result.success && result.photos.length > 0) {
+        showToast(`🎉 फ़ोल्डर से ${result.photos.length} फ़ोटो मिल गईं!`);
+      } else {
+        showToast(result.message);
+      }
+    } catch (err) {
+      showToast('फ़ोल्डर लोड करने में समस्या आई।');
+    } finally {
+      setIsFetchingGdriveFolder(false);
+    }
+  };
+
+  // Google Drive Photos Apply & Save to Festival Handler
+  const handleApplyGDrivePhotosToFestival = () => {
+    if (!gdriveFetchResult || !gdriveFetchResult.photos || gdriveFetchResult.photos.length === 0) return;
+    const currentFest = festivals.find(f => f.id === selectedFestivalForPhotos);
+    const festName = currentFest?.nameHi || 'पावन उत्सव';
+
+    const newSlides: DivineDeitySlide[] = gdriveFetchResult.photos.map((p, idx) => ({
+      id: `slide_gdrive_${Date.now()}_${idx}`,
+      godName: p.godName || `${festName} पावन दर्शन`,
+      title: p.title || `${festName} • पावन दर्शन #${idx + 1}`,
+      tagline: 'भक्तों की मनोकामना पूर्ण करने वाले',
+      badge: idx === 0 ? '✨ मुख्य दर्शन' : '🌸 पावन दर्शन',
+      mantra: '॥ ॐ श्री गणेशाय नमः ॥',
+      imageUrl: p.imageUrl
+    }));
+
+    // 1. Save slides to this festival
+    setDeitySlides(newSlides);
+    saveStoredDeitySlides(selectedFestivalForPhotos, newSlides);
+
+    // 2. Also update festival's gdriveFolderUrl & heroImage to the 1st photo
+    const updatedFestivals = festivals.map(f => {
+      if (f.id === selectedFestivalForPhotos) {
+        return {
+          ...f,
+          gdriveFolderUrl: gdriveFolderInput.trim(),
+          heroImage: newSlides[0]?.imageUrl || f.heroImage
+        };
+      }
+      return f;
+    });
+    setFestivals(updatedFestivals);
+    saveStoredFestivals(updatedFestivals);
+
+    setGdriveFetchResult(null);
+    showToast(`🎉 बधाई! Google Drive फ़ोल्डर की ${newSlides.length} फ़ोटो त्योहार में जुड़ गईं और लाइव हो गईं! 🚀`);
+  };
 
   // ==========================================
   // FESTIVAL CRUD OPERATIONS
   // ==========================================
   const handleSaveFestival = (fest: Festival) => {
+    // 1. Update YouTube Stats
+    updateAdminFestivalEngagement(fest.id, {
+      views: editingViews,
+      likes: editingLikes,
+      shares: editingShares
+    });
+
     let updated: Festival[];
     const exists = festivals.some(f => f.id === fest.id);
     if (exists) {
@@ -1153,6 +1269,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </p>
                       </div>
                     </div>
+
+                    {/* YouTube Stats Badge */}
+                    {(() => {
+                      const stats = getFestivalEngagement(fest.id);
+                      return (
+                        <div className="flex items-center justify-between text-[11px] bg-stone-950/80 px-2.5 py-1.5 rounded-xl border border-stone-800 text-stone-300">
+                          <span className="flex items-center gap-1 text-amber-300 font-bold" title={`कुल दृश्य: ${formatFullCount(stats.views)}`}>
+                            <Eye className="w-3 h-3 text-amber-400" />
+                            <span>{formatEngagementCount(stats.views)} views</span>
+                          </span>
+                          <span className="flex items-center gap-1 text-red-400 font-semibold" title={`लाइक्स: ${formatFullCount(stats.likes)}`}>
+                            <ThumbsUp className="w-3 h-3 text-red-400" />
+                            <span>{formatEngagementCount(stats.likes)}</span>
+                          </span>
+                          <span className="flex items-center gap-1 text-blue-400 font-semibold" title={`शेयर्स: ${formatFullCount(stats.shares)}`}>
+                            <Share2 className="w-3 h-3 text-blue-400" />
+                            <span>{formatEngagementCount(stats.shares)}</span>
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Audio Preview Bar */}
                     <div className="flex items-center justify-between text-[11px] bg-stone-950/80 px-2.5 py-1.5 rounded-xl border border-stone-800">
@@ -2317,6 +2454,97 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             </div>
 
+            {/* 📂 Google Drive Folder Auto-Import & Live Sync Box */}
+            <div className="bg-gradient-to-r from-stone-900 via-amber-950/20 to-stone-900 p-4 sm:p-5 rounded-2xl border-2 border-amber-500/40 shadow-xl space-y-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-amber-300 flex items-center gap-2 font-serif">
+                    <span>📂</span>
+                    <span>Google Drive इमेज फ़ोल्डर लिंक (Auto-Import & Live Sync)</span>
+                  </h4>
+                  <p className="text-xs text-stone-300 mt-0.5">
+                    Google Drive फ़ोल्डर का लिंक यहाँ पेस्ट करें। फ़ोल्डर में रखी सभी तस्वीरें ऑटोमैटिक इस त्योहार में जुड़ जाएँगी और लाइव दिखेंगी!
+                  </p>
+                </div>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full font-semibold shrink-0">
+                  ⚡ Auto-Sync Ready
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input
+                  type="text"
+                  value={gdriveFolderInput}
+                  onChange={(e) => setGdriveFolderInput(e.target.value)}
+                  placeholder="उदा: https://drive.google.com/drive/folders/1aBcDeFgHiJkLmNo..."
+                  className="flex-1 p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-xs text-white focus:outline-none focus:border-amber-400 placeholder:text-stone-500 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleFetchGDrivePhotos}
+                  disabled={isFetchingGdriveFolder}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {isFetchingGdriveFolder ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>फ़ोटो ढूंढी जा रही हैं... ⏳</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-3.5 h-3.5" />
+                      <span>🔍 फ़ोल्डर से सभी फ़ोटो लोड करें</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Instructions helper */}
+              <div className="text-[11px] text-stone-400 bg-black/40 p-2.5 rounded-xl border border-stone-800 flex items-start gap-2">
+                <span className="text-amber-400 shrink-0">💡</span>
+                <span>
+                  <strong>गूगल ड्राइव सेटिंग:</strong> अपने Google Drive में फ़ोल्डर पर राइट-क्लिक करें ➔ <strong>Share</strong> ➔ General Access में <strong>"Anyone with the link can view" (कोई भी देख सकता है)</strong> चुनें और लिंक कॉपी करके ऊपर पेस्ट करें।
+                </span>
+              </div>
+
+              {/* Preview of discovered Google Drive Photos */}
+              {gdriveFetchResult && (
+                <div className="p-3 bg-stone-950 rounded-xl border border-amber-500/30 space-y-3 animate-fade-in">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <span className={`text-xs font-bold flex items-center gap-1.5 ${
+                      gdriveFetchResult.success ? 'text-emerald-400' : 'text-amber-400'
+                    }`}>
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>{gdriveFetchResult.message}</span>
+                    </span>
+                    {gdriveFetchResult.photos.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleApplyGDrivePhotosToFestival}
+                        className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95 transition"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>⚡ सभी {gdriveFetchResult.photos.length} फ़ोटो त्योहार में तुरंत सहेजें</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {gdriveFetchResult.photos.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+                      {gdriveFetchResult.photos.map((p, idx) => (
+                        <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden border border-amber-500/40 bg-black group">
+                          <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
+                          <span className="absolute bottom-0 inset-x-0 bg-black/80 text-[9px] text-amber-300 text-center py-0.5 truncate font-mono">
+                            #{idx + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Reorder / Manage Instructions */}
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-center justify-between">
               <span>
@@ -2987,6 +3215,67 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <span className="text-[11px] text-stone-400">फ़ोटो लाइव प्रीव्यू (Instant Display)</span>
                   </div>
                 )}
+              </div>
+
+              {/* 📂 Google Drive Folder Link Setting for this Festival */}
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5 font-serif">
+                    <span>📂</span>
+                    <span>Google Drive इमेज फ़ोल्डर लिंक (Auto-Sync Photos)</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-400 font-semibold">⚡ फ़ोल्डर की सभी तस्वीरें दर्शन में दिखेंगी</span>
+                </div>
+                <input
+                  type="text"
+                  value={editingFestival.gdriveFolderUrl || ''}
+                  onChange={(e) => setEditingFestival({ ...editingFestival, gdriveFolderUrl: e.target.value })}
+                  placeholder="उदा: https://drive.google.com/drive/folders/1aBcDeFgHiJk..."
+                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-mono text-xs focus:outline-none focus:border-amber-400 placeholder:text-stone-500"
+                />
+                <p className="text-[10px] text-stone-400 leading-relaxed">
+                  💡 Google Drive में फ़ोल्डर की शेयरिंग "Anyone with the link can view" (कोई भी देख सकता है) पर रखें। इस लिंक की सभी तस्वीरें त्योहार के 6-सेकंड ऑटो स्लाइडर व पावन दर्शन में लाइव प्रदर्शित होंगी।
+                </p>
+              </div>
+
+              {/* ▶️ YouTube-Style Stats (Views, Likes, Shares) */}
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-stone-900/90 border border-red-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-red-400 flex items-center gap-1.5 font-serif">
+                    <span>▶️</span>
+                    <span>YouTube स्टाइल आंकड़े (Views, Likes, Shares)</span>
+                  </label>
+                  <span className="text-[10px] text-stone-400">हर विज़िटर को लाइव दिखेंगे</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-stone-300 mb-1">👁️ कुल Views</label>
+                    <input
+                      type="number"
+                      value={editingViews}
+                      onChange={(e) => setEditingViews(parseInt(e.target.value) || 0)}
+                      className="w-full p-2 rounded-xl bg-stone-950 border border-stone-800 text-white font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-stone-300 mb-1">👍 Likes</label>
+                    <input
+                      type="number"
+                      value={editingLikes}
+                      onChange={(e) => setEditingLikes(parseInt(e.target.value) || 0)}
+                      className="w-full p-2 rounded-xl bg-stone-950 border border-stone-800 text-white font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-stone-300 mb-1">↗️ Shares</label>
+                    <input
+                      type="number"
+                      value={editingShares}
+                      onChange={(e) => setEditingShares(parseInt(e.target.value) || 0)}
+                      className="w-full p-2 rounded-xl bg-stone-950 border border-stone-800 text-white font-bold text-xs"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="sm:col-span-2">

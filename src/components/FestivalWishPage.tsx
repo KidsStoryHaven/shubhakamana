@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Festival } from '../data/festivals';
 import { FestiveCanvas } from './FestiveCanvas';
 import { festiveAudio } from '../utils/festiveAudio';
@@ -7,13 +7,23 @@ import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
 import { VideoStatusModal } from './VideoStatusModal';
 import { FestivalImageSlider } from './FestivalImageSlider';
-import { NavratriKathaAudioSection } from './NavratriKathaAudioSection';
+import { FestivalKathaAudioSection } from './FestivalKathaAudioSection';
 import { StickyKathaMiniPlayer } from './StickyKathaMiniPlayer';
+import { WishFontSelector } from './WishFontSelector';
+import { getWishFontById } from '../data/wishFontsData';
+import { 
+  CARD_BACKGROUNDS, 
+  BACKGROUND_CATEGORIES, 
+  CardBackground, 
+  getDefaultBackgroundForCategory 
+} from '../data/cardBackgroundsData';
 import { DivineDeitySlide } from '../data/divineGodsData';
 import { getStoredFestivals, getStoredDeitySlides } from '../data/festivalStore';
 import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
 import { AdBanner } from './AdBanner';
+import { YouTubeStatsBar } from './YouTubeStatsBar';
 import { awardUserPoints } from '../data/userStore';
+import { recordFestivalView, recordFestivalShare } from '../data/festivalEngagementStore';
 import { createShortWishUrl, parseWishUrl, isDefaultSenderName } from '../utils/shortUrl';
 import { generateStatusCardBlob } from '../utils/generateStatusCard';
 import { updatePageSEO, getFestivalSEOMetadata } from '../utils/seoManager';
@@ -53,7 +63,10 @@ import {
   Pause,
   PartyPopper,
   Film,
-  Edit3
+  Edit3,
+  Palette,
+  Shuffle,
+  Search
 } from 'lucide-react';
 import { getUploadedAudioFile } from '../utils/audioStorage';
 
@@ -84,6 +97,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     const updated = all.find(f => f.id === initialFestival.id || f.slug === initialFestival.slug);
     if (updated) setFestival(updated);
     else setFestival(initialFestival);
+    // Record YouTube-style view for this festival
+    recordFestivalView(initialFestival.id);
   }, [initialFestival]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -162,6 +177,54 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [statusModalImage, setStatusModalImage] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Font Style state (User requirement for font selection options)
+  const [selectedFontId, setSelectedFontId] = useState<string>('rozha');
+  const currentFont = getWishFontById(selectedFontId);
+
+  // Background state (User requirement for 130+ professional backgrounds)
+  const [selectedBg, setSelectedBg] = useState<CardBackground>(() => 
+    getDefaultBackgroundForCategory(festival.slug || festival.id)
+  );
+  const [customBgUrl, setCustomBgUrl] = useState<string | null>(null);
+  const [bgCategoryFilter, setBgCategoryFilter] = useState<string>('all');
+  const [bgSearchQuery, setBgSearchQuery] = useState<string>('');
+  const [isBgPickerExpanded, setIsBgPickerExpanded] = useState<boolean>(false);
+  const customBgInputRef = useRef<HTMLInputElement>(null);
+
+  // Filtered backgrounds for festival card
+  const filteredBackgrounds = useMemo(() => {
+    let list = CARD_BACKGROUNDS;
+    if (bgCategoryFilter !== 'all') {
+      list = list.filter(b => b.category === bgCategoryFilter);
+    }
+    if (bgSearchQuery.trim()) {
+      const q = bgSearchQuery.toLowerCase().trim();
+      list = list.filter(b => 
+        b.name.toLowerCase().includes(q) || 
+        b.categoryLabel.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [bgCategoryFilter, bgSearchQuery]);
+
+  const handleSelectRandomBackground = () => {
+    const rand = CARD_BACKGROUNDS[Math.floor(Math.random() * CARD_BACKGROUNDS.length)];
+    setSelectedBg(rand);
+    setCustomBgUrl(null);
+  };
+
+  const handleCustomBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (typeof event.target?.result === 'string') {
+        setCustomBgUrl(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const getResolvedDeitySlides = (fest: Festival): DivineDeitySlide[] => {
     const rawSlides = getStoredDeitySlides(fest.id);
@@ -517,7 +580,10 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         birthdayPhoto: isBirthday ? birthdayPhoto : undefined,
         poem: activeTranslation.greetingPoem || festival.defaultPoem,
         greetingTitle: activeTranslation.greetingTitle || festival.nameHi,
-        heroImageOverride: activeHeroImage
+        heroImageOverride: activeHeroImage,
+        background: selectedBg,
+        customBackgroundUrl: customBgUrl,
+        font: currentFont
       });
 
       const fileName = isBirthday ? `Happy-Birthday-${birthdayPerson}-8K.jpg` : `Shubhakamna-8K-Status-${senderName}.jpg`;
@@ -597,7 +663,10 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         birthdayPhoto: isBirthday ? birthdayPhoto : undefined,
         poem: activeTranslation.greetingPoem || festival.defaultPoem,
         greetingTitle: activeTranslation.greetingTitle || festival.nameHi,
-        heroImageOverride: activeHeroImage
+        heroImageOverride: activeHeroImage,
+        background: selectedBg,
+        customBackgroundUrl: customBgUrl,
+        font: currentFont
       });
 
       const url = URL.createObjectURL(blob);
@@ -680,8 +749,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         </div>
       </div>
 
-      {/* 🎧 Upper Sticky / Floating Navratri Katha Mini Player Shortcut */}
-      <StickyKathaMiniPlayer festivalId={festival.id} />
+      {/* 🎧 Upper Sticky / Floating Festival Katha Mini Player Shortcut */}
+      <StickyKathaMiniPlayer festivalId={festival.id} festivalTitle={festival.nameHi} />
 
       {/* AdSense Top Slot (728x90 / Responsive) */}
       <div className="max-w-3xl mx-auto px-4 pt-3">
@@ -698,8 +767,49 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
       {/* Main Magical Greeting Card with Festive Canvas */}
       <div className="relative max-w-xl mx-auto px-4 pt-4 pb-6">
+        
+        {/* YouTube-Style Live Video Engagement Stats Bar (Views, Likes, Shares) */}
+        <YouTubeStatsBar
+          festivalId={festival.id}
+          festivalTitle={festival.nameHi}
+          variant="page"
+          onShareClick={() => {
+            recordFestivalShare(festival.id);
+            handleWhatsAppShare();
+          }}
+        />
+
         <div className={`relative overflow-hidden rounded-3xl border-2 ${festival.themeColor.border} bg-gradient-to-b ${festival.themeColor.gradient} p-5 sm:p-7 shadow-2xl ${festival.themeColor.glow} text-center`}>
           
+          {/* Dynamic Professional Background Image Layer */}
+          {(customBgUrl || (selectedBg?.type === 'image' && selectedBg.url)) && (
+            <>
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-all duration-700 pointer-events-none z-0 opacity-45 scale-105 blur-[0.5px]"
+                style={{ backgroundImage: `url(${customBgUrl || selectedBg.url})` }}
+              />
+              <div 
+                className={`absolute inset-0 pointer-events-none z-0 ${
+                  selectedBg.overlayStyle === 'amber'
+                    ? 'bg-gradient-to-b from-stone-950/80 via-amber-950/65 to-stone-950/95'
+                    : selectedBg.overlayStyle === 'royal'
+                    ? 'bg-gradient-to-b from-stone-950/80 via-purple-950/70 to-stone-950/95'
+                    : selectedBg.overlayStyle === 'mystic'
+                    ? 'bg-gradient-to-b from-stone-950/80 via-blue-950/70 to-stone-950/95'
+                    : 'bg-gradient-to-b from-stone-950/80 via-stone-900/70 to-stone-950/95'
+                }`} 
+              />
+            </>
+          )}
+
+          {/* Dynamic Professional Gradient Layer */}
+          {selectedBg?.type === 'gradient' && selectedBg.cssGradient && !customBgUrl && (
+            <div 
+              className="absolute inset-0 transition-all duration-700 pointer-events-none z-0 opacity-70"
+              style={{ background: selectedBg.cssGradient }}
+            />
+          )}
+
           {/* Interactive Festive Canvas Overlay */}
           <FestiveCanvas 
             type={festival.particlesType} 
@@ -969,7 +1079,10 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
             {/* Sender Royal Plate */}
             <div className="my-2 py-3 px-4 rounded-2xl bg-black/50 border border-amber-500/30 backdrop-blur-sm shadow-inner">
               <p className="text-xs text-amber-200/80 tracking-wide font-medium">✨ स्नेह एवं सम्मान सहित प्रेषित ✨</p>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 font-serif tracking-tight drop-shadow-md mt-1">
+              <h2 
+                className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 tracking-tight drop-shadow-md mt-1 transition-all"
+                style={{ fontFamily: currentFont.fontFamily }}
+              >
                 {senderName}
               </h2>
               <p className="text-[11px] text-amber-300/70 mt-0.5">
@@ -990,18 +1103,27 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
             </div>
 
             {/* Festival Grand Title */}
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white mt-3 font-serif leading-tight drop-shadow-lg">
+            <h1 
+              className="text-2xl sm:text-4xl font-extrabold text-white mt-3 leading-tight drop-shadow-lg transition-all"
+              style={{ fontFamily: currentFont.fontFamily }}
+            >
               {isBirthday ? `🎉 Happy Birthday ${birthdayPerson}! 🎉` : activeTranslation.greetingTitle}
             </h1>
 
             {/* Poetic Message */}
-            <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-stone-100 text-sm sm:text-base leading-relaxed font-sans text-center">
+            <div 
+              className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-stone-100 text-sm sm:text-base leading-relaxed text-center transition-all"
+              style={{ fontFamily: currentFont.fontFamily }}
+            >
               "{activeTranslation.greetingPoem}"
             </div>
 
             {/* Sacred Mantra / Shloka if available */}
             {festival.mantraOrShloka && (
-              <div className="mt-3 p-3 rounded-lg bg-black/40 border border-yellow-500/20 text-yellow-300/90 text-xs sm:text-sm font-serif italic">
+              <div 
+                className="mt-3 p-3 rounded-lg bg-black/40 border border-yellow-500/20 text-yellow-300/90 text-xs sm:text-sm italic transition-all"
+                style={{ fontFamily: currentFont.fontFamily }}
+              >
                 {festival.mantraOrShloka}
               </div>
             )}
@@ -1015,6 +1137,207 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               <span className="font-semibold text-amber-300">
                 {festival.countdownDays > 0 ? `${festival.countdownDays} दिन शेष` : 'आज ही का पावन दिवस'}
               </span>
+            </div>
+
+            {/* Hidden Input for Custom Festival Background Upload */}
+            <input
+              ref={customBgInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCustomBgUpload}
+              className="hidden"
+            />
+
+            {/* 🔤 1. WISH FONT SELECTOR (Choose Font Style) */}
+            <div className="mt-5 text-left">
+              <WishFontSelector
+                selectedFontId={selectedFontId}
+                onSelectFont={(font) => setSelectedFontId(font.id)}
+                title="🔤 फॉन्ट स्टाइल चुनें (Choose Font Style)"
+                subtitle="विश व बधाई के अक्षरों को अपने पसंदीदा स्टाइल में सजाएँ"
+              />
+            </div>
+
+            {/* 🎨 2. 130+ PROFESSIONAL FESTIVAL BACKGROUNDS SELECTOR */}
+            <div className="mt-4 p-4 rounded-2xl bg-black/85 border-2 border-amber-500/40 text-left space-y-3.5 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-center justify-between flex-wrap gap-2 relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    <Palette className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs sm:text-sm font-bold text-amber-300">
+                        🎨 मनमोहक बैकग्राउंड चुनें
+                      </h3>
+                      <span className="text-[10px] bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950 font-black px-2 py-0.5 rounded-full shadow-sm">
+                        130+ HD विकल्प
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-400">
+                      {customBgUrl ? '✅ आपकी कस्टम फोटो बैकग्राउंड में लगी है' : `सक्रिय: ${selectedBg.name}`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleSelectRandomBackground}
+                    className="px-2.5 py-1 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                    title="रैंडम बैकग्राउंड बदलें"
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">रैंडम</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => customBgInputRef.current?.click()}
+                    className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1 transition cursor-pointer shadow-sm"
+                    title="गैलरी से फोटो बैकग्राउंड में लगाएं"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-stone-950" />
+                    <span>कस्टम फोटो</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsBgPickerExpanded(!isBgPickerExpanded)}
+                    className="text-stone-400 hover:text-white p-1 cursor-pointer"
+                    title={isBgPickerExpanded ? 'कम विकल्प' : 'सभी 130+ बैकग्राउंड्स देखें'}
+                  >
+                    {isBgPickerExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom background active notice */}
+              {customBgUrl && (
+                <div className="p-2 rounded-xl bg-emerald-950/70 border border-emerald-500/50 flex items-center justify-between text-xs text-emerald-300">
+                  <span>✅ आपकी फ़ोटो कार्ड बैकग्राउंड में सक्रिय है</span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomBgUrl(null)}
+                    className="text-stone-400 hover:text-rose-400 underline cursor-pointer text-[11px]"
+                  >
+                    डिफ़ॉल्ट पर लौटें
+                  </button>
+                </div>
+              )}
+
+              {/* Background Picker Collapsible Panel */}
+              {isBgPickerExpanded && (
+                <div className="space-y-3 pt-1">
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input
+                      type="text"
+                      value={bgSearchQuery}
+                      onChange={(e) => setBgSearchQuery(e.target.value)}
+                      placeholder="बैकग्राउंड खोजें (उदा. मंदिर, गंगा, दीप, महल, गुलाब, भोर, रंग)..."
+                      className="w-full pl-8 pr-8 py-1.5 rounded-xl bg-stone-900 border border-stone-800 text-stone-200 placeholder-stone-500 text-xs focus:outline-none focus:border-amber-400"
+                    />
+                    {bgSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setBgSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Category Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none text-xs">
+                    {BACKGROUND_CATEGORIES.map(cat => {
+                      const isSelected = bgCategoryFilter === cat.id;
+                      const count = cat.id === 'all' 
+                        ? CARD_BACKGROUNDS.length 
+                        : CARD_BACKGROUNDS.filter(b => b.category === cat.id).length;
+
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setBgCategoryFilter(cat.id)}
+                          className={`px-3 py-1 rounded-xl whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 font-medium ${
+                            isSelected
+                              ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20'
+                              : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/40'
+                          }`}
+                        >
+                          <span>{cat.label}</span>
+                          <span className={`text-[10px] px-1.5 rounded-full ${
+                            isSelected ? 'bg-black/25 text-stone-950' : 'bg-stone-800 text-stone-400'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Thumbnails Grid */}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-stone-700">
+                    {filteredBackgrounds.map(bg => {
+                      const isSelected = !customBgUrl && selectedBg.id === bg.id;
+
+                      return (
+                        <button
+                          key={bg.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedBg(bg);
+                            setCustomBgUrl(null);
+                          }}
+                          className={`relative rounded-xl overflow-hidden aspect-[9/14] border-2 transition-all cursor-pointer group text-left ${
+                            isSelected
+                              ? 'border-amber-400 shadow-lg shadow-amber-500/40 scale-102 ring-2 ring-amber-400/50'
+                              : 'border-stone-800 hover:border-amber-400/60 opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          {bg.type === 'image' ? (
+                            <img
+                              src={bg.url}
+                              alt={bg.name}
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            />
+                          ) : (
+                            <div 
+                              className="w-full h-full flex items-center justify-center text-xs font-bold text-white/90 p-1 text-center"
+                              style={{ background: bg.cssGradient || '#1a1a1a' }}
+                            >
+                              <span>{bg.name.split(' ')[0]}</span>
+                            </div>
+                          )}
+
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-1.5 text-[10px] text-white font-medium truncate">
+                            {bg.name}
+                          </div>
+
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow-md">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {filteredBackgrounds.length === 0 && (
+                    <div className="text-center py-5 text-stone-400 text-xs">
+                      कोई बैकग्राउंड नहीं मिला। दूसरा कीवर्ड खोजें।
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Name & Photo Customizer Form */}
@@ -1263,10 +1586,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           </p>
         </div>
 
-        {/* 🌸 Navratri Mythological Katha Audio Player & Do's and Don'ts 🌸 */}
-        {(festival.id === 'navratri' || festival.slug.includes('navratri') || festival.id.includes('durga')) && (
-          <NavratriKathaAudioSection />
-        )}
+        {/* 🌸 Universal Mythological Katha Audio Player & Do's and Don'ts (क्या करें और क्या न करें) 🌸 */}
+        <FestivalKathaAudioSection festival={festival} />
 
         {/* Top Copy-Paste Wishes */}
         <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-5 shadow-lg">
@@ -1407,6 +1728,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         customAudioUrl={effectiveAudioUrl}
         shareUrl={getShareUrl()}
         slides={deitySlides}
+        font={currentFont}
+        selectedFontId={selectedFontId}
+        onFontChange={(newFontId) => setSelectedFontId(newFontId)}
       />
 
       {/* Floating Loyalty Reward Points Celebration Toast */}

@@ -19,7 +19,8 @@ import {
   Upload,
   Loader2,
   CheckCircle2,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Type
 } from 'lucide-react';
 import { 
   SuvicharItem, 
@@ -29,6 +30,12 @@ import {
   getDayAndTimeFormatted,
   getTodayHindiDateString 
 } from '../data/dailySuvicharData';
+import { 
+  SUVICHAR_STYLES, 
+  SuvicharStyleOption, 
+  getSuvicharStyleById, 
+  parseSuvicharContent 
+} from '../data/suvicharStylesData';
 import { generateSuvicharCardBlob } from '../utils/generateSuvicharCard';
 import { awardUserPoints } from '../data/userStore';
 
@@ -54,6 +61,15 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
   const [aspectRatio, setAspectRatio] = useState<'story' | 'square'>('story');
   const [selectedLang, setSelectedLang] = useState<'hindi' | 'english' | 'marathi' | 'gujarati'>('hindi');
   const [showDayAndTime, setShowDayAndTime] = useState<boolean>(true);
+
+  // 🎨 8 WhatsApp Status Font & Card Styles
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('gold_floral');
+  const [headlineWord, setHeadlineWord] = useState<string>('');
+  const [customBadge1, setCustomBadge1] = useState<string>('');
+  const [customBadge2, setCustomBadge2] = useState<string>('');
+  const [fontScale, setFontScale] = useState<number>(1.5);
+
+  const activeStyle = useMemo(() => getSuvicharStyleById(selectedStyleId), [selectedStyleId]);
 
   // Background category filter
   const [bgCategoryFilter, setBgCategoryFilter] = useState<'all' | 'sunrise' | 'temple' | 'nature' | 'gradient'>('all');
@@ -164,7 +180,12 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
         senderPhoto,
         aspectRatio,
         language: selectedLang,
-        showDayAndTime
+        showDayAndTime,
+        styleId: selectedStyleId,
+        headlineOverride: headlineWord,
+        customBadge1: customBadge1.trim() || undefined,
+        customBadge2: customBadge2.trim() || undefined,
+        fontSizeMultiplier: fontScale
       });
 
       // 1. Download file
@@ -212,7 +233,12 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
             senderPhoto,
             aspectRatio,
             language: selectedLang,
-            showDayAndTime
+            showDayAndTime,
+            styleId: selectedStyleId,
+            headlineOverride: headlineWord,
+            customBadge1: customBadge1.trim() || undefined,
+            customBadge2: customBadge2.trim() || undefined,
+            fontSizeMultiplier: fontScale
           });
 
           const file = new File([blob], fileName, { type: 'image/jpeg' });
@@ -410,7 +436,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
             {/* Left: Live Visual Card Preview (Zero Cut-Off Guarantee) */}
             <div className="lg:col-span-6 flex flex-col items-center">
               <div 
-                className={`relative w-full max-w-[340px] sm:max-w-[390px] rounded-3xl overflow-hidden border-2 border-amber-400/90 shadow-2xl bg-black flex flex-col justify-between text-center select-none transition-all ${
+                className={`relative w-full max-w-[340px] sm:max-w-[390px] rounded-3xl overflow-hidden border-2 border-amber-400/90 shadow-2xl flex flex-col justify-between text-center select-none transition-all ${
                   aspectRatio === 'story' 
                     ? 'aspect-[9/16] p-4 sm:p-5' 
                     : 'min-h-[460px] sm:min-h-[500px] p-4 sm:p-5'
@@ -418,82 +444,218 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 style={{
                   backgroundImage: customBgUrl
                     ? `url(${customBgUrl})`
-                    : selectedBackground.type === 'image'
+                    : selectedBackground.type === 'image' && selectedBackground.id !== 'default_plain'
                       ? `url(${selectedBackground.url})`
-                      : selectedBackground.cssGradient,
+                      : activeStyle.cardTheme === 'royal_dark' || activeStyle.cardTheme === 'cosmic_gold' || activeStyle.cardTheme === 'sunrise_wood'
+                        ? `radial-gradient(circle at center, ${activeStyle.bgGrad[0]}, ${activeStyle.bgGrad[1]}, ${activeStyle.bgGrad[2]})`
+                        : `linear-gradient(135deg, ${activeStyle.bgGrad[0]}, ${activeStyle.bgGrad[1]}, ${activeStyle.bgGrad[2]})`,
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  backgroundColor: activeStyle.isDarkTheme ? '#0c0a09' : '#ffffff'
                 }}
               >
                 {/* Dark Vignette Overlay for 100% Readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/60 pointer-events-none" />
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: activeStyle.isDarkTheme
+                      ? 'linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.65), rgba(0,0,0,0.5))'
+                      : 'linear-gradient(to top, rgba(255,255,255,0.92), rgba(255,255,255,0.7), rgba(255,255,255,0.8))'
+                  }}
+                />
 
                 {/* Decorative border rail */}
-                <div className="absolute inset-2 border border-amber-400/35 rounded-2xl pointer-events-none" />
+                <div 
+                  className="absolute inset-2 border rounded-2xl pointer-events-none" 
+                  style={{ borderColor: activeStyle.isDarkTheme ? 'rgba(251, 191, 36, 0.4)' : 'rgba(217, 119, 6, 0.35)' }}
+                />
 
                 {/* Card Top Branding */}
                 <div className="relative z-10 space-y-1 shrink-0">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/85 border border-amber-400/60 text-[11px] font-extrabold text-amber-300 backdrop-blur-md shadow-md">
+                  <div 
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold backdrop-blur-md shadow-md border"
+                    style={{
+                      backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.95)',
+                      borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
+                      color: activeStyle.isDarkTheme ? '#fde047' : '#92400e'
+                    }}
+                  >
                     <span>✨ ॐ सूर्याय नमः • शुभ प्रभात ✨</span>
                   </div>
-                  <p className="text-[10px] text-amber-200/90 font-mono font-bold">
+                  <p 
+                    className="text-[10px] font-mono font-bold"
+                    style={{ color: activeStyle.isDarkTheme ? '#fde68a' : '#78350f' }}
+                  >
                     दैनिक सुविचार #{selectedSuvichar.number} • {selectedSuvichar.categoryLabel}
                   </p>
 
-                  {/* 🕒 Small Day & Time Badge on Card (जैसे: 📅 सोमवार • 07:15 AM) */}
+                  {/* 🕒 Small Day & Time Badge on Card */}
                   {showDayAndTime && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/90 border border-amber-500/50 text-[10px] font-bold text-amber-300 backdrop-blur-md shadow-sm">
-                      <Clock className="w-3 h-3 text-yellow-400" />
+                    <div 
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md shadow-sm border"
+                      style={{
+                        backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                        borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
+                        color: activeStyle.isDarkTheme ? '#fde047' : '#b45309'
+                      }}
+                    >
+                      <Clock className="w-3 h-3 text-yellow-500" />
                       <span>{currentDayTime.badgeText}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Card Center: BIG, BOLD, RAZOR-SHARP SUVICHAR TEXT */}
-                <div className="relative z-10 p-3 sm:p-4 rounded-2xl bg-black/80 border-2 border-amber-400/50 backdrop-blur-md shadow-2xl my-auto">
-                  <div className="text-amber-400/50 text-3xl sm:text-4xl font-serif -mb-2 leading-none">“</div>
-                  <p className="text-sm sm:text-base font-black text-amber-50 font-serif leading-relaxed drop-shadow-lg">
-                    {getSuvicharText(selectedSuvichar)}
-                  </p>
-                  <div className="text-amber-400/50 text-3xl sm:text-4xl font-serif -mt-2 text-right leading-none">”</div>
-                </div>
+                {/* Card Center: BADE BADE TEXT (Full Space Utilization, No Awkward Dabbas) */}
+                {(() => {
+                  const activeText = getSuvicharText(selectedSuvichar);
+                  const parsed = parseSuvicharContent(activeText, customBadge1, customBadge2);
+                  const b1 = customBadge1 || parsed.badge1;
+                  const b2 = customBadge2 || parsed.badge2;
+                  const hWord = headlineWord ? headlineWord.trim() : '';
 
-                {/* Card Bottom: VERY LARGE USER PHOTO, NAME & MAIN WEBSITE URL (NEVER CUT OFF) */}
-                <div className="relative z-10 flex flex-col items-center gap-2 pt-1 shrink-0">
-                  
-                  {/* 👑 Large User Photo */}
-                  {senderPhoto ? (
-                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl border-2 border-yellow-300 ring-4 ring-amber-500/50">
-                      <img
-                        src={senderPhoto}
-                        alt={senderName}
-                        className="w-full h-full rounded-full object-cover border-2 border-stone-950"
-                      />
-                      <span className="absolute -bottom-1 -right-1 bg-amber-500 text-stone-950 text-[11px] font-black w-6 h-6 rounded-full border-2 border-yellow-100 shadow-md flex items-center justify-center">
-                        ★
-                      </span>
+                  return (
+                    <div className="relative z-10 flex-1 flex flex-col justify-center items-center py-2 px-1 space-y-2.5 my-auto">
+                      
+                      {/* Optional Headline Word if chosen by user (Clean styled text, zero background container) */}
+                      {hWord ? (
+                        <div className="text-center py-0.5">
+                          <span 
+                            className="inline-block text-2xl sm:text-3xl font-black tracking-wide"
+                            style={{
+                              fontFamily: activeStyle.fontFamily,
+                              color: activeStyle.highlightColor || (activeStyle.isDarkTheme ? '#fde047' : '#b45309'),
+                              textShadow: activeStyle.isDarkTheme 
+                                ? '0 2px 10px rgba(0,0,0,0.9), 0 0 16px rgba(251,191,36,0.45)' 
+                                : '0 1px 4px rgba(0,0,0,0.2)'
+                            }}
+                          >
+                            {hWord}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {/* 📖 MAIN BOLD SUVICHAR QUOTE — 1.5X BADE BADE TEXT FILLING THE CARD! */}
+                      <div className="w-full px-2 py-1 text-center">
+                        <p 
+                          className={`font-black tracking-wide leading-snug sm:leading-relaxed ${
+                            fontScale >= 1.5
+                              ? activeText.length > 120 
+                                ? 'text-lg sm:text-xl md:text-2xl' 
+                                : activeText.length > 70 
+                                  ? 'text-xl sm:text-2xl md:text-3xl' 
+                                  : 'text-2xl sm:text-3xl md:text-4xl'
+                              : fontScale >= 1.25
+                                ? activeText.length > 120 
+                                  ? 'text-base sm:text-lg md:text-xl' 
+                                  : activeText.length > 70 
+                                    ? 'text-lg sm:text-xl md:text-2xl' 
+                                    : 'text-xl sm:text-2xl md:text-3xl'
+                                : activeText.length > 120 
+                                  ? 'text-sm sm:text-base' 
+                                  : activeText.length > 70 
+                                    ? 'text-base sm:text-lg' 
+                                    : 'text-lg sm:text-xl'
+                          }`}
+                          style={{ 
+                            color: activeStyle.textColor, 
+                            fontFamily: activeStyle.fontFamily,
+                            textShadow: activeStyle.isDarkTheme 
+                              ? '0 4px 16px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.9)' 
+                              : '0 2px 10px rgba(255,255,255,0.98), 0 1px 3px rgba(0,0,0,0.35)'
+                          }}
+                        >
+                          “{activeText}”
+                        </p>
+                      </div>
+
+                      {/* Ornament */}
+                      <div className="text-sm opacity-90">
+                        {activeStyle.ornament}
+                      </div>
+
                     </div>
-                  ) : null}
+                  );
+                })()}
 
-                  {/* Sender Name Plate */}
-                  <div className="px-3.5 py-1 rounded-xl bg-black/90 border border-amber-500/60 backdrop-blur-md shadow-md min-w-[190px]">
-                    <p className="text-[9px] text-amber-300 font-bold uppercase tracking-wider">
-                      ✨ सप्रेम शुभकामना प्रेषक ✨
-                    </p>
-                    <p className="text-xs sm:text-sm font-black text-white font-serif">
-                      {senderName || 'आपका शुभचिंतक'}
-                    </p>
-                  </div>
+                {/* Card Bottom: VIRTUE TAGS ABOVE PHOTO, ROUND USER PHOTO, SENDER PLATE */}
+                {(() => {
+                  const activeText = getSuvicharText(selectedSuvichar);
+                  const parsed = parseSuvicharContent(activeText, customBadge1, customBadge2);
+                  const b1 = customBadge1 || parsed.badge1;
+                  const b2 = customBadge2 || parsed.badge2;
 
-                  {/* 🌐 Main Website URL Badge on Card (Zero Cut-Off!) */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/90 border border-amber-500/50 text-[10px] font-bold text-amber-300 shadow-sm">
-                    <span>🌐 shubhakamna.in</span>
-                  </div>
+                  return (
+                    <div className="relative z-10 flex flex-col items-center gap-1.5 pt-1 shrink-0">
+                      
+                      {/* 🏷️ सत्यवचन व सकारात्मकता: User photo ke round ke theek upar, chote text me */}
+                      <div 
+                        className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[10px] sm:text-[11px] font-bold shadow-sm backdrop-blur-md"
+                        style={{
+                          backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                          borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
+                          color: activeStyle.isDarkTheme ? '#fde047' : '#92400e'
+                        }}
+                      >
+                        <span>✨ {b1} • {b2} ✨</span>
+                      </div>
 
-                  <p className="text-[9px] text-stone-400 font-medium">
-                    🌅 दैनिक १०० शुभ प्रभात सुविचार • मुफ़्त कार्ड
-                  </p>
-                </div>
+                      {/* 👑 Large Round User Photo */}
+                      {senderPhoto ? (
+                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl border-2 border-yellow-300 ring-4 ring-amber-500/50">
+                          <img
+                            src={senderPhoto}
+                            alt={senderName}
+                            className="w-full h-full rounded-full object-cover border-2 border-stone-950"
+                          />
+                          <span className="absolute -bottom-1 -right-1 bg-amber-500 text-stone-950 text-[11px] font-black w-6 h-6 rounded-full border-2 border-yellow-100 shadow-md flex items-center justify-center">
+                            ★
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {/* Sender Name Plate */}
+                      <div 
+                        className="px-3.5 py-1 rounded-xl backdrop-blur-md shadow-md min-w-[190px] border"
+                        style={{
+                          backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                          borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706'
+                        }}
+                      >
+                        <p 
+                          className="text-[9px] font-bold uppercase tracking-wider"
+                          style={{ color: activeStyle.isDarkTheme ? '#fde68a' : '#92400e' }}
+                        >
+                          ✨ सप्रेम शुभकामना प्रेषक ✨
+                        </p>
+                        <p 
+                          className="text-xs sm:text-sm font-black font-serif"
+                          style={{ color: activeStyle.isDarkTheme ? '#ffffff' : '#1c1917' }}
+                        >
+                          {senderName || 'आपका शुभचिंतक'}
+                        </p>
+                      </div>
+
+                      {/* 🌐 Main Website URL Badge on Card (Zero Cut-Off!) */}
+                      <div 
+                        className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[10px] font-bold shadow-sm"
+                        style={{
+                          backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                          borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
+                          color: activeStyle.isDarkTheme ? '#fde047' : '#b45309'
+                        }}
+                      >
+                        <span>🌐 shubhakamna.in/shubh-prabhat</span>
+                      </div>
+
+                      <p 
+                        className="text-[9px] font-medium"
+                        style={{ color: activeStyle.isDarkTheme ? '#94a3b8' : '#64748b' }}
+                      >
+                        🌅 दैनिक १०० शुभ प्रभात सुविचार • मुफ़्त कार्ड
+                      </p>
+                    </div>
+                  );
+                })()}
 
               </div>
             </div>
@@ -575,11 +737,201 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 )}
               </div>
 
-              {/* 3. Language Selector for Suvichar */}
+              {/* 🎨 3. 8 SPECIAL SUVICHAR CARD & FONT STYLES (MATCHING USER REFERENCE IMAGE) */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-black/60 border border-amber-500/40">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>३. फ़ॉन्ट व स्टेटस स्टाइल चुनें (८ स्पेशल प्रभात डिज़ाइन्स):</span>
+                  </label>
+                  <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                    {activeStyle.hindiName}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-stone-400">
+                  नीचे दिए गए ८ डिज़ाइनों में से अपनी पसंद चुनें, जिसमें बड़े-बड़े 3D अक्षर और रंगीन बैच हैं:
+                </p>
+
+                {/* 8 Styles Gallery Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  {SUVICHAR_STYLES.map((st) => {
+                    const isSelected = st.id === selectedStyleId;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setSelectedStyleId(st.id)}
+                        className={`p-2.5 rounded-2xl text-left transition flex flex-col justify-between border cursor-pointer relative overflow-hidden group ${
+                          isSelected
+                            ? 'bg-amber-950/80 border-amber-400 shadow-lg shadow-amber-500/30 ring-2 ring-amber-400 scale-[1.02]'
+                            : 'bg-stone-900 hover:bg-stone-850 border-stone-800 hover:border-amber-500/40 text-stone-300'
+                        }`}
+                      >
+                        {/* Active Check Badge */}
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-[11px] font-black border border-amber-500/40 shrink-0">
+                              {st.number}
+                            </span>
+                            <span className="text-[11px] font-bold text-stone-200 truncate">
+                              {st.name}
+                            </span>
+                          </div>
+
+                          {/* Text Font Preview (Clean Text Only - No background box) */}
+                          <div className="h-8 flex items-center justify-center text-center">
+                            <span 
+                              className="text-sm sm:text-base font-black tracking-wide"
+                              style={{
+                                fontFamily: st.fontFamily,
+                                background: st.previewGradient,
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))'
+                              }}
+                            >
+                              {st.defaultHeadline}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-1 pt-1 border-t border-stone-800 flex items-center justify-between text-[9px] text-stone-400">
+                          <span className="truncate">{st.tag}</span>
+                          <span>{st.ornament.split(' ')[0]}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Headline Word Selector & Custom Input (Optional) */}
+                <div className="pt-2 border-t border-stone-800/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-300">
+                      शीर्षक शब्द (वैकल्पिक / Optional Title):
+                    </span>
+                    <span className="text-[10px] text-stone-400">
+                      {headlineWord ? 'सक्रिय है' : 'साफ़ (कोई शीर्षक नहीं)'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setHeadlineWord('')}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        !headlineWord
+                          ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-sm font-black'
+                          : 'bg-stone-950 text-stone-300 border-stone-700 hover:border-stone-500'
+                      }`}
+                    >
+                      ✓ बिना शीर्षक (साफ़)
+                    </button>
+                    {['शुभ प्रभात', 'सुविचार', 'सत्य वचन', 'सकारात्मकता'].map((word) => (
+                      <button
+                        key={word}
+                        type="button"
+                        onClick={() => setHeadlineWord(headlineWord === word ? '' : word)}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                          headlineWord === word
+                            ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-sm font-black'
+                            : 'bg-stone-950 text-stone-300 border-stone-700 hover:border-stone-500'
+                        }`}
+                      >
+                        {word}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={headlineWord}
+                    onChange={(e) => setHeadlineWord(e.target.value)}
+                    placeholder="या अपना शीर्षक लिखें (खाली रखने पर सिर्फ सुविचार दिखेगा)..."
+                    maxLength={25}
+                    className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                {/* Photo ke upar wale chote pavitra shabda (Tags above photo) */}
+                <div className="pt-2 border-t border-stone-800/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-300">
+                      फ़ोटो के ऊपर के शब्द (Tags above photo):
+                    </span>
+                    <span className="text-[10px] text-stone-400">
+                      फ़ोटो के ठीक ऊपर छोटे अक्षरों में दिखेंगे
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={customBadge1}
+                      onChange={(e) => setCustomBadge1(e.target.value)}
+                      placeholder="शब्द १ (जैसे: सत्य वचन)"
+                      maxLength={18}
+                      className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-400"
+                    />
+                    <input
+                      type="text"
+                      value={customBadge2}
+                      onChange={(e) => setCustomBadge2(e.target.value)}
+                      placeholder="शब्द २ (जैसे: सकारात्मक विचार)"
+                      maxLength={18}
+                      className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+
+                {/* 🔤 Font Size Scale (1.5x Default Boost) */}
+                <div className="pt-2 border-t border-stone-800/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5 text-amber-400" />
+                      <span>फ़ॉन्ट का साइज़ (Font Size 1.5×):</span>
+                    </span>
+                    <span className="text-[10px] text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                      ⚡ {fontScale}× बड़ा सेट है
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { scale: 1.0, label: '1.0× सामान्य' },
+                      { scale: 1.25, label: '1.25× बड़ा' },
+                      { scale: 1.5, label: '1.5× बहुत बड़ा' },
+                      { scale: 1.75, label: '1.75× विशाल' }
+                    ].map(item => (
+                      <button
+                        key={item.scale}
+                        type="button"
+                        onClick={() => setFontScale(item.scale)}
+                        className={`px-2 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border text-center ${
+                          fontScale === item.scale
+                            ? 'bg-amber-500 text-stone-950 border-amber-400 font-black shadow-md'
+                            : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Language Selector for Suvichar */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-amber-300 flex items-center gap-1.5">
                   <Languages className="w-3.5 h-3.5 text-amber-400" />
-                  <span>३. सुविचार की भाषा चुनें (Select Language):</span>
+                  <span>४. सुविचार की भाषा चुनें (Select Language):</span>
                 </label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {[
@@ -630,12 +982,12 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 </button>
               </div>
 
-              {/* 4. Unlimited Backgrounds Selector */}
+              {/* 5. Unlimited Backgrounds Selector */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                     <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                    <span>४. बैकग्राउंड चुनें (Unlimited Backgrounds):</span>
+                    <span>५. बैकग्राउंड चुनें (Unlimited Backgrounds):</span>
                   </label>
                   <button
                     onClick={() => customBgInputRef.current?.click()}

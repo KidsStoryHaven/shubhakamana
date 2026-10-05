@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Sparkles, Flame, ArrowRight, Calendar, Heart } from 'lucide-react';
 import { Festival } from '../data/festivals';
+import { YouTubeStatsBar } from './YouTubeStatsBar';
 
 interface FestivalCountdownTimerProps {
   festivals: Festival[];
@@ -17,6 +18,9 @@ interface TimeRemaining {
 
 // Exact Muhurat Target Dates for Upcoming Festivals (2026 & 2027)
 const FESTIVAL_TARGET_DATES: Record<string, string> = {
+  navratri: '2026-10-11T06:18:00', // 11 October 2026 (शारदीय नवरात्रि 2026 घटस्थापना)
+  dhammachakra_pravartan: '2026-10-14T09:00:00', // 14 October 2026 (धम्मचक्र प्रवर्तन दिवस)
+  dussehra: '2026-10-20T17:45:00', // 20 October 2026 (विजयादशमी - दशहरा 2026)
   karwa_chauth: '2026-10-29T20:15:00', // 29 October 2026 (करवा चौथ चंद्र दर्शन)
   dhanteras: '2026-11-06T17:45:00', // 6 November 2026 सायं 05:45 (धनतेरस व कुबेर पूजा)
   diwali: '2026-11-08T18:15:00', // 8 November 2026 सायं 06:15 (कार्तिक अमावस्या - महालक्ष्मी पूजन)
@@ -39,7 +43,7 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
   // Top upcoming major festivals in ascending order
   const majorFestivals = festivals.filter(f => f.countdownDays > 0).slice(0, 5);
 
-  const [selectedId, setSelectedId] = useState<string>(() => festivals[0]?.id || 'karwa_chauth');
+  const [selectedId, setSelectedId] = useState<string>(() => festivals[0]?.id || 'navratri');
 
   const targetFestival = festivals.find(f => f.id === selectedId) || 
     festivals[0];
@@ -148,6 +152,16 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
           <p className="text-xs sm:text-sm text-stone-300 line-clamp-2 leading-relaxed pt-1">
             {targetFestival.shubhMuhurat || targetFestival.taglineHi}
           </p>
+
+          {/* YouTube-Style Live Metrics */}
+          <div className="pt-1">
+            <YouTubeStatsBar
+              festivalId={targetFestival.id}
+              festivalTitle={targetFestival.nameHi}
+              variant="card"
+              className="border-t-0 py-0"
+            />
+          </div>
 
           <div className="pt-2">
             <button

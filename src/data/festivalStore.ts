@@ -47,6 +47,14 @@ export function getStoredFestivals(): Festival[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // If cached storage has outdated 2027 Navratri or missing Navratri 2026 at the top
+        const hasOutdatedNavratri = parsed.some(
+          (f: Festival) => f.id === 'navratri' && (f.nameHi.includes('2027') || f.countdownDays > 300)
+        );
+        if (hasOutdatedNavratri || parsed[0]?.id !== 'navratri') {
+          localStorage.setItem(STORAGE_KEYS.FESTIVALS, JSON.stringify(DEFAULT_FESTIVALS));
+          return DEFAULT_FESTIVALS;
+        }
         return parsed;
       }
     }

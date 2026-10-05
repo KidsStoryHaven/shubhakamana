@@ -4,37 +4,54 @@ import {
   Pause, 
   Headphones, 
   ChevronDown, 
-  X,
-  Sparkles,
-  Volume2
+  X, 
+  Sparkles 
 } from 'lucide-react';
-import { kathaAudio, KATHA_SECTIONS } from '../utils/kathaAudioEngine';
+import { kathaAudio } from '../utils/kathaAudioEngine';
 
 interface StickyKathaMiniPlayerProps {
   festivalId: string;
+  festivalTitle?: string;
 }
 
-export const StickyKathaMiniPlayer: React.FC<StickyKathaMiniPlayerProps> = ({ festivalId }) => {
+export const StickyKathaMiniPlayer: React.FC<StickyKathaMiniPlayerProps> = ({ 
+  festivalId, 
+  festivalTitle = '' 
+}) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activeParaIndex, setActiveParaIndex] = useState<number>(0);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
+  const [totalChapters, setTotalChapters] = useState<number>(4);
 
-  // Show only on Navratri / Durga Puja pages
-  const isNavratri = festivalId === 'navratri' || festivalId.includes('durga');
+  // Clean title for display in the mini sticky card
+  const displayTitle = (festivalTitle || 'पावन कथा')
+    .split('•')[0]
+    .replace('शुभ', '')
+    .replace('की हार्दिक शुभकामनाएँ', '')
+    .trim();
 
   useEffect(() => {
-    if (!isNavratri) return;
+    // Reset dismissed state when festival changes so user can hear the new festival's story
+    setIsDismissed(false);
+    setIsMinimized(false);
+
     const unsubscribe = kathaAudio.subscribe((state) => {
-      setIsPlaying(state.isPlaying);
-      setActiveParaIndex(state.activeParaIndex);
+      if (state.activeFestivalId === festivalId) {
+        setIsPlaying(state.isPlaying);
+        setActiveParaIndex(state.activeParaIndex);
+        setTotalChapters(state.totalChapters || 4);
+      } else {
+        setIsPlaying(false);
+      }
     });
+
     return () => {
       unsubscribe();
     };
-  }, [isNavratri]);
+  }, [festivalId]);
 
-  if (!isNavratri || isDismissed) return null;
+  if (isDismissed) return null;
 
   const handleTogglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,11 +59,14 @@ export const StickyKathaMiniPlayer: React.FC<StickyKathaMiniPlayerProps> = ({ fe
   };
 
   const handleScrollToKatha = () => {
-    const el = document.getElementById('navratri-katha-section');
+    const el = document.getElementById('festival-katha-section') || document.getElementById('navratri-katha-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  const currentSections = kathaAudio.getCurrentSections();
+  const currentChapter = currentSections[activeParaIndex];
 
   // Minimized Floating Pill Mode
   if (isMinimized) {
@@ -59,19 +79,21 @@ export const StickyKathaMiniPlayer: React.FC<StickyKathaMiniPlayerProps> = ({ fe
               ? 'bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 text-stone-950 font-black border-amber-300 animate-pulse'
               : 'bg-stone-900/90 hover:bg-stone-800 text-amber-300 border-amber-500/50'
           }`}
-          title="नवरात्रि कथा प्लेयर खोलें"
+          title={`${displayTitle} कथा प्लेयर खोलें`}
         >
           <Headphones className="w-3.5 h-3.5" />
-          <span className="text-[11px] font-bold">{isPlaying ? 'कथा बज रही है...' : 'नवरात्रि कथा'}</span>
+          <span className="text-[11px] font-bold">
+            {isPlaying ? 'कथा बज रही है...' : `${displayTitle} कथा`}
+          </span>
         </button>
       </div>
     );
   }
 
-  // Sticky Note Style Upper Mini-Player (Unobtrusive & Elegant)
+  // Sticky Note Style Upper Mini-Player (Unobtrusive & Elegant for all festivals)
   return (
     <aside 
-      aria-label="Navratri Katha Mini Player"
+      aria-label={`${displayTitle} Katha Mini Player`}
       className="fixed top-18 right-3 sm:top-20 sm:right-6 z-40 max-w-[280px] animate-fadeIn"
     >
       <div 
@@ -112,13 +134,13 @@ export const StickyKathaMiniPlayer: React.FC<StickyKathaMiniPlayerProps> = ({ fe
                 {isPlaying ? 'लाइव' : 'कथा'}
               </span>
               <p className="text-xs font-black text-amber-200 truncate group-hover:text-amber-100">
-                नवरात्रि पावन कथा
+                {displayTitle} पावन कथा
               </p>
             </div>
             <p className="text-[10px] text-stone-300 truncate mt-0.5">
-              {isPlaying 
-                ? `अध्याय ${activeParaIndex + 1}: ${KATHA_SECTIONS[activeParaIndex]?.title.slice(0, 20)}...`
-                : '🎧 मधुर महिला स्वर में सुनें'}
+              {isPlaying && currentChapter
+                ? `अध्याय ${activeParaIndex + 1}/${totalChapters}: ${currentChapter.title.replace(/^[०-९1-9IVXLCDM]+\.\s*/, '').slice(0, 18)}...`
+                : '🎧 मधुर स्वर में कथा सुनें'}
             </p>
           </div>
 
@@ -154,7 +176,7 @@ export const StickyKathaMiniPlayer: React.FC<StickyKathaMiniPlayerProps> = ({ fe
         <div className="mt-1.5 pt-1 border-t border-stone-800/80 flex items-center justify-between text-[10px] text-amber-300/80">
           <span className="flex items-center gap-1">
             <Sparkles className="w-2.5 h-2.5 text-yellow-300" />
-            <span>पूरी कथा नीचे पढ़ें</span>
+            <span>पूरी कथा व नियम नीचे पढ़ें</span>
           </span>
           <ChevronDown className="w-3 h-3 text-amber-400 group-hover:translate-y-0.5 transition" />
         </div>

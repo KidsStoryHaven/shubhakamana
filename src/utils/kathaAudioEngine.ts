@@ -40,12 +40,16 @@ export const KATHA_SECTIONS: KathaParagraph[] = [
   }
 ];
 
-type KathaStateListener = (state: {
+export interface KathaState {
   isPlaying: boolean;
   activeParaIndex: number;
   elapsedSeconds: number;
   speed: number;
-}) => void;
+  activeFestivalId: string;
+  totalChapters: number;
+}
+
+type KathaStateListener = (state: KathaState) => void;
 
 class KathaAudioEngine {
   private isPlaying = false;
@@ -53,6 +57,8 @@ class KathaAudioEngine {
   private speed = 0.92;
   private isMuted = false;
   private elapsedSeconds = 0;
+  private activeFestivalId = 'navratri';
+  private currentSections: KathaParagraph[] = KATHA_SECTIONS;
   private listeners: Set<KathaStateListener> = new Set();
   private timer: NodeJS.Timeout | null = null;
   private droneCtx: AudioContext | null = null;
@@ -65,6 +71,35 @@ class KathaAudioEngine {
     }
   }
 
+  /**
+   * Dynamically loads story chapters for any festival
+   */
+  public loadFestival(festivalId: string, sections: KathaParagraph[]) {
+    if (!sections || sections.length === 0) return;
+    
+    // If switching to a new festival, reset state
+    if (this.activeFestivalId !== festivalId) {
+      if (this.isPlaying) {
+        this.pause();
+      }
+      this.activeFestivalId = festivalId;
+      this.currentSections = sections;
+      this.activeParaIndex = 0;
+      this.elapsedSeconds = 0;
+      this.notify();
+    } else {
+      // Same festival: update sections in case they changed
+      this.currentSections = sections;
+      if (this.activeParaIndex >= sections.length) {
+        this.activeParaIndex = 0;
+      }
+    }
+  }
+
+  public getCurrentSections(): KathaParagraph[] {
+    return this.currentSections;
+  }
+
   public subscribe(listener: KathaStateListener): () => void {
     this.listeners.add(listener);
     listener(this.getState());
@@ -73,12 +108,14 @@ class KathaAudioEngine {
     };
   }
 
-  public getState() {
+  public getState(): KathaState {
     return {
       isPlaying: this.isPlaying,
       activeParaIndex: this.activeParaIndex,
       elapsedSeconds: this.elapsedSeconds,
-      speed: this.speed
+      speed: this.speed,
+      activeFestivalId: this.activeFestivalId,
+      totalChapters: this.currentSections.length
     };
   }
 
@@ -162,10 +199,10 @@ class KathaAudioEngine {
 
   public play(fromIndex?: number) {
     if (fromIndex !== undefined) {
-      this.activeParaIndex = fromIndex;
+      this.activeParaIndex = Math.max(0, Math.min(fromIndex, this.currentSections.length - 1));
     }
 
-    // 🛑 1. AUTOMATICALLY PAUSE BACKGROUND FESTIVE MUSIC / DHUN
+    // Automatically pause background festive music / dhun
     festiveAudio.stopAll();
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('shubhakamna_katha_started'));
@@ -206,7 +243,7 @@ class KathaAudioEngine {
   }
 
   public next() {
-    if (this.activeParaIndex < KATHA_SECTIONS.length - 1) {
+    if (this.activeParaIndex < this.currentSections.length - 1) {
       this.activeParaIndex++;
       if (this.isPlaying) {
         this.speakCurrent();
@@ -236,7 +273,7 @@ class KathaAudioEngine {
   }
 
   public setPara(index: number) {
-    this.activeParaIndex = Math.max(0, Math.min(index, KATHA_SECTIONS.length - 1));
+    this.activeParaIndex = Math.max(0, Math.min(index, this.currentSections.length - 1));
     if (this.isPlaying) {
       this.speakCurrent();
     } else {
@@ -245,14 +282,19 @@ class KathaAudioEngine {
   }
 
   private speakCurrent() {
-    if (!this.synth || this.activeParaIndex >= KATHA_SECTIONS.length) {
+    if (!this.synth || this.activeParaIndex >= this.currentSections.length) {
       this.pause();
       return;
     }
 
     this.synth.cancel();
 
-    const para = KATHA_SECTIONS[this.activeParaIndex];
+    const para = this.currentSections[this.activeParaIndex];
+    if (!para) {
+      this.pause();
+      return;
+    }
+
     const text = `${para.title}। ${para.text}`;
     const u = new SpeechSynthesisUtterance(text);
     u.pitch = 1.18;
@@ -263,7 +305,7 @@ class KathaAudioEngine {
     if (voice) u.voice = voice;
 
     u.onend = () => {
-      if (this.activeParaIndex + 1 < KATHA_SECTIONS.length) {
+      if (this.activeParaIndex + 1 < this.currentSections.length) {
         this.activeParaIndex++;
         this.notify();
         this.speakCurrent();

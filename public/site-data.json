@@ -1,7 +1,114 @@
 {
   "version": "2.0",
-  "updatedAt": "2026-10-05T06:06:39.648Z",
+  "updatedAt": "2026-10-05T09:38:03.713Z",
   "festivals": [
+    {
+      "id": "navratri",
+      "slug": "navratri-durga-puja-wishes",
+      "nameHi": "शारदीय नवरात्रि 2026 • माँ दुर्गा पूजा",
+      "nameEn": "Shardiya Navratri 2026 & Durga Puja Wishes",
+      "taglineHi": "माँ जगदम्बा के नौ दिव्य स्वरूपों की पावन आराधना • शक्ति महापर्व 2026",
+      "category": "hindu",
+      "dateLabel": "11 अक्टूबर 2026 (अश्विन शुक्ल प्रतिपदा से नवमी)",
+      "countdownDays": 6,
+      "badge": "🚩 चालू महापर्व • जय माता दी",
+      "heroImage": "https://lh3.googleusercontent.com/d/1HE5DaiYEcjYhw2V8qw6bmBhTkkYZvgN8",
+      "themeColor": {
+        "gradient": "from-rose-950 via-red-900 to-stone-950",
+        "border": "border-red-500/40",
+        "accent": "text-rose-300",
+        "glow": "shadow-red-500/20"
+      },
+      "particlesType": "flowers",
+      "soundType": "custom_url",
+      "customAudioUrl": "/audio/navratri-aarti.mp3",
+      "greetingTitle": "शारदीय नवरात्रि 2026 की पावन शुभकामनाएँ • जय माता दी",
+      "defaultPoem": "सर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके। शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते॥ माँ दुर्गा आपके घर में सुख, शांति, समृद्धि और शक्ति का वरदान दें। नवरात्रि 2026 की हार्दिक बधाई!",
+      "mantraOrShloka": "या देवी सर्वभूतेषु शक्ति-रूपेण संस्थिता। नमस्तस्यै नमस्तस्यै नमस्तस्यै नमो नमः॥",
+      "significance": "शक्ति स्वरूपा माँ दुर्गा के नौ दिव्य स्वरूपों (शैलपुत्री, ब्रह्मचारिणी, चंद्रघंटा, कुष्मांडा, स्कंदमाता, कात्यायनी, कालरात्रि, महागौरी, सिद्धिदात्री) की पावन उपासना का महापर्व है।",
+      "shubhMuhurat": "घटस्थापना व कलश स्थापना शुभ मुहूर्त: 11 अक्टूबर प्रातः 06:18 से 10:15 बजे तक।",
+      "seoTopWishes": [
+        "माँ शेरावाली आपके परिवार की रक्षा करें और समस्त कष्ट दूर करें। जय माता दी!",
+        "शारदीय नवरात्रि 2026 की आपको और आपके पूरे परिवार को मंगलमय शुभकामनाएँ!"
+      ],
+      "faqs": [
+        {
+          "question": "घटस्थापना का शुभ मुहूर्त कब है?",
+          "answer": "11 अक्टूबर प्रातः 06:18 से 10:15 बजे तक और अभिजीत मुहूर्त मध्याह्न 11:45 से 12:35 तक।"
+        },
+        {
+          "question": "कलश स्थापना की दिशा क्या होनी चाहिए?",
+          "answer": "पूजा स्थल के उत्तर-पूर्व (ईशान कोण) में कलश स्थापना अत्यंत शुभ होती है।"
+        }
+      ]
+    },
+    {
+      "id": "dhammachakra_pravartan",
+      "slug": "dhammachakra-pravartan-din-deekshabhoomi",
+      "nameHi": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+      "nameEn": "Dhammachakra Pravartan Din 2026 Wishes",
+      "taglineHi": "14 अक्टूबर • बोधिसत्व डॉ. आंबेडकर द्वारा ऐतिहासिक बौद्ध धम्म दीक्षा",
+      "category": "social_national",
+      "dateLabel": "14 अक्टूबर 2026",
+      "countdownDays": 9,
+      "badge": "☸️ सद्धम्म विजय",
+      "heroImage": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
+      "themeColor": {
+        "gradient": "from-blue-950 via-yellow-950 to-stone-950",
+        "border": "border-blue-400/40",
+        "accent": "text-blue-300",
+        "glow": "shadow-blue-500/20"
+      },
+      "particlesType": "diyas",
+      "soundType": "shankh",
+      "greetingTitle": "धम्मचक्र प्रवर्तन दिवस 2026 की मंगलकामनाएँ • नमो बुद्धाय जय भीम",
+      "defaultPoem": "नागपुर की पावन दीक्षाभूमि से गूंजा था जो सद्धम्म का नाद, बाबासाहेब ने दिया हमें आत्मसम्मान और ज्ञान का वरदान। धम्मचक्र प्रवर्तन दिवस की हार्दिक बधाई!",
+      "significance": "14 अक्टूबर 1956 को परम पूज्य डॉ. बाबासाहेब आंबेडकर ने लाखों अनुयायियों के साथ बौद्ध धम्म की दीक्षा ली थी।",
+      "shubhMuhurat": "दीक्षाभूमि नागपुर में लाखों अनुयायियों का महासंगम।",
+      "seoTopWishes": [
+        "धम्मचक्र प्रवर्तन दिवस 2026 पर सभी को हार्दिक बधाई। जय भीम, नमो बुद्धाय!"
+      ],
+      "faqs": [
+        {
+          "question": "दीक्षा कहाँ हुई थी?",
+          "answer": "नागपुर की ऐतिहासिक दीक्षाभूमि पर।"
+        }
+      ]
+    },
+    {
+      "id": "dussehra",
+      "slug": "dussehra-vijayadashami-wishes",
+      "nameHi": "विजयादशमी • दशहरा 2026",
+      "nameEn": "Happy Dussehra Vijayadashami 2026 Wishes",
+      "taglineHi": "अधर्म पर धर्म और असत्य पर सत्य की अमर विजय का पावन महापर्व",
+      "category": "hindu",
+      "dateLabel": "20 अक्टूबर 2026 (अश्विन शुक्ल दशमी)",
+      "countdownDays": 15,
+      "badge": "🏹 सत्य की विजय",
+      "heroImage": "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&w=1200&q=80",
+      "themeColor": {
+        "gradient": "from-amber-950 via-red-950 to-stone-950",
+        "border": "border-yellow-500/40",
+        "accent": "text-amber-300",
+        "glow": "shadow-amber-500/20"
+      },
+      "particlesType": "fireworks",
+      "soundType": "shankh",
+      "greetingTitle": "विजयादशमी व दशहरा 2026 की हार्दिक शुभकामनाएँ",
+      "defaultPoem": "बुराई पर अच्छाई की जीत का प्रतीक, हर मन में जागे राम का नेक विचार। रावण रूपी विकारों का हो अंत, मुबारक हो आपको विजयादशमी 2026 का त्योहार!",
+      "mantraOrShloka": "राम रामेति रामेति रमे रामे मनोरमे। सहस्रनाम तत्तुल्यं रामनाम वरानने॥",
+      "significance": "मर्यादा पुरुषोत्तम भगवान श्री राम द्वारा रावण वध और माँ दुर्गा द्वारा महिषासुर मर्दन की विजय गाथा।",
+      "shubhMuhurat": "रावण दहन व विजय मुहूर्त 20 अक्टूबर सायं 05:40 से 07:20 बजे तक।",
+      "seoTopWishes": [
+        "आपके जीवन से हर बुराई का नाश हो और सफलता प्राप्त हो। शुभ दशहरा 2026!"
+      ],
+      "faqs": [
+        {
+          "question": "दशहरा पूजन समय?",
+          "answer": "अपराह्न काल में शस्त्र व शमी पूजन और सायं रावण दहन।"
+        }
+      ]
+    },
     {
       "id": "karwa_chauth",
       "slug": "karwa-chauth-suhag-wishes",
@@ -1005,74 +1112,6 @@
         {
           "question": "बाप्पा को क्या प्रिय है?",
           "answer": "दूर्वा, मोदक और लाल पुष्प।"
-        }
-      ]
-    },
-    {
-      "id": "navratri",
-      "slug": "navratri-durga-puja-wishes",
-      "nameHi": "शारदीय नवरात्रि 2027 • माँ दुर्गा पूजा",
-      "nameEn": "Navratri Durga Puja 2027 Wishes",
-      "taglineHi": "माँ जगदम्बा के नौ दिव्य स्वरूपों की पावन आराधना 2027",
-      "category": "hindu",
-      "dateLabel": "10 अक्टूबर 2027 (अश्विन शुक्ल प्रतिपदा)",
-      "countdownDays": 370,
-      "badge": "🚩 जय माता दी",
-      "heroImage": "https://lh3.googleusercontent.com/d/1HE5DaiYEcjYhw2V8qw6bmBhTkkYZvgN8",
-      "themeColor": {
-        "gradient": "from-rose-950 via-red-900 to-stone-950",
-        "border": "border-red-500/40",
-        "accent": "text-rose-300",
-        "glow": "shadow-red-500/20"
-      },
-      "particlesType": "flowers",
-      "soundType": "custom_url",
-      "customAudioUrl": "/audio/navratri-aarti.mp3",
-      "greetingTitle": "नवरात्रि 2027 की असीम शुभकामनाएँ • जय माता दी",
-      "defaultPoem": "सर्वमंगल मांगल्ये शिवे सर्वार्थ साधिके। शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते॥ माँ दुर्गा आपके घर में सुख, शांति और शक्ति का वरदान दें।",
-      "mantraOrShloka": "या देवी सर्वभूतेषु शक्ति-रूपेण संस्थिता। नमस्तस्यै नमस्तस्यै नमस्तस्यै नमो नमः॥",
-      "significance": "शक्ति स्वरूपा माँ दुर्गा द्वारा महिषासुर के मर्दन का महापर्व है।",
-      "shubhMuhurat": "10 अक्टूबर 2027 घटस्थापना: प्रातः 06:18 से 10:15 बजे तक।",
-      "seoTopWishes": [
-        "माँ शेरावाली आपके परिवार की रक्षा करें। जय माता दी! नवरात्रि 2027 की बधाई!"
-      ],
-      "faqs": [
-        {
-          "question": "कलश स्थापना की दिशा?",
-          "answer": "उत्तर-पूर्व (ईशान कोण)।"
-        }
-      ]
-    },
-    {
-      "id": "dhammachakra_pravartan",
-      "slug": "dhammachakra-pravartan-din-deekshabhoomi",
-      "nameHi": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2027",
-      "nameEn": "Dhammachakra Pravartan Din 2027 Wishes",
-      "taglineHi": "14 अक्टूबर • बोधिसत्व डॉ. आंबेडकर द्वारा ऐतिहासिक बौद्ध धम्म दीक्षा",
-      "category": "social_national",
-      "dateLabel": "14 अक्टूबर 2027",
-      "countdownDays": 374,
-      "badge": "☸️ सद्धम्म विजय",
-      "heroImage": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
-      "themeColor": {
-        "gradient": "from-blue-950 via-yellow-950 to-stone-950",
-        "border": "border-blue-400/40",
-        "accent": "text-blue-300",
-        "glow": "shadow-blue-500/20"
-      },
-      "particlesType": "diyas",
-      "soundType": "shankh",
-      "greetingTitle": "धम्मचक्र प्रवर्तन दिवस 2027 की मंगलकामनाएँ • नमो बुद्धाय जय भीम",
-      "defaultPoem": "नागपुर की पावन दीक्षाभूमि से गूंजा था जो सद्धम्म का नाद, बाबासाहेब ने दिया हमें आत्मसम्मान और ज्ञान का वरदान। धम्मचक्र प्रवर्तन दिवस की हार्दिक बधाई!",
-      "significance": "14 अक्टूबर 1956 को बाबासाहेब आंबेडकर ने लाखों अनुयायियों के साथ बौद्ध धम्म की दीक्षा ली थी।",
-      "shubhMuhurat": "दीक्षाभूमि नागपुर में लाखों अनुयायियों का महासंगम।",
-      "seoTopWishes": [
-        "धम्मचक्र प्रवर्तन दिवस पर सभी को हार्दिक बधाई। जय भीम, नमो बुद्धाय!"
-      ],
-      "faqs": [
-        {
-          "question": "दीक्षा कहाँ हुई थी?",
-          "answer": "नागपुर की पावन दीक्षाभूमि पर।"
         }
       ]
     },

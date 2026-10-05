@@ -1,6 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { WishCategory, HindiWish } from '../data/wishesData';
 import { generateWishCardBlob } from '../utils/canvasCardGenerator';
+import { 
+  CARD_BACKGROUNDS, 
+  BACKGROUND_CATEGORIES, 
+  CardBackground, 
+  getDefaultBackgroundForCategory 
+} from '../data/cardBackgroundsData';
+import { WishFontSelector } from './WishFontSelector';
+import { getWishFontById } from '../data/wishFontsData';
 import { festiveAudio } from '../utils/festiveAudio';
 import { getUploadedAudioFile } from '../utils/audioStorage';
 import { awardUserPoints } from '../data/userStore';
@@ -15,11 +23,16 @@ import {
   Smartphone,
   MessageCircle,
   RefreshCw,
-  Music,
   Volume2,
   Square,
   Cake,
-  PartyPopper
+  PartyPopper,
+  Image as ImageIcon,
+  Palette,
+  Shuffle,
+  Search,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface WishCardGeneratorProps {
@@ -72,6 +85,24 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
     }
   });
 
+  // Background selection state (130+ Professional Backgrounds)
+  const [selectedBackground, setSelectedBackground] = useState<CardBackground>(() => 
+    getDefaultBackgroundForCategory(category.slug)
+  );
+  const [customBgUrl, setCustomBgUrl] = useState<string | null>(null);
+  const [bgCategoryFilter, setBgCategoryFilter] = useState<string>('all');
+  const [bgSearchQuery, setBgSearchQuery] = useState<string>('');
+  const [isBgPickerExpanded, setIsBgPickerExpanded] = useState<boolean>(true);
+
+  // Font Selection State
+  const [selectedFontId, setSelectedFontId] = useState<string>('rozha');
+
+  // Update background when category changes
+  useEffect(() => {
+    setSelectedBackground(getDefaultBackgroundForCategory(category.slug));
+    setCustomBgUrl(null);
+  }, [category.slug]);
+
   const [customText, setCustomText] = useState(selectedWish.hindiText);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
@@ -79,6 +110,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
 
   const bdayPhotoInputRef = useRef<HTMLInputElement>(null);
   const userPhotoInputRef = useRef<HTMLInputElement>(null);
+  const customBgInputRef = useRef<HTMLInputElement>(null);
 
   // Sync customText when selectedWish prop changes
   useEffect(() => {
@@ -92,7 +124,23 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
     };
   }, []);
 
-  // Generate card preview whenever inputs change
+  // Filtered backgrounds based on active category & search query
+  const filteredBackgrounds = useMemo(() => {
+    let list = CARD_BACKGROUNDS;
+    if (bgCategoryFilter !== 'all') {
+      list = list.filter(b => b.category === bgCategoryFilter);
+    }
+    if (bgSearchQuery.trim()) {
+      const q = bgSearchQuery.toLowerCase().trim();
+      list = list.filter(b => 
+        b.name.toLowerCase().includes(q) || 
+        b.categoryLabel.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [bgCategoryFilter, bgSearchQuery]);
+
+  // Generate card preview whenever inputs or background changes
   useEffect(() => {
     let active = true;
     const timer = setTimeout(async () => {
@@ -105,7 +153,10 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
           userPhotoUrl: userPhoto,
           customMessage: customText,
           birthdayPersonName: isBirthday ? birthdayPersonName : undefined,
-          birthdayPersonPhotoUrl: isBirthday ? birthdayPersonPhoto : undefined
+          birthdayPersonPhotoUrl: isBirthday ? birthdayPersonPhoto : undefined,
+          background: selectedBackground,
+          customBackgroundUrl: customBgUrl,
+          font: getWishFontById(selectedFontId)
         });
         if (active) {
           const url = URL.createObjectURL(blob);
@@ -119,13 +170,25 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
       } finally {
         if (active) setIsGenerating(false);
       }
-    }, 250);
+    }, 200);
 
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [category, selectedWish, senderName, userPhoto, customText, birthdayPersonName, birthdayPersonPhoto, isBirthday]);
+  }, [
+    category, 
+    selectedWish, 
+    senderName, 
+    userPhoto, 
+    customText, 
+    birthdayPersonName, 
+    birthdayPersonPhoto, 
+    isBirthday,
+    selectedBackground,
+    customBgUrl,
+    selectedFontId
+  ]);
 
   // Birthday Song Toggle
   const handleToggleBirthdaySong = () => {
@@ -216,6 +279,23 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
     if (userPhotoInputRef.current) userPhotoInputRef.current.value = '';
   };
 
+  const handleCustomBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target?.result as string;
+      setCustomBgUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSelectRandomBackground = () => {
+    const randomIndex = Math.floor(Math.random() * CARD_BACKGROUNDS.length);
+    setSelectedBackground(CARD_BACKGROUNDS[randomIndex]);
+    setCustomBgUrl(null);
+  };
+
   const handleBdayNameChange = (val: string) => {
     setBirthdayPersonName(val);
     try {
@@ -240,7 +320,9 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
         userPhotoUrl: userPhoto,
         customMessage: customText,
         birthdayPersonName: isBirthday ? birthdayPersonName : undefined,
-        birthdayPersonPhotoUrl: isBirthday ? birthdayPersonPhoto : undefined
+        birthdayPersonPhotoUrl: isBirthday ? birthdayPersonPhoto : undefined,
+        background: selectedBackground,
+        customBackgroundUrl: customBgUrl
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -325,22 +407,22 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
         </div>
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-            <span>{isBirthday ? 'बर्थडे स्पेशल: नाम व फोटो वाला 9:16 विशिंग कार्ड' : 'अपने नाम व फोटो का 9:16 विशिंग कार्ड बनाएं'}</span>
+            <span>{isBirthday ? 'बर्थडे स्पेशल: नाम व फोटो वाला 9:16 विशिंग कार्ड' : 'अपने नाम, फोटो व पसंदीदा बैकग्राउंड का 9:16 विशिंग कार्ड बनाएं'}</span>
             <span className="text-[11px] font-sans font-semibold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
               100% मुफ़्त
             </span>
           </h2>
           <p className="text-xs text-stone-400">
             {isBirthday 
-              ? 'जिसका जन्मदिन है उसका नाम लिखें, फोटो लगाएं और उसके नाम का स्पेशल गाना बजाएं!'
-              : 'WhatsApp स्टेटस व इंस्टाग्राम स्टोरी के लिए एचडी 9:16 साइज में 1-क्लिक शेयर करें'}
+              ? 'जिसका जन्मदिन है उसका नाम लिखें, 108+ लक्ज़री बैकग्राउंड्स में से चुनें, फोटो लगाएं और गाना बजाएं!'
+              : '108+ प्रोफ़ेशनल बैकग्राउंड्स में से अपना पसंदीदा चुनें और WhatsApp स्टेटस के लिए 1-क्लिक HD कार्ड बनाएं'}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Form Controls */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-7 space-y-5">
           
           {/* SPECIAL BIRTHDAY SECTION */}
           {isBirthday && (
@@ -419,7 +501,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
                 </div>
               </div>
 
-              {/* 3. Personalized Birthday Song Button (THE USER REQUIREMENT) */}
+              {/* 3. Personalized Birthday Song Button */}
               <div className="pt-1">
                 <button
                   type="button"
@@ -517,6 +599,213 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
             </div>
           )}
 
+          {/* ========================================================================= */}
+          {/* 🌟 108+ PROFESSIONAL BACKGROUND SELECTOR (THE CORE USER REQUIREMENT) 🌟 */}
+          {/* ========================================================================= */}
+          <div className="p-4 rounded-2xl bg-stone-950/80 border-2 border-amber-500/40 space-y-3.5 shadow-xl relative overflow-hidden">
+            {/* Ambient gold glow */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-center justify-between flex-wrap gap-2 relative z-10">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Palette className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                    <span>{isBirthday ? '4. कार्ड बैकग्राउंड चुनें' : '3. कार्ड बैकग्राउंड चुनें'}</span>
+                    <span className="text-[10px] bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950 font-black px-2 py-0.5 rounded-full shadow-sm">
+                      108+ प्रोफ़ेशनल बैकग्राउंड्स
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-stone-400">
+                    मनमोहक और प्रोफ़ेशनल डिज़ाइन्स में से अपनी पसंद का बैकग्राउंड चुनें
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons: Random Surprise & Upload Custom */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectRandomBackground}
+                  className="px-2.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  title="रैंडम बैकग्राउंड बदलें"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">रैंडम चुनें</span>
+                </button>
+
+                <input
+                  ref={customBgInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCustomBgUpload}
+                  className="hidden"
+                  id="custom-bg-upload-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => customBgInputRef.current?.click()}
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                  title="अपनी फ़ोटो बैकग्राउंड में लगाएँ"
+                >
+                  <Upload className="w-3.5 h-3.5 text-stone-950" />
+                  <span>अपना बैकग्राउंड</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBgPickerExpanded(!isBgPickerExpanded)}
+                  className="text-stone-400 hover:text-white p-1"
+                  title={isBgPickerExpanded ? 'संक्षिप्त करें' : 'पूरा खोलें'}
+                >
+                  {isBgPickerExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Background Active Notification */}
+            {customBgUrl && (
+              <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/50 flex items-center justify-between text-xs text-emerald-300">
+                <span className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4" />
+                  <strong>आपकी कस्टम फ़ोटो बैकग्राउंड में सक्रिय है</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCustomBgUrl(null)}
+                  className="text-stone-400 hover:text-rose-400 text-xs underline cursor-pointer"
+                >
+                  डिफ़ॉल्ट पर लौटें
+                </button>
+              </div>
+            )}
+
+            {isBgPickerExpanded && (
+              <div className="space-y-3 pt-1">
+                {/* Search bar inside background picker */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                  <input
+                    type="text"
+                    value={bgSearchQuery}
+                    onChange={(e) => setBgSearchQuery(e.target.value)}
+                    placeholder="बैकग्राउंड खोजें (उदा. मंदिर, दीप, गुलाब, गोल्ड, रंग, भोर, पार्टी)..."
+                    className="w-full pl-8 pr-8 py-1.5 rounded-xl bg-stone-900 border border-stone-800 text-stone-200 placeholder-stone-500 text-xs focus:outline-none focus:border-amber-400"
+                  />
+                  {bgSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setBgSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Categories Filter Tabs (9 Categories) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none text-xs">
+                  {BACKGROUND_CATEGORIES.map(cat => {
+                    const isSelected = bgCategoryFilter === cat.id;
+                    const count = cat.id === 'all' 
+                      ? CARD_BACKGROUNDS.length 
+                      : CARD_BACKGROUNDS.filter(b => b.category === cat.id).length;
+
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setBgCategoryFilter(cat.id)}
+                        className={`px-3 py-1 rounded-xl whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 font-medium ${
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20'
+                            : 'bg-stone-900 text-stone-300 border border-stone-800 hover:border-amber-500/40'
+                        }`}
+                      >
+                        <span>{cat.label}</span>
+                        <span className={`text-[10px] px-1.5 rounded-full ${
+                          isSelected ? 'bg-black/25 text-stone-950' : 'bg-stone-800 text-stone-400'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Grid of Background Thumbnails (108+ Choices) */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-stone-700">
+                  {filteredBackgrounds.map(bg => {
+                    const isSelected = !customBgUrl && selectedBackground.id === bg.id;
+
+                    return (
+                      <button
+                        key={bg.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedBackground(bg);
+                          setCustomBgUrl(null);
+                        }}
+                        className={`relative rounded-xl overflow-hidden aspect-[9/14] border-2 transition-all cursor-pointer group text-left ${
+                          isSelected
+                            ? 'border-amber-400 shadow-lg shadow-amber-500/30 scale-102 ring-2 ring-amber-400/50'
+                            : 'border-stone-800 hover:border-amber-400/60 opacity-85 hover:opacity-100'
+                        }`}
+                      >
+                        {/* Background Thumbnail Image or Gradient */}
+                        {bg.type === 'image' ? (
+                          <img
+                            src={bg.url}
+                            alt={bg.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                          />
+                        ) : (
+                          <div 
+                            className="w-full h-full" 
+                            style={{ background: bg.cssGradient }} 
+                          />
+                        )}
+
+                        {/* Subtle dark gradient overlay for text readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-1.5">
+                          <p className="text-[10px] text-white font-bold leading-tight truncate">
+                            {bg.name}
+                          </p>
+                        </div>
+
+                        {/* Active Selection Badge */}
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow-md animate-scale-in">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {filteredBackgrounds.length === 0 && (
+                  <div className="text-center py-6 text-stone-400 text-xs">
+                    कोई बैकग्राउंड नहीं मिला। दूसरा कीवर्ड खोजें।
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================================= */}
+          {/* 🔤 WISH FONT SELECTOR (USER REQUIREMENT FOR FONT OPTIONS) 🔤 */}
+          {/* ========================================================================= */}
+          <WishFontSelector
+            selectedFontId={selectedFontId}
+            onSelectFont={(font) => setSelectedFontId(font.id)}
+            title={isBirthday ? '5. फॉन्ट स्टाइल चुनें (Choose Font Style)' : '4. फॉन्ट स्टाइल चुनें (Choose Font Style)'}
+            subtitle="विश कार्ड के अक्षरों को अपने मनपसंद स्टाइल में सजाएं"
+          />
+
           {/* FESTIVE SOUND PLAYER FOR NON-BIRTHDAY CARDS */}
           {!isBirthday && (
             <div className="pt-0.5">
@@ -553,7 +842,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
           {/* WISH / MESSAGE SELECTOR OR CUSTOM EDIT */}
           <div>
             <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-1.5">
-              {isBirthday ? '4. शुभकामना संदेश चुनें या संपादित करें:' : '3. शुभकामना संदेश चुनें या संपादित करें:'}
+              {isBirthday ? '6. शुभकामना संदेश चुनें या संपादित करें:' : '5. शुभकामना संदेश चुनें या संपादित करें:'}
             </label>
             <textarea
               rows={3}
@@ -633,7 +922,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
 
         {/* Right Column: Live 9:16 Mobile Card Preview */}
         <div className="lg:col-span-5 flex flex-col items-center">
-          <div className="w-full max-w-[270px] aspect-[9/16] rounded-2xl overflow-hidden border-2 border-amber-500/40 shadow-2xl relative bg-stone-950 flex items-center justify-center group">
+          <div className="w-full max-w-[280px] aspect-[9/16] rounded-2xl overflow-hidden border-2 border-amber-500/40 shadow-2xl relative bg-stone-950 flex items-center justify-center group">
             {previewBlobUrl ? (
               <img
                 src={previewBlobUrl}
@@ -657,6 +946,12 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
               <Smartphone className="w-3 h-3" /> 9:16 HD
             </div>
 
+            {/* Current Active Background Badge */}
+            <div className="absolute top-2 left-2 bg-stone-950/80 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] text-amber-300 font-semibold flex items-center gap-1 border border-amber-500/30">
+              <ImageIcon className="w-3 h-3 text-amber-400" />
+              <span>{customBgUrl ? 'कस्टम बैकग्राउंड' : selectedBackground.name}</span>
+            </div>
+
             {isBirthday && (
               <div className="absolute top-2 right-2 bg-pink-600/90 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] text-white font-bold flex items-center gap-1 shadow">
                 <Cake className="w-3 h-3" /> Birthday
@@ -664,8 +959,9 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
             )}
           </div>
 
-          <span className="text-[11px] text-stone-400 mt-2">
-            💡 लाइव 9:16 मोबाइल कार्ड प्रीव्यू
+          <span className="text-[11px] text-stone-400 mt-2 flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-amber-400" />
+            <span>लाइव 9:16 मोबाइल स्टेटस कार्ड प्रीव्यू</span>
           </span>
         </div>
       </div>
