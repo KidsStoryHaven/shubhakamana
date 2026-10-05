@@ -20,6 +20,7 @@ import {
 import { DivineDeitySlide } from '../data/divineGodsData';
 import { getStoredFestivals, getStoredDeitySlides, saveStoredDeitySlides } from '../data/festivalStore';
 import { resolveDirectImageUrl, resolveDirectAudioUrl, fetchPhotosFromGoogleDriveFolder } from '../utils/googleDriveHelper';
+import { ThreeDSharePreviewCard } from './ThreeDSharePreviewCard';
 import { AdBanner } from './AdBanner';
 import { YouTubeStatsBar } from './YouTubeStatsBar';
 import { awardUserPoints } from '../data/userStore';
@@ -1376,6 +1377,26 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               )}
             </div>
 
+            {/* 🌐 3D Embossed Royal Website CTA Plate & Link Badge (Like Shubh Prabhat) */}
+            <div className="my-5 flex flex-col items-center justify-center text-center space-y-2">
+              <div 
+                onClick={handleScrollToNameInput}
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 rounded-full border-2 border-amber-400 text-xs sm:text-sm font-black shadow-[0_6px_20px_rgba(245,158,11,0.45),inset_0_1px_3px_rgba(255,255,255,0.4)] tracking-wide transform hover:scale-105 active:scale-95 transition cursor-pointer bg-gradient-to-b from-stone-800 via-stone-900 to-black text-amber-300 group"
+              >
+                <span className="text-base animate-bounce">🌐</span>
+                <span className="group-hover:text-yellow-200 transition">
+                  ✨ अपने नाम व फोटो का 4K 3D स्टेटस बनाएँ ➔ shubhakamna.in
+                </span>
+                <span className="text-[10px] bg-amber-500 text-stone-950 px-2 py-0.5 rounded-full font-black shadow">
+                  FREE
+                </span>
+              </div>
+              <p className="text-[10.5px] text-stone-300 font-medium flex items-center justify-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>भारत का #1 पावन शुभकामना पोर्टल • 1-क्लिक में WhatsApp 4K स्टेटस व वीडियो बनाएँ</span>
+              </p>
+            </div>
+
             {/* Name & Photo Customizer Form */}
             {isBirthday ? (
               /* Dedicated Birthday Customizer Form */
@@ -1519,6 +1540,20 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                 </div>
               </div>
             )}
+
+            {/* ✨ 3D WhatsApp & Social Media Embed Preview Card (Placed Above Share Actions) */}
+            <ThreeDSharePreviewCard
+              festivalName={festival.nameHi}
+              senderName={senderName}
+              userPhoto={userPhoto}
+              heroImage={activeHeroImage || (deitySlides && deitySlides[activeImageIndex]?.imageUrl) || deitySlides[0]?.imageUrl || festival.heroImage}
+              shareUrl={getShareUrl()}
+              type="festival"
+              onShareWhatsApp={handleWhatsAppShare}
+              onCopyLink={handleCopyLink}
+              isCopied={isCopied}
+              showButtons={true}
+            />
 
             {/* Mega Action Buttons: WhatsApp Viral Share, Download Photo Card, Copy Link */}
             <div className="mt-5 space-y-2.5">

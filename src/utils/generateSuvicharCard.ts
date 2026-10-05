@@ -711,28 +711,47 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   ctx.fillText(senderName || 'आपका शुभचिंतक', width / 2, plateY + (isStory ? 58 : 45));
   ctx.restore();
 
-  // 9. 🌐 SHORT LINK & WATERMARK BADGE (shubhakamna.in/shubh-prabhat)
+  // 9. 🌐 3D EMBOSSED SHORT LINK & WEBSITE CTA PLATE (shubhakamna.in/shubh-prabhat)
   ctx.save();
   ctx.textAlign = 'center';
-  const linkW = isStory ? 440 : 360;
+  const linkW = isStory ? 540 : 420;
   const linkX = (width - linkW) / 2;
 
-  ctx.fillStyle = style.isDarkTheme ? 'rgba(20, 14, 8, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+  // 3D Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  ctx.shadowBlur = isStory ? 14 : 9;
+  ctx.shadowOffsetY = isStory ? 6 : 4;
+
+  const linkGrad = ctx.createLinearGradient(linkX, bottomLinkY, linkX, bottomLinkY + bottomLinkH);
+  if (style.isDarkTheme) {
+    linkGrad.addColorStop(0, '#1c1917');
+    linkGrad.addColorStop(0.5, '#292524');
+    linkGrad.addColorStop(1, '#0c0a09');
+  } else {
+    linkGrad.addColorStop(0, '#ffffff');
+    linkGrad.addColorStop(0.5, '#fef3c7');
+    linkGrad.addColorStop(1, '#fde68a');
+  }
+
+  ctx.fillStyle = linkGrad;
   ctx.beginPath();
-  ctx.roundRect(linkX, bottomLinkY, linkW, bottomLinkH, [18]);
+  ctx.roundRect(linkX, bottomLinkY, linkW, bottomLinkH, [isStory ? 24 : 18]);
   ctx.fill();
 
+  // 3D Golden Border
+  ctx.shadowColor = 'transparent';
   ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = isStory ? 2.5 : 2;
   ctx.stroke();
 
-  ctx.fillStyle = style.isDarkTheme ? '#fde047' : '#b45309';
-  ctx.font = `bold ${isStory ? 18 : 15}px sans-serif`;
-  ctx.fillText('🌐 shubhakamna.in/shubh-prabhat', width / 2, bottomLinkY + (isStory ? 24 : 20));
+  // 3D Text
+  ctx.fillStyle = style.isDarkTheme ? '#fef08a' : '#92400e';
+  ctx.font = `bold ${isStory ? 19 : 15}px "Noto Sans Devanagari", sans-serif`;
+  ctx.fillText('✨ अपना नाम लिखकर स्टेटस बनाएँ ➔ shubhakamna.in', width / 2, bottomLinkY + (isStory ? 26 : 21));
 
-  ctx.fillStyle = style.isDarkTheme ? '#94a3b8' : '#64748b';
-  ctx.font = `600 ${isStory ? 15 : 12}px "Noto Sans Devanagari", sans-serif`;
-  ctx.fillText('दैनिक १०० शुभ प्रभात सुविचार • मुफ़्त फ़ोटो स्टेटस', width / 2, height - (isStory ? 26 : 20));
+  ctx.fillStyle = style.isDarkTheme ? '#cbd5e1' : '#475569';
+  ctx.font = `600 ${isStory ? 14 : 11}px sans-serif`;
+  ctx.fillText('दैनिक १००+ शुभ प्रभात सुविचार • मुफ़्त फ़ोटो कार्ड', width / 2, height - (isStory ? 24 : 16));
   ctx.restore();
 
   // 10. Export as Blob

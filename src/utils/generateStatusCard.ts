@@ -109,6 +109,71 @@ function drawImageCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, wi
 /**
  * Generates an Ultra-HD (2160 x 3840, 4K/8K resolution) vertical status card.
  */
+// Helper to draw ultra-crisp, crystal-clear 3D Golden Website Text with 100% legibility
+function draw3DGoldExtrudedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  fontFamily: string = '"Arial Black", "Poppins", "Inter", system-ui, sans-serif',
+  maxW: number = 1800
+) {
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let size = fontSize;
+  ctx.font = `900 ${size}px ${fontFamily}`;
+  while (ctx.measureText(text).width > maxW && size > 36) {
+    size -= 2;
+    ctx.font = `900 ${size}px ${fontFamily}`;
+  }
+
+  // 1. Deep 3D Drop Cast Shadow (Bottom-right)
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = '#000000';
+  ctx.fillText(text, x, y + 8);
+  ctx.restore();
+
+  // 2. Extrusion Slices for real 3D Depth
+  for (let d = 6; d >= 1; d--) {
+    ctx.fillStyle = d > 3 ? '#451a03' : '#78350f';
+    ctx.fillText(text, x, y + d);
+  }
+
+  // 3. Crisp High-Contrast Dark Outline for Separation
+  ctx.save();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#1c1917';
+  ctx.strokeText(text, x, y);
+  ctx.restore();
+
+  // 4. Ultra-Bright Shining Gold Metallic Face (100% High-Contrast & Legible)
+  const faceGrad = ctx.createLinearGradient(x, y - size * 0.45, x, y + size * 0.45);
+  faceGrad.addColorStop(0, '#ffffff');
+  faceGrad.addColorStop(0.2, '#fffbeb');
+  faceGrad.addColorStop(0.5, '#fef08a');
+  faceGrad.addColorStop(0.85, '#f59e0b');
+  faceGrad.addColorStop(1, '#d97706');
+
+  ctx.fillStyle = faceGrad;
+  ctx.fillText(text, x, y);
+
+  // 5. Crisp Gold Bevel Stroke
+  ctx.save();
+  ctx.lineWidth = 1.8;
+  ctx.strokeStyle = '#fef08a';
+  ctx.strokeText(text, x, y);
+  ctx.restore();
+
+  ctx.restore();
+}
+
 export async function generateStatusCardBlob(options: StatusCardOptions): Promise<Blob> {
   const { 
     festival, 
@@ -502,10 +567,64 @@ export async function generateStatusCardBlob(options: StatusCardOptions): Promis
   );
   ctx.restore();
 
-  // 10. Watermark & Creation Link
-  ctx.fillStyle = '#d6d3d1';
-  ctx.font = '42px sans-serif';
-  ctx.fillText('📲 अपना नाम व फोटो वाला 8K कार्ड बनाएँ: https://shubhakamna.in', 1080, 3620);
+  // 10. 🌐 MASSIVE 3D EMBOSSED ROYAL WEBSITE CTA PLATE (High-Impact 3D Pop)
+  ctx.save();
+  const ctaPillW = 1940;
+  const ctaPillH = 220;
+  const ctaPillX = 110;
+  const ctaPillY = 3470;
+
+  // Deep Multi-layer 3D Extruded Drop Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.98)';
+  ctx.shadowBlur = 36;
+  ctx.shadowOffsetY = 16;
+
+  // 3D Metallic Dark Onyx & Gold Gradient Fill
+  const ctaGrad = ctx.createLinearGradient(ctaPillX, ctaPillY, ctaPillX, ctaPillY + ctaPillH);
+  ctaGrad.addColorStop(0, '#292524');
+  ctaGrad.addColorStop(0.25, '#1c1917');
+  ctaGrad.addColorStop(0.65, '#0c0a09');
+  ctaGrad.addColorStop(1, '#000000');
+  ctx.fillStyle = ctaGrad;
+  ctx.beginPath();
+  ctx.roundRect(ctaPillX, ctaPillY, ctaPillW, ctaPillH, 44);
+  ctx.fill();
+
+  // Outer Golden Glow Border
+  ctx.shadowColor = 'rgba(245, 158, 11, 0.4)';
+  ctx.shadowBlur = 18;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Inner Golden Glow Bevel Ring
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.roundRect(ctaPillX + 8, ctaPillY + 8, ctaPillW - 16, ctaPillH - 16, 38);
+  ctx.stroke();
+
+  // Top Line: Action Invitation Badge (Hindi Callout)
+  ctx.fillStyle = '#fde68a';
+  ctx.font = 'bold 44px "Noto Sans Devanagari", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
+  ctx.shadowBlur = 10;
+  ctx.fillText('✨ 👉 अपने नाम व फोटो का 4K स्टेटस यहाँ बनाएँ ➔ मुफ़्त 👈 ✨', 1080, ctaPillY + 68);
+
+  // Bottom Centerpiece: BIG 3D POP-OUT WEBSITE DOMAIN (BADA & 3D LOOK)
+  draw3DGoldExtrudedText(
+    ctx,
+    '🌐 WWW.SHUBHAKAMNA.IN 🌐',
+    1080,
+    ctaPillY + 152,
+    78,
+    '"Poppins", "Inter", system-ui, sans-serif',
+    ctaPillW - 80
+  );
+
+  ctx.restore();
 
   // 11. Export as High-Quality JPEG Blob
   return new Promise<Blob>((resolve, reject) => {

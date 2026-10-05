@@ -219,6 +219,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     success: boolean;
   } | null>(null);
 
+  // Modal-specific Google Drive state
+  const [isModalFetchingGdrive, setIsModalFetchingGdrive] = useState(false);
+  const [modalGdriveFetchResult, setModalGdriveFetchResult] = useState<{
+    photos: DriveFolderPhoto[];
+    message: string;
+    success: boolean;
+  } | null>(null);
+
   // YouTube-Style Stats Input State for Festival Modal
   const [editingViews, setEditingViews] = useState<number>(0);
   const [editingLikes, setEditingLikes] = useState<number>(0);
@@ -503,6 +511,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
+  // Modal Google Drive Folder Fetch Handler
+  const handleFetchModalGdrivePhotos = async () => {
+    if (!editingFestival?.gdriveFolderUrl?.trim()) {
+      showToast('कृपया पहले Google Drive फ़ोल्डर का लिंक दर्ज करें!');
+      return;
+    }
+    const festName = editingFestival.nameHi || 'पावन उत्सव';
+    setIsModalFetchingGdrive(true);
+    setModalGdriveFetchResult(null);
+    showToast('गूगल ड्राइव फ़ोल्डर से फ़ोटो ढूंढी जा रही हैं... ⏳');
+
+    try {
+      const result = await fetchPhotosFromGoogleDriveFolder(editingFestival.gdriveFolderUrl, festName);
+      setModalGdriveFetchResult({
+        photos: result.photos,
+        message: result.message,
+        success: result.success
+      });
+      if (result.success && result.photos.length > 0) {
+        showToast(`🎉 फ़ोल्डर से ${result.photos.length} फ़ोटो मिल गईं!`);
+        // If hero image is default, auto-suggest the 1st photo
+        if (!editingFestival.heroImage || editingFestival.heroImage.includes('unsplash.com')) {
+          setEditingFestival(prev => prev ? ({ ...prev, heroImage: result.photos[0].imageUrl }) : prev);
+        }
+      } else {
+        showToast(result.message);
+      }
+    } catch (err) {
+      showToast('फ़ोल्डर लोड करने में समस्या आई।');
+    } finally {
+      setIsModalFetchingGdrive(false);
+    }
+  };
+
   // Google Drive Photos Apply & Save to Festival Handler
   const handleApplyGDrivePhotosToFestival = () => {
     if (!gdriveFetchResult || !gdriveFetchResult.photos || gdriveFetchResult.photos.length === 0) return;
@@ -552,19 +594,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       shares: editingShares
     });
 
+    // 2. If Google Drive photos were fetched in the modal, automatically save slides too!
+    if (modalGdriveFetchResult && modalGdriveFetchResult.photos && modalGdriveFetchResult.photos.length > 0) {
+      const modalSlides: DivineDeitySlide[] = modalGdriveFetchResult.photos.map((p, idx) => ({
+        id: `slide_gdrive_${Date.now()}_${idx}`,
+        godName: p.godName || `${fest.nameHi} पावन दर्शन`,
+        title: p.title || `${fest.nameHi} • पावन दर्शन #${idx + 1}`,
+        tagline: 'भक्तों की मनोकामना पूर्ण करने वाले',
+        badge: idx === 0 ? '✨ मुख्य दर्शन' : '🌸 पावन दर्शन',
+        mantra: '॥ ॐ श्री गणेशाय नमः ॥',
+        imageUrl: p.imageUrl
+      }));
+      saveStoredDeitySlides(fest.id, modalSlides);
+      if (selectedFestivalForPhotos === fest.id) {
+        setDeitySlides(modalSlides);
+      }
+      fest.heroImage = modalSlides[0]?.imageUrl || fest.heroImage;
+    }
+
     let updated: Festival[];
     const exists = festivals.some(f => f.id === fest.id);
     if (exists) {
       updated = festivals.map(f => f.id === fest.id ? fest : f);
-      showToast(`'${fest.nameHi}' अपडेट हो गया!`);
+      showToast(`'${fest.nameHi}' अपडेट हो गया और लाइव हो गया!`);
     } else {
       updated = [fest, ...festivals];
-      showToast(`नया त्योहार '${fest.nameHi}' जुड़ गया!`);
+      showToast(`नया त्योहार '${fest.nameHi}' जुड़ गया और लाइव हो गया!`);
     }
     setFestivals(updated);
     saveStoredFestivals(updated);
     setEditingFestival(null);
     setIsAddingFestival(false);
+    setModalGdriveFetchResult(null);
   };
 
   const handleDeleteFestival = (id: string, name: string) => {
@@ -2499,6 +2560,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </button>
               </div>
 
+              {/* Quick Preset for 1-Click Testing */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-stone-400">⚡ 1-क्लिक टेस्ट लिंक:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGdriveFolderInput('https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo');
+                  }}
+                  className="text-[10px] bg-stone-900 hover:bg-stone-800 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md cursor-pointer transition"
+                >
+                  दीक्षाभूमि / धम्मचक्र प्रवर्तन दिन फ़ोल्डर (40 फ़ोटो)
+                </button>
+              </div>
+
               {/* Instructions helper */}
               <div className="text-[11px] text-stone-400 bg-black/40 p-2.5 rounded-xl border border-stone-800 flex items-start gap-2">
                 <span className="text-amber-400 shrink-0">💡</span>
@@ -3218,21 +3293,94 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               {/* 📂 Google Drive Folder Link Setting for this Festival */}
-              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-2">
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5 font-serif">
                     <span>📂</span>
-                    <span>Google Drive इमेज फ़ोल्डर लिंक (Auto-Sync Photos)</span>
+                    <span>Google Drive इमेज फ़ोल्डर लिंक (Auto-Import & Live Sync)</span>
                   </label>
-                  <span className="text-[10px] text-emerald-400 font-semibold">⚡ फ़ोल्डर की सभी तस्वीरें दर्शन में दिखेंगी</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">
+                    ⚡ Auto-Sync Ready
+                  </span>
                 </div>
-                <input
-                  type="text"
-                  value={editingFestival.gdriveFolderUrl || ''}
-                  onChange={(e) => setEditingFestival({ ...editingFestival, gdriveFolderUrl: e.target.value })}
-                  placeholder="उदा: https://drive.google.com/drive/folders/1aBcDeFgHiJk..."
-                  className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-mono text-xs focus:outline-none focus:border-amber-400 placeholder:text-stone-500"
-                />
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="text"
+                    value={editingFestival.gdriveFolderUrl || ''}
+                    onChange={(e) => setEditingFestival({ ...editingFestival, gdriveFolderUrl: e.target.value })}
+                    placeholder="उदा: https://drive.google.com/drive/folders/1aBcDeFgHiJk..."
+                    className="flex-1 p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-white font-mono text-xs focus:outline-none focus:border-amber-400 placeholder:text-stone-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFetchModalGdrivePhotos}
+                    disabled={isModalFetchingGdrive || !editingFestival.gdriveFolderUrl?.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    {isModalFetchingGdrive ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>फ़ोटो जांची जा रही हैं... ⏳</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-3.5 h-3.5" />
+                        <span>🔍 फ़ोटो फेच करें (Test & Fetch)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Quick 1-click Preset Folder for testing */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-stone-400">⚡ 1-क्लिक टेस्ट लिंक:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingFestival({
+                        ...editingFestival,
+                        gdriveFolderUrl: 'https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo'
+                      });
+                    }}
+                    className="text-[10px] bg-stone-900 hover:bg-stone-800 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md cursor-pointer transition"
+                  >
+                    दीक्षाभूमि / धम्मचक्र प्रवर्तन दिन फ़ोल्डर (40 फ़ोटो)
+                  </button>
+                </div>
+
+                {/* Modal Discovered Google Drive Photos Preview */}
+                {modalGdriveFetchResult && (
+                  <div className="p-3 bg-stone-950 rounded-xl border border-amber-500/40 space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-bold flex items-center gap-1.5 ${
+                        modalGdriveFetchResult.success ? 'text-emerald-400' : 'text-amber-400'
+                      }`}>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>{modalGdriveFetchResult.message}</span>
+                      </span>
+                      {modalGdriveFetchResult.photos.length > 0 && (
+                        <span className="text-[10px] text-stone-400">
+                          (सेव करते ही सभी {modalGdriveFetchResult.photos.length} फ़ोटो जुड़ जाएँगी)
+                        </span>
+                      )}
+                    </div>
+
+                    {modalGdriveFetchResult.photos.length > 0 && (
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-36 overflow-y-auto p-1 bg-black/50 rounded-lg border border-stone-800">
+                        {modalGdriveFetchResult.photos.map((p, idx) => (
+                          <div key={p.id} className="relative aspect-square rounded-md overflow-hidden border border-amber-500/30 bg-black">
+                            <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
+                            <span className="absolute bottom-0 inset-x-0 bg-black/80 text-[8px] text-amber-300 text-center py-0.5 truncate font-mono">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <p className="text-[10px] text-stone-400 leading-relaxed">
                   💡 Google Drive में फ़ोल्डर की शेयरिंग "Anyone with the link can view" (कोई भी देख सकता है) पर रखें। इस लिंक की सभी तस्वीरें त्योहार के 6-सेकंड ऑटो स्लाइडर व पावन दर्शन में लाइव प्रदर्शित होंगी।
                 </p>

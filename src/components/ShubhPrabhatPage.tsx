@@ -38,6 +38,7 @@ import {
 } from '../data/suvicharStylesData';
 import { generateSuvicharCardBlob } from '../utils/generateSuvicharCard';
 import { awardUserPoints } from '../data/userStore';
+import { ThreeDSharePreviewCard } from './ThreeDSharePreviewCard';
 
 interface ShubhPrabhatPageProps {
   onBackToPortal: () => void;
@@ -648,23 +649,25 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                         </p>
                       </div>
 
-                      {/* 🌐 Main Website URL Badge on Card (Zero Cut-Off!) */}
+                      {/* 🌐 3D Embossed Website CTA Button on Card (Zero Cut-Off!) */}
                       <div 
-                        className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[10px] font-bold shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border-2 text-[10.5px] sm:text-xs font-black shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] tracking-wide transform hover:scale-105 transition"
                         style={{
-                          backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                          borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
-                          color: activeStyle.isDarkTheme ? '#fde047' : '#b45309'
+                          background: activeStyle.isDarkTheme 
+                            ? 'linear-gradient(180deg, #292524 0%, #1c1917 100%)' 
+                            : 'linear-gradient(180deg, #ffffff 0%, #fef3c7 100%)',
+                          borderColor: '#f59e0b',
+                          color: activeStyle.isDarkTheme ? '#fef08a' : '#92400e'
                         }}
                       >
-                        <span>🌐 shubhakamna.in/shubh-prabhat</span>
+                        <span>✨ अपना नाम लिखकर स्टेटस बनाएँ ➔ shubhakamna.in</span>
                       </div>
 
                       <p 
-                        className="text-[9px] font-medium"
-                        style={{ color: activeStyle.isDarkTheme ? '#94a3b8' : '#64748b' }}
+                        className="text-[9.5px] font-semibold tracking-tight"
+                        style={{ color: activeStyle.isDarkTheme ? '#cbd5e1' : '#475569' }}
                       >
-                        🌅 दैनिक १०० शुभ प्रभात सुविचार • मुफ़्त कार्ड
+                        🌅 दैनिक १००+ शुभ प्रभात सुविचार • मुफ़्त कार्ड जनरेटर
                       </p>
                     </div>
                   );
@@ -1115,6 +1118,19 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   })}
                 </div>
               </div>
+
+              {/* ✨ 3D WhatsApp & Social Media Embed Preview Card (Placed Above Action Buttons) */}
+              <ThreeDSharePreviewCard
+                festivalName="दैनिक शुभ प्रभात"
+                senderName={senderName}
+                userPhoto={senderPhoto}
+                heroImage={customBgUrl || selectedBackground.url || 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1200&h=630&q=85'}
+                shareUrl={getShortUrl()}
+                type="subhaprabhat"
+                onShareWhatsApp={() => handleWhatsAppShare()}
+                onCopyLink={() => handleCopyLink(selectedSuvichar.id)}
+                isCopied={copiedId === selectedSuvichar.id}
+              />
 
               {/* 5. Main Action Buttons: Download HD Card & Direct WhatsApp Share */}
               <div className="pt-2 space-y-2.5">

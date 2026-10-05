@@ -17,48 +17,45 @@ export const StickyWhatsAppChannel: React.FC<StickyWhatsAppChannelProps> = ({
   return (
     <aside 
       aria-label="WhatsApp Channel"
-      className={`fixed bottom-20 right-3 sm:bottom-6 sm:right-6 z-40 transition-all duration-300 animate-slide-up ${className}`}
+      className={`fixed bottom-16 right-2 sm:bottom-4 sm:right-4 z-40 transition-all duration-300 animate-slide-up ${className}`}
     >
-      <div className="flex items-center gap-2 bg-[#0c2419]/95 hover:bg-[#0c2419] border border-[#25D366]/60 hover:border-[#25D366] rounded-full pl-2 pr-3 py-1.5 shadow-[0_6px_25px_rgba(0,0,0,0.8),0_0_15px_rgba(37,211,102,0.25)] backdrop-blur-md transition-all group">
+      <div className="flex items-center gap-1.5 bg-[#0c2419]/95 hover:bg-[#0c2419] border border-[#25D366]/50 hover:border-[#25D366] rounded-full pl-1.5 pr-2.5 py-1 shadow-[0_4px_15px_rgba(0,0,0,0.7),0_0_10px_rgba(37,211,102,0.2)] backdrop-blur-md transition-all group">
         
         {/* WhatsApp Icon with Live Ping Badge */}
         <a
           href={channelUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-white font-extrabold text-xs transition cursor-pointer"
+          className="flex items-center gap-1.5 text-white font-bold text-[11px] transition cursor-pointer"
         >
           <div className="relative">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#25D366] to-[#128C7E] flex items-center justify-center text-white shadow-md shadow-emerald-950/50">
-              <WhatsAppIcon className="w-4 h-4 fill-current" />
+            <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#25D366] to-[#128C7E] flex items-center justify-center text-white shadow-sm">
+              <WhatsAppIcon className="w-3 h-3 fill-current" />
             </div>
-            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+            <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
             </span>
           </div>
 
-          <div className="flex flex-col text-left leading-tight">
-            <span className="text-[11px] font-black text-white group-hover:text-emerald-300 transition flex items-center gap-1">
-              <span>चैनल जॉइन करें</span>
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-1 leading-none">
+            <span className="text-[10px] font-extrabold text-white group-hover:text-emerald-300 transition">
+              चैनल
             </span>
-            <span className="text-[9px] text-emerald-300/80 font-medium">
-              रोज़ नई शुभकामनाएँ
-            </span>
+            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
           </div>
 
-          <ChevronRight className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-x-0.5 transition" />
+          <ChevronRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-0.5 transition" />
         </a>
 
-        {/* Small Close Button */}
+        {/* Mini Close Button */}
         <button
           onClick={() => setIsDismissed(true)}
-          className="text-stone-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition cursor-pointer ml-1"
+          className="text-stone-400 hover:text-white p-0.5 rounded-full hover:bg-white/10 transition cursor-pointer"
           title="हटाएँ"
           aria-label="Close"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-2.5 h-2.5" />
         </button>
       </div>
     </aside>

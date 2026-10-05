@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "updatedAt": "2026-10-05T11:14:28.071Z",
+  "updatedAt": "2026-10-05T12:21:16.871Z",
   "festivals": [
     {
       "id": "navratri",
@@ -52,7 +52,7 @@
       "dateLabel": "14 अक्टूबर 2026",
       "countdownDays": 9,
       "badge": "☸️ सद्धम्म विजय",
-      "heroImage": "https://lh3.googleusercontent.com/d/13Wohak-0H-tYzYKP44DEE9-rIvEqoIi0",
+      "heroImage": "https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX",
       "gdriveFolderUrl": "https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo",
       "themeColor": {
         "gradient": "from-blue-950 via-yellow-950 to-stone-950",
@@ -2112,443 +2112,363 @@
     "dhammachakra_pravartan": [
       {
         "id": "gdrive_13Wohak-0H-tYzYKP44DEE9-rIvEqoIi0_1",
-        "fileId": "13Wohak-0H-tYzYKP44DEE9-rIvEqoIi0",
-        "imageUrl": "https://lh3.googleusercontent.com/d/13Wohak-0H-tYzYKP44DEE9-rIvEqoIi0",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=13Wohak-0H-tYzYKP44DEE9-rIvEqoIi0&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #1",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #1",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
         "badge": "✨ मुख्य दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/13Wohak-0H-tYzYKP44DEE9-rIvEqoIi0"
       },
       {
         "id": "gdrive_1GHR-hXePjas3KRPgr6qodt3aWsNN06ni_2",
-        "fileId": "1GHR-hXePjas3KRPgr6qodt3aWsNN06ni",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1GHR-hXePjas3KRPgr6qodt3aWsNN06ni",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1GHR-hXePjas3KRPgr6qodt3aWsNN06ni&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #2",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #2",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1GHR-hXePjas3KRPgr6qodt3aWsNN06ni"
       },
       {
         "id": "gdrive_1cPRtHLB235xi8ee1pvJebF_4N9NxMNYf_3",
-        "fileId": "1cPRtHLB235xi8ee1pvJebF_4N9NxMNYf",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1cPRtHLB235xi8ee1pvJebF_4N9NxMNYf",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1cPRtHLB235xi8ee1pvJebF_4N9NxMNYf&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Buddha statue and Dhamma Chakra 2K 20261005162037",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1cPRtHLB235xi8ee1pvJebF_4N9NxMNYf"
       },
       {
         "id": "gdrive_1cjnwRX_dE5VlrN2_Pv4_rm3858ogQTdK_4",
-        "fileId": "1cjnwRX_dE5VlrN2_Pv4_rm3858ogQTdK",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1cjnwRX_dE5VlrN2_Pv4_rm3858ogQTdK",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1cjnwRX_dE5VlrN2_Pv4_rm3858ogQTdK&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #4",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #4",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1cjnwRX_dE5VlrN2_Pv4_rm3858ogQTdK"
       },
       {
         "id": "gdrive_1yFa1yUW5ocdleICw448oD2HjftdZHgpy_5",
-        "fileId": "1yFa1yUW5ocdleICw448oD2HjftdZHgpy",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1yFa1yUW5ocdleICw448oD2HjftdZHgpy",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1yFa1yUW5ocdleICw448oD2HjftdZHgpy&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #5",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #5",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1yFa1yUW5ocdleICw448oD2HjftdZHgpy"
       },
       {
         "id": "gdrive_1Abas4z7aKr5_x5vHVCNpOD93h7XvEBQZ_6",
-        "fileId": "1Abas4z7aKr5_x5vHVCNpOD93h7XvEBQZ",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1Abas4z7aKr5_x5vHVCNpOD93h7XvEBQZ",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1Abas4z7aKr5_x5vHVCNpOD93h7XvEBQZ&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #6",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #6",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1Abas4z7aKr5_x5vHVCNpOD93h7XvEBQZ"
       },
       {
         "id": "gdrive_1lZWT_hiwkWZPlKiQ0Fzyi10EhDKCdN8H_7",
-        "fileId": "1lZWT_hiwkWZPlKiQ0Fzyi10EhDKCdN8H",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1lZWT_hiwkWZPlKiQ0Fzyi10EhDKCdN8H",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1lZWT_hiwkWZPlKiQ0Fzyi10EhDKCdN8H&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Buddha statue with Dhamma Chakra 2K 20261005162826",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1lZWT_hiwkWZPlKiQ0Fzyi10EhDKCdN8H"
       },
       {
         "id": "gdrive_1fLCwtMvZw8MSj8EKbdrFFLix-MscjDeO_8",
-        "fileId": "1fLCwtMvZw8MSj8EKbdrFFLix-MscjDeO",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1fLCwtMvZw8MSj8EKbdrFFLix-MscjDeO",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1fLCwtMvZw8MSj8EKbdrFFLix-MscjDeO&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Buddha statue with Dhamma Chakra 2K 20261005162833",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1fLCwtMvZw8MSj8EKbdrFFLix-MscjDeO"
       },
       {
         "id": "gdrive_1LckMu7FIZmHtT7rr68b2F0kkOanFRHqV_9",
-        "fileId": "1LckMu7FIZmHtT7rr68b2F0kkOanFRHqV",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1LckMu7FIZmHtT7rr68b2F0kkOanFRHqV",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1LckMu7FIZmHtT7rr68b2F0kkOanFRHqV&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #9",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #9",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1LckMu7FIZmHtT7rr68b2F0kkOanFRHqV"
       },
       {
         "id": "gdrive_15QEueRAOR93Px-GFi-dFeUoRo3Zshw4v_10",
-        "fileId": "15QEueRAOR93Px-GFi-dFeUoRo3Zshw4v",
-        "imageUrl": "https://lh3.googleusercontent.com/d/15QEueRAOR93Px-GFi-dFeUoRo3Zshw4v",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=15QEueRAOR93Px-GFi-dFeUoRo3Zshw4v&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #10",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #10",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/15QEueRAOR93Px-GFi-dFeUoRo3Zshw4v"
       },
       {
         "id": "gdrive_1Ly9jfOShkK9VzD4x6RY6eMf_jfMPSCvN_11",
-        "fileId": "1Ly9jfOShkK9VzD4x6RY6eMf_jfMPSCvN",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1Ly9jfOShkK9VzD4x6RY6eMf_jfMPSCvN",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1Ly9jfOShkK9VzD4x6RY6eMf_jfMPSCvN&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #11",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #11",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1Ly9jfOShkK9VzD4x6RY6eMf_jfMPSCvN"
       },
       {
         "id": "gdrive_1g8nIkzNkkqod6Wh3-O2N5EISLIP4hBOU_12",
-        "fileId": "1g8nIkzNkkqod6Wh3-O2N5EISLIP4hBOU",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1g8nIkzNkkqod6Wh3-O2N5EISLIP4hBOU",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1g8nIkzNkkqod6Wh3-O2N5EISLIP4hBOU&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #12",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #12",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1g8nIkzNkkqod6Wh3-O2N5EISLIP4hBOU"
       },
       {
         "id": "gdrive_17uHTh5zLgXJDZ8p1oSKZ5Y1jNPoQkhsV_13",
-        "fileId": "17uHTh5zLgXJDZ8p1oSKZ5Y1jNPoQkhsV",
-        "imageUrl": "https://lh3.googleusercontent.com/d/17uHTh5zLgXJDZ8p1oSKZ5Y1jNPoQkhsV",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=17uHTh5zLgXJDZ8p1oSKZ5Y1jNPoQkhsV&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #13",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #13",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/17uHTh5zLgXJDZ8p1oSKZ5Y1jNPoQkhsV"
       },
       {
         "id": "gdrive_1f8-8uyQkNEvYYSajaZ9V_lTqqWxmnZoJ_14",
-        "fileId": "1f8-8uyQkNEvYYSajaZ9V_lTqqWxmnZoJ",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1f8-8uyQkNEvYYSajaZ9V_lTqqWxmnZoJ",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1f8-8uyQkNEvYYSajaZ9V_lTqqWxmnZoJ&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #14",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #14",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1f8-8uyQkNEvYYSajaZ9V_lTqqWxmnZoJ"
       },
       {
         "id": "gdrive_15-JAuvIWpriX6mzBucswCuYtL1nJe3DF_15",
-        "fileId": "15-JAuvIWpriX6mzBucswCuYtL1nJe3DF",
-        "imageUrl": "https://lh3.googleusercontent.com/d/15-JAuvIWpriX6mzBucswCuYtL1nJe3DF",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=15-JAuvIWpriX6mzBucswCuYtL1nJe3DF&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #15",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #15",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/15-JAuvIWpriX6mzBucswCuYtL1nJe3DF"
       },
       {
         "id": "gdrive_1Sq_1QECWSqv4oW6zXCYrdDUPJrwNurVm_16",
-        "fileId": "1Sq_1QECWSqv4oW6zXCYrdDUPJrwNurVm",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1Sq_1QECWSqv4oW6zXCYrdDUPJrwNurVm",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1Sq_1QECWSqv4oW6zXCYrdDUPJrwNurVm&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #16",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #16",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1Sq_1QECWSqv4oW6zXCYrdDUPJrwNurVm"
       },
       {
         "id": "gdrive_1Hwf5eWPXaZ6S5L3Ac-dEW2dGeZR4MDuL_17",
-        "fileId": "1Hwf5eWPXaZ6S5L3Ac-dEW2dGeZR4MDuL",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1Hwf5eWPXaZ6S5L3Ac-dEW2dGeZR4MDuL",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1Hwf5eWPXaZ6S5L3Ac-dEW2dGeZR4MDuL&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Creating Buddha statue image 2K 20261005161949",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1Hwf5eWPXaZ6S5L3Ac-dEW2dGeZR4MDuL"
       },
       {
         "id": "gdrive_1mi8Gs_FzFQYQ7K9kNih0S3-hJo2Im-my_18",
-        "fileId": "1mi8Gs_FzFQYQ7K9kNih0S3-hJo2Im-my",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1mi8Gs_FzFQYQ7K9kNih0S3-hJo2Im-my",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1mi8Gs_FzFQYQ7K9kNih0S3-hJo2Im-my&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Creating Buddha statue image 2K 20261005161957",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1mi8Gs_FzFQYQ7K9kNih0S3-hJo2Im-my"
       },
       {
         "id": "gdrive_1fXjrNZKCrt2p0QpzsGw9-rTiQY4TIADQ_19",
-        "fileId": "1fXjrNZKCrt2p0QpzsGw9-rTiQY4TIADQ",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1fXjrNZKCrt2p0QpzsGw9-rTiQY4TIADQ",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1fXjrNZKCrt2p0QpzsGw9-rTiQY4TIADQ&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Creating Buddha statue image 2K 20261005162057",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1fXjrNZKCrt2p0QpzsGw9-rTiQY4TIADQ"
       },
       {
         "id": "gdrive_1NpFsM_TO3lTXvBxB3CDLJ9cCQDEZ6SBy_20",
-        "fileId": "1NpFsM_TO3lTXvBxB3CDLJ9cCQDEZ6SBy",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1NpFsM_TO3lTXvBxB3CDLJ9cCQDEZ6SBy",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1NpFsM_TO3lTXvBxB3CDLJ9cCQDEZ6SBy&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #20",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #20",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1NpFsM_TO3lTXvBxB3CDLJ9cCQDEZ6SBy"
       },
       {
         "id": "gdrive_1wjOUJDdOsrPaFbkDzj3_DHLsL7UMBfXc_21",
-        "fileId": "1wjOUJDdOsrPaFbkDzj3_DHLsL7UMBfXc",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1wjOUJDdOsrPaFbkDzj3_DHLsL7UMBfXc",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1wjOUJDdOsrPaFbkDzj3_DHLsL7UMBfXc&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #21",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #21",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1wjOUJDdOsrPaFbkDzj3_DHLsL7UMBfXc"
       },
       {
         "id": "gdrive_1LimlvUIe2gzZtga8c5GKlxHK8FGQBBLF_22",
-        "fileId": "1LimlvUIe2gzZtga8c5GKlxHK8FGQBBLF",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1LimlvUIe2gzZtga8c5GKlxHK8FGQBBLF",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1LimlvUIe2gzZtga8c5GKlxHK8FGQBBLF&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #22",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #22",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1LimlvUIe2gzZtga8c5GKlxHK8FGQBBLF"
       },
       {
         "id": "gdrive_1cuBHMNGDcYe-dr8yWp6huqSWQwbSjwIt_23",
-        "fileId": "1cuBHMNGDcYe-dr8yWp6huqSWQwbSjwIt",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1cuBHMNGDcYe-dr8yWp6huqSWQwbSjwIt",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1cuBHMNGDcYe-dr8yWp6huqSWQwbSjwIt&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #23",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #23",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1cuBHMNGDcYe-dr8yWp6huqSWQwbSjwIt"
       },
       {
         "id": "gdrive_1c4MfraanXM_L-KPJuSP0a7Pm129UzXtQ_24",
-        "fileId": "1c4MfraanXM_L-KPJuSP0a7Pm129UzXtQ",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1c4MfraanXM_L-KPJuSP0a7Pm129UzXtQ",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1c4MfraanXM_L-KPJuSP0a7Pm129UzXtQ&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #24",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #24",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1c4MfraanXM_L-KPJuSP0a7Pm129UzXtQ"
       },
       {
         "id": "gdrive_1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX_25",
-        "fileId": "1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #25",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #25",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX"
       },
       {
         "id": "gdrive_1X-cTWNlockK0bYn5C6DTMSLkUk_oWwSK_26",
-        "fileId": "1X-cTWNlockK0bYn5C6DTMSLkUk_oWwSK",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1X-cTWNlockK0bYn5C6DTMSLkUk_oWwSK",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1X-cTWNlockK0bYn5C6DTMSLkUk_oWwSK&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #26",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #26",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1X-cTWNlockK0bYn5C6DTMSLkUk_oWwSK"
       },
       {
         "id": "gdrive_1AskvmdECDQzblbMO2QEUiKwqEvev3rnA_27",
-        "fileId": "1AskvmdECDQzblbMO2QEUiKwqEvev3rnA",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1AskvmdECDQzblbMO2QEUiKwqEvev3rnA",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1AskvmdECDQzblbMO2QEUiKwqEvev3rnA&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #27",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #27",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1AskvmdECDQzblbMO2QEUiKwqEvev3rnA"
       },
       {
         "id": "gdrive_112AlkTSqgILqohQyv7iT-tHJKuOFobSv_28",
-        "fileId": "112AlkTSqgILqohQyv7iT-tHJKuOFobSv",
-        "imageUrl": "https://lh3.googleusercontent.com/d/112AlkTSqgILqohQyv7iT-tHJKuOFobSv",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=112AlkTSqgILqohQyv7iT-tHJKuOFobSv&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #28",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #28",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/112AlkTSqgILqohQyv7iT-tHJKuOFobSv"
       },
       {
         "id": "gdrive_1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE_29",
-        "fileId": "1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #29",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #29",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE"
       },
       {
         "id": "gdrive_1fni-UMTvTcD4TQoWWPL40oY26qIZaeBc_30",
-        "fileId": "1fni-UMTvTcD4TQoWWPL40oY26qIZaeBc",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1fni-UMTvTcD4TQoWWPL40oY26qIZaeBc",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1fni-UMTvTcD4TQoWWPL40oY26qIZaeBc&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #30",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #30",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1fni-UMTvTcD4TQoWWPL40oY26qIZaeBc"
       },
       {
         "id": "gdrive_1E4LxYD-zsKbaJfaPipc0_VVRNl0n4p4t_31",
-        "fileId": "1E4LxYD-zsKbaJfaPipc0_VVRNl0n4p4t",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1E4LxYD-zsKbaJfaPipc0_VVRNl0n4p4t",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1E4LxYD-zsKbaJfaPipc0_VVRNl0n4p4t&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #31",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #31",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1E4LxYD-zsKbaJfaPipc0_VVRNl0n4p4t"
       },
       {
         "id": "gdrive_1VZrMvrk2ud_NhIST3xfd17rpW9pvJq5__32",
-        "fileId": "1VZrMvrk2ud_NhIST3xfd17rpW9pvJq5_",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1VZrMvrk2ud_NhIST3xfd17rpW9pvJq5_",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1VZrMvrk2ud_NhIST3xfd17rpW9pvJq5_&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #32",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #32",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1VZrMvrk2ud_NhIST3xfd17rpW9pvJq5_"
       },
       {
         "id": "gdrive_1dpUk6brcP19HzJD6_d8pJQ4wEjPa2NlR_33",
-        "fileId": "1dpUk6brcP19HzJD6_d8pJQ4wEjPa2NlR",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1dpUk6brcP19HzJD6_d8pJQ4wEjPa2NlR",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1dpUk6brcP19HzJD6_d8pJQ4wEjPa2NlR&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #33",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #33",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1dpUk6brcP19HzJD6_d8pJQ4wEjPa2NlR"
       },
       {
         "id": "gdrive_1FJuLS_nfg8BqvRoRANPRz0svLK3PXM_Q_34",
-        "fileId": "1FJuLS_nfg8BqvRoRANPRz0svLK3PXM_Q",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1FJuLS_nfg8BqvRoRANPRz0svLK3PXM_Q",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1FJuLS_nfg8BqvRoRANPRz0svLK3PXM_Q&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #34",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #34",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1FJuLS_nfg8BqvRoRANPRz0svLK3PXM_Q"
       },
       {
         "id": "gdrive_1R4LMt2BP5KXTtrAwRW0L4DyxTWZCyche_35",
-        "fileId": "1R4LMt2BP5KXTtrAwRW0L4DyxTWZCyche",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1R4LMt2BP5KXTtrAwRW0L4DyxTWZCyche",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1R4LMt2BP5KXTtrAwRW0L4DyxTWZCyche&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #35",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #35",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1R4LMt2BP5KXTtrAwRW0L4DyxTWZCyche"
       },
       {
         "id": "gdrive_107gBbTiFJejh0hLU9WeDwtxYXK8LL5FI_36",
-        "fileId": "107gBbTiFJejh0hLU9WeDwtxYXK8LL5FI",
-        "imageUrl": "https://lh3.googleusercontent.com/d/107gBbTiFJejh0hLU9WeDwtxYXK8LL5FI",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=107gBbTiFJejh0hLU9WeDwtxYXK8LL5FI&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #36",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #36",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/107gBbTiFJejh0hLU9WeDwtxYXK8LL5FI"
       },
       {
         "id": "gdrive_1Ir1oLmV6MLnAOCpVgWvEzdUfFHm356l-_37",
-        "fileId": "1Ir1oLmV6MLnAOCpVgWvEzdUfFHm356l-",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1Ir1oLmV6MLnAOCpVgWvEzdUfFHm356l-",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1Ir1oLmV6MLnAOCpVgWvEzdUfFHm356l-&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #37",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #37",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1Ir1oLmV6MLnAOCpVgWvEzdUfFHm356l-"
       },
       {
         "id": "gdrive_1kfnj9grjMmjtKEQ5PZUPCG9ivZxPHlWt_38",
-        "fileId": "1kfnj9grjMmjtKEQ5PZUPCG9ivZxPHlWt",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1kfnj9grjMmjtKEQ5PZUPCG9ivZxPHlWt",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1kfnj9grjMmjtKEQ5PZUPCG9ivZxPHlWt&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Dr. B. R. Ambedkar portrait 2K 20261005162553",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1kfnj9grjMmjtKEQ5PZUPCG9ivZxPHlWt"
       },
       {
         "id": "gdrive_1xfhEWVxXbztjbEOzPH34l3LwubuH6KKo_39",
-        "fileId": "1xfhEWVxXbztjbEOzPH34l3LwubuH6KKo",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1xfhEWVxXbztjbEOzPH34l3LwubuH6KKo",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1xfhEWVxXbztjbEOzPH34l3LwubuH6KKo&sz=w600",
-        "title": "धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #39",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #39",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1xfhEWVxXbztjbEOzPH34l3LwubuH6KKo"
       },
       {
         "id": "gdrive_1QMeHgua5UUS3U-lfczhoQS0mCKtgZo8E_40",
-        "fileId": "1QMeHgua5UUS3U-lfczhoQS0mCKtgZo8E",
-        "imageUrl": "https://lh3.googleusercontent.com/d/1QMeHgua5UUS3U-lfczhoQS0mCKtgZo8E",
-        "thumbnailUrl": "https://drive.google.com/thumbnail?id=1QMeHgua5UUS3U-lfczhoQS0mCKtgZo8E&sz=w600",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
         "title": "Tribute image for Dhamma Chakra 2K 20261005162148",
-        "godName": "धम्मचक्र प्रवर्तन दिवस पावन दर्शन",
         "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
-        "badge": "🌸 पावन दर्शन",
-        "mantra": "॥ ॐ श्रीं ह्रीं क्लीं ॥"
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1QMeHgua5UUS3U-lfczhoQS0mCKtgZo8E"
       }
     ]
   },

@@ -287,10 +287,111 @@ async function startServer() {
   });
 
   // ==========================================
-  // VITE DEV MIDDLEWARE / STATIC ASSETS
+  // VITE DEV MIDDLEWARE / STATIC ASSETS & 3D OG PREVIEW INJECTOR
   // ==========================================
   const distPath = path.join(__dirname, 'dist');
   const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
+
+  const isSocialCrawler = (userAgent: string = '') => {
+    return /whatsapp|facebookexternalhit|twitterbot|telegrambot|linkedinbot|pinterest|slackbot|applebot|discordbot|googlebot/i.test(userAgent);
+  };
+
+  const getDynamicOGHtml = (reqUrl: string, userAgent: string, rawHtml: string) => {
+    try {
+      const urlObj = new URL(reqUrl, 'https://shubhakamna.in');
+      let sender = urlObj.searchParams.get('n') || urlObj.searchParams.get('sender') || urlObj.searchParams.get('from') || '';
+      let festId = urlObj.searchParams.get('f') || urlObj.searchParams.get('festival') || '';
+      const bname = urlObj.searchParams.get('bname') || '';
+      const customImg = urlObj.searchParams.get('img') || '';
+      const w = urlObj.searchParams.get('w') || '';
+
+      // Parse short code pattern ?w=Rahul_diwali or ?w=diwali
+      if (w) {
+        const parts = w.split('_');
+        if (parts.length >= 2) {
+          if (!sender) sender = parts[0];
+          if (!festId) festId = parts[1];
+        } else if (parts.length === 1) {
+          if (!festId) festId = parts[0];
+        }
+      }
+
+      const isShubhPrabhat = urlObj.pathname.includes('shubh-prabhat') || festId.includes('prabhat') || w.includes('prabhat');
+      const isBirthday = festId.includes('birthday') || urlObj.pathname.includes('birthday') || w.includes('birthday');
+
+      let title = '✨ Shubhakamna.in - 3D पावन शुभकामना पोर्टल';
+      let description = '👉 तुरंत टच करके देखें आपके लिए क्या खास संदेश आया है! अपने नाम व फोटो का 4K स्टेटस बनाएँ ➔';
+      let ogImage = customImg || 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=1200&h=630&q=85';
+
+      if (isBirthday) {
+        const celebrant = bname || 'मित्र';
+        title = sender 
+          ? `🎂 ${sender} ने ${celebrant} के लिए भेजा है खास 3D बर्थडे सरप्राइज! 🎉`
+          : `🎂 Happy Birthday ${celebrant}! • 3D जादुई बर्थडे सॉन्ग व कार्ड`;
+        description = `👉 तुरंत टच करके सुनें ${celebrant} के नाम का स्पेशल बर्थडे गाना व 3D कार्ड ➔ www.shubhakamna.in`;
+        if (!customImg) {
+          ogImage = 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&h=630&q=85';
+        }
+      } else if (isShubhPrabhat) {
+        title = sender 
+          ? `🌅 ${sender} ने आपके लिए आज का सुंदर 3D शुभ प्रभात सुविचार भेजा है! ✨`
+          : '🌅 आज का पावन शुभ विचार • 3D सुविचार कार्ड | Shubhakamna.in';
+        description = '👉 अपने नाम व फोटो का सुंदर 3D सुविचार स्टेटस बनाएँ और 1-क्लिक में WhatsApp पर शेयर करें ➔';
+        if (!customImg) {
+          ogImage = 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1200&h=630&q=85';
+        }
+      } else {
+        let festName = 'पावन पर्व';
+
+        // Dynamic lookup from site-data.json if exists
+        try {
+          if (fs.existsSync(dataFilePath)) {
+            const rawSiteData = fs.readFileSync(dataFilePath, 'utf-8');
+            const parsed = JSON.parse(rawSiteData);
+            if (parsed.festivals && Array.isArray(parsed.festivals)) {
+              const matched = parsed.festivals.find((f: any) => 
+                (festId && f.id === festId) || 
+                (f.slug && urlObj.pathname.includes(f.slug)) ||
+                (f.id && urlObj.pathname.includes(f.id)) ||
+                (festId && f.slug && f.slug.includes(festId))
+              );
+              if (matched) {
+                festName = matched.nameHi || festName;
+                if (!customImg && matched.heroImage) {
+                  ogImage = matched.heroImage;
+                }
+              }
+            }
+          }
+        } catch {}
+
+        if (festId.includes('dhammachakra') || urlObj.pathname.includes('dhammachakra')) {
+          festName = 'धम्मचक्र प्रवर्तन दिवस';
+          if (!customImg) ogImage = 'https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX';
+        } else if (festId.includes('diwali') || urlObj.pathname.includes('diwali')) {
+          festName = 'शुभ दीपावली';
+        }
+
+        title = sender 
+          ? `✨ ${sender} ने आपके लिए भेजा है ${festName} का खास 3D जादुई सरप्राइज! 🎁`
+          : `✨ ${festName} की हार्दिक शुभकामनाएँ • 3D विशिंग कार्ड | Shubhakamna.in`;
+        description = `👉 इस नीले लिंक को तुरंत टच करके देखें आपके लिए क्या खास 3D संदेश आया है! अपने नाम व फोटो का 4K स्टेटस बनाएँ ➔`;
+      }
+
+      // Replace or inject meta tags
+      let modifiedHtml = rawHtml;
+      modifiedHtml = modifiedHtml.replace(/<title>.*?<\/title>/i, `<title>${title}</title>`);
+      modifiedHtml = modifiedHtml.replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${title}" />`);
+      modifiedHtml = modifiedHtml.replace(/<meta property="og:description" content=".*?" \/>/i, `<meta property="og:description" content="${description}" />`);
+      modifiedHtml = modifiedHtml.replace(/<meta property="og:image" content=".*?" \/>/i, `<meta property="og:image" content="${ogImage}" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />`);
+      modifiedHtml = modifiedHtml.replace(/<meta name="twitter:title" content=".*?" \/>/i, `<meta name="twitter:title" content="${title}" />`);
+      modifiedHtml = modifiedHtml.replace(/<meta name="twitter:description" content=".*?" \/>/i, `<meta name="twitter:description" content="${description}" />`);
+
+      return modifiedHtml;
+    } catch {
+      return rawHtml;
+    }
+  };
 
   if (!isProduction && !hasDist) {
     const { createServer: createViteServer } = await import('vite');
@@ -300,12 +401,19 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files from dist
+    // Serve static assets from dist
     app.use(express.static(distPath));
 
     app.get('*', (req, res) => {
       const targetFile = path.join(distPath, 'index.html');
       if (fs.existsSync(targetFile)) {
+        const rawHtml = fs.readFileSync(targetFile, 'utf-8');
+        const userAgent = req.headers['user-agent'] || '';
+        if (isSocialCrawler(userAgent) || req.query.n || req.query.f) {
+          const html = getDynamicOGHtml(req.url, userAgent, rawHtml);
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(html);
+        }
         res.sendFile(targetFile);
       } else {
         res.status(200).send('<!DOCTYPE html><html><head><title>Shubhakamna</title></head><body><div id="root"></div></body></html>');

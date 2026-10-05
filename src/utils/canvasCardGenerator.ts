@@ -332,21 +332,89 @@ export async function generateWishCardBlob(options: CardGenerationOptions): Prom
   ctx.fillText(displaySender, width / 2, senderY + 65);
   ctx.restore();
 
-  // 7. Footer Branding & Shubhakamna Portal Tag
+  // 7. 🌐 MASSIVE 3D EMBOSSED ROYAL WEBSITE CTA PLATE
   ctx.save();
-  ctx.strokeStyle = 'rgba(251, 191, 36, 0.35)';
-  ctx.lineWidth = 2;
+  ctx.textAlign = 'center';
+  const ctaW = width - 140;
+  const ctaH = 130;
+  const ctaX = 70;
+  const ctaY = height - 170;
+
+  // Multi-layer 3D Extruded Drop Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.96)';
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 10;
+
+  // 3D Metallic Dark Onyx & Gold Gradient Fill
+  const ctaGrad = ctx.createLinearGradient(ctaX, ctaY, ctaX, ctaY + ctaH);
+  ctaGrad.addColorStop(0, '#292524');
+  ctaGrad.addColorStop(0.25, '#1c1917');
+  ctaGrad.addColorStop(0.65, '#0c0a09');
+  ctaGrad.addColorStop(1, '#000000');
+  ctx.fillStyle = ctaGrad;
   ctx.beginPath();
-  ctx.moveTo(180, height - 190);
-  ctx.lineTo(width - 180, height - 190);
+  roundRect(ctx, ctaX, ctaY, ctaW, ctaH, 28);
+  ctx.fill();
+
+  // 3D Golden Beveled Outer Border
+  ctx.shadowColor = 'rgba(245, 158, 11, 0.4)';
+  ctx.shadowBlur = 14;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = 'bold 28px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  // Inner Golden Glow Bevel Ring
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  roundRect(ctx, ctaX + 5, ctaY + 5, ctaW - 10, ctaH - 10, 24);
+  ctx.stroke();
+
+  // Top line: Callout in Hindi
+  ctx.fillStyle = '#fde68a';
+  ctx.font = 'bold 28px "Noto Sans Devanagari", sans-serif';
+  ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
   ctx.shadowBlur = 8;
-  ctx.fillText('🪔 Shubhakamna.in · भारत का पावन शुभकामना द्वार', width / 2, height - 130);
+  ctx.fillText('✨ 👉 अपने नाम का 4K स्टेटस यहाँ बनाएँ ➔ मुफ़्त 👈 ✨', width / 2, ctaY + 42);
+
+  // Bottom Centerpiece: Large 3D Gold Extruded Website Name
+  ctx.save();
+  ctx.textBaseline = 'middle';
+  const siteDomain = '🌐 WWW.SHUBHAKAMNA.IN 🌐';
+  const domainY = ctaY + 88;
+  const domFont = '800 44px "Poppins", system-ui, -apple-system, sans-serif';
+  ctx.font = domFont;
+
+  // 1. Clean Crisp 3D Cast Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = '#000000';
+  ctx.fillText(siteDomain, width / 2, domainY + 3);
+
+  // 2. Subtle 3D Bevel Outline
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = '#b45309';
+  ctx.strokeText(siteDomain, width / 2, domainY + 1);
+
+  // 3. Ultra-Bright Face Fill Gradient (High Contrast & Legibility)
+  const faceGrad = ctx.createLinearGradient(width / 2, domainY - 20, width / 2, domainY + 20);
+  faceGrad.addColorStop(0, '#ffffff');
+  faceGrad.addColorStop(0.25, '#fffbeb');
+  faceGrad.addColorStop(0.55, '#fef08a');
+  faceGrad.addColorStop(0.85, '#fbbf24');
+  faceGrad.addColorStop(1, '#f59e0b');
+  ctx.fillStyle = faceGrad;
+  ctx.fillText(siteDomain, width / 2, domainY);
+
+  // 4. Thin Specular Top Outline
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.strokeText(siteDomain, width / 2, domainY);
+  ctx.restore();
+
   ctx.restore();
 
   return new Promise((resolve, reject) => {
