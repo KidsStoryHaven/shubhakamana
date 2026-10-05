@@ -25,6 +25,9 @@ import { ContactPage } from './components/ContactPage';
 import { SiteFooter } from './components/SiteFooter';
 import { StickyWhatsAppChannel } from './components/StickyWhatsAppChannel';
 import { WishCategory, getCategoryBySlug, getAllCategories } from './data/wishesData';
+import { ShubhPrabhatPage } from './components/ShubhPrabhatPage';
+
+export type StaticRouteType = 'about' | 'privacy-policy' | 'contact' | 'shubh-prabhat';
 
 export default function App() {
   const [urlData] = useState(() => {
@@ -38,15 +41,16 @@ export default function App() {
   const [festivals, setFestivals] = useState<Festival[]>(() => getStoredFestivals());
   const [categories, setCategories] = useState<CategoryInfo[]>(() => getStoredCategories());
   
-  const resolveStaticRoute = (pathStr: string): 'about' | 'privacy-policy' | 'contact' | null => {
+  const resolveStaticRoute = (pathStr: string): StaticRouteType | null => {
     const clean = pathStr.replace(/^\/+|\/+$/g, '').toLowerCase();
     if (clean === 'about' || clean === 'about-us') return 'about';
     if (clean === 'privacy-policy' || clean === 'privacy') return 'privacy-policy';
     if (clean === 'contact' || clean === 'contact-us') return 'contact';
+    if (clean === 'shubh-prabhat' || clean === 'shubhprabhat' || clean === 'suvichar' || clean === 'good-morning') return 'shubh-prabhat';
     return null;
   };
 
-  const [staticPageRoute, setStaticPageRoute] = useState<'about' | 'privacy-policy' | 'contact' | null>(() => {
+  const [staticPageRoute, setStaticPageRoute] = useState<StaticRouteType | null>(() => {
     try {
       return resolveStaticRoute(window.location.pathname || '');
     } catch {
@@ -203,8 +207,16 @@ export default function App() {
 
   // 1. Initial Load & Direct Link SEO Injection
   useEffect(() => {
-    if (selectedWishCategory) {
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
+    if (staticPageRoute === 'shubh-prabhat') {
+      updatePageSEO({
+        title: '🌅 शुभ प्रभात • आज के १०० पावन सुविचार एवं फोटो स्टेटस | Shubhakamna.in',
+        description: 'प्रतिदिन स्वतः बदलने वाले १०० दिव्य सुविचार अपनी बड़ी फ़ोटो व नाम के साथ जोड़कर WhatsApp स्टेटस व इमेज कार्ड बनाएँ। हिंदी, अंग्रेजी, मराठी व गुजराती में दैनिक विचार।',
+        keywords: 'shubh prabhat suvichar, daily 100 suvichar, good morning quotes hindi, aaj ka vichar photo card',
+        canonicalUrl: `${origin}/shubh-prabhat/`,
+        ogType: 'website'
+      });
+    } else if (selectedWishCategory) {
       updatePageSEO({
         title: selectedWishCategory.seoTitle,
         description: selectedWishCategory.metaDescription,
@@ -237,6 +249,16 @@ export default function App() {
         setStaticPageRoute(staticMatch);
         setSelectedWishCategory(null);
         setSelectedFestival(null);
+        if (staticMatch === 'shubh-prabhat') {
+          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
+          updatePageSEO({
+            title: '🌅 शुभ प्रभात • आज के १०० पावन सुविचार एवं फोटो स्टेटस | Shubhakamna.in',
+            description: 'प्रतिदिन स्वतः बदलने वाले १०० दिव्य सुविचार अपनी बड़ी फ़ोटो व नाम के साथ जोड़कर WhatsApp स्टेटस व इमेज कार्ड बनाएँ। हिंदी, अंग्रेजी, मराठी व गुजराती में दैनिक विचार।',
+            keywords: 'shubh prabhat suvichar, daily 100 suvichar, good morning quotes hindi, aaj ka vichar photo card',
+            canonicalUrl: `${origin}/shubh-prabhat/`,
+            ogType: 'website'
+          });
+        }
         return;
       }
       setStaticPageRoute(null);
@@ -331,6 +353,16 @@ export default function App() {
       setStaticPageRoute(staticMatch);
       setSelectedWishCategory(null);
       setSelectedFestival(null);
+      if (staticMatch === 'shubh-prabhat') {
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
+        updatePageSEO({
+          title: '🌅 शुभ प्रभात • आज के १०० पावन सुविचार एवं फोटो स्टेटस | Shubhakamna.in',
+          description: 'प्रतिदिन स्वतः बदलने वाले १०० दिव्य सुविचार अपनी बड़ी फ़ोटो व नाम के साथ जोड़कर WhatsApp स्टेटस व इमेज कार्ड बनाएँ। हिंदी, अंग्रेजी, मराठी व गुजराती में दैनिक विचार।',
+          keywords: 'shubh prabhat suvichar, daily 100 suvichar, good morning quotes hindi, aaj ka vichar photo card',
+          canonicalUrl: `${origin}/shubh-prabhat/`,
+          ogType: 'website'
+        });
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -392,6 +424,7 @@ export default function App() {
           onGoHome={() => handleGoHome()}
           onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
           onOpenAuth={() => setIsAuthOpen(true)}
+          onNavigateToPath={handleNavigateToPath}
         />
 
         {/* Top Header Ad Banner */}
@@ -409,6 +442,9 @@ export default function App() {
           )}
           {staticPageRoute === 'contact' && (
             <ContactPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+          )}
+          {staticPageRoute === 'shubh-prabhat' && (
+            <ShubhPrabhatPage onBackToPortal={() => handleGoHome()} />
           )}
         </main>
 
@@ -453,6 +489,7 @@ export default function App() {
           onGoHome={() => handleGoHome()}
           onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
           onOpenAuth={() => setIsAuthOpen(true)}
+          onNavigateToPath={handleNavigateToPath}
         />
 
         {/* Top Header Ad Banner */}
@@ -547,6 +584,7 @@ export default function App() {
         onGoHome={() => handleGoHome()}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onNavigateToPath={handleNavigateToPath}
       />
 
       {/* Top Header Ad Banner */}

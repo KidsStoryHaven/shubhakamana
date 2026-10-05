@@ -33,6 +33,7 @@ interface NavbarProps {
   onGoHome: () => void;
   onOpenLeaderboard?: () => void;
   onOpenAuth?: () => void;
+  onNavigateToPath?: (path: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -40,7 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectFestival,
   onGoHome,
   onOpenLeaderboard,
-  onOpenAuth
+  onOpenAuth,
+  onNavigateToPath
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<FestivalCategory | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -139,6 +141,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="px-2.5 py-2 rounded-xl text-stone-300 hover:text-white hover:bg-stone-900 transition cursor-pointer"
           >
             होम
+          </button>
+
+          {/* Shubh Prabhat 100 Daily Suvichar Button */}
+          <button
+            onClick={() => {
+              setActiveDropdown(null);
+              setIsMobileMenuOpen(false);
+              if (onNavigateToPath) {
+                onNavigateToPath('/shubh-prabhat/');
+              } else {
+                window.location.pathname = '/shubh-prabhat/';
+              }
+            }}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/25 hover:from-amber-500/35 hover:to-yellow-500/35 text-amber-300 font-bold border border-amber-500/40 hover:border-amber-400 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+            title="दैनिक १०० शुभ प्रभात सुविचार व फोटो कार्ड"
+          >
+            <Sun className="w-3.5 h-3.5 text-yellow-400 animate-spin" />
+            <span>शुभ प्रभात</span>
+            <span className="text-[9px] bg-amber-500 text-stone-950 font-black px-1.5 py-0.5 rounded-full">
+              100
+            </span>
           </button>
 
           {/* Dynamic Categories with Floating Dropdown */}
@@ -365,6 +388,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Horizontal Quick Bar */}
       <div className="flex lg:hidden border-t border-stone-800/80 overflow-x-auto px-3 py-2 gap-1.5 text-xs font-medium text-stone-300 scrollbar-none items-center">
+        {/* Mobile Shubh Prabhat Button */}
+        <button
+          onClick={() => {
+            if (onNavigateToPath) {
+              onNavigateToPath('/shubh-prabhat/');
+            } else {
+              window.location.pathname = '/shubh-prabhat/';
+            }
+          }}
+          className="shrink-0 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/25 border border-amber-400/60 text-amber-300 font-bold flex items-center gap-1 shadow-sm"
+        >
+          <Sun className="w-3.5 h-3.5 text-yellow-400" />
+          <span>शुभ प्रभात (100)</span>
+        </button>
+
         {/* Mobile Leaderboard Quick Link */}
         <button
           onClick={() => onOpenLeaderboard?.()}
@@ -430,6 +468,32 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 बंद करें ✕
               </button>
+            </div>
+
+            {/* Featured Shubh Prabhat Link */}
+            <div 
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                if (onNavigateToPath) {
+                  onNavigateToPath('/shubh-prabhat/');
+                } else {
+                  window.location.pathname = '/shubh-prabhat/';
+                }
+              }}
+              className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/80 via-yellow-950/60 to-amber-950/80 border border-amber-500/40 cursor-pointer flex items-center justify-between shadow-lg"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-400/50 flex items-center justify-center">
+                  <Sun className="w-4 h-4 text-yellow-400 animate-spin" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-amber-200">🌅 शुभ प्रभात • आज के १०० सुविचार</p>
+                  <p className="text-[10px] text-stone-300">अपनी बड़ी फ़ोटो के साथ आज का स्टेटस बनाएँ</p>
+                </div>
+              </div>
+              <span className="text-xs font-black text-amber-400 bg-amber-500/20 px-2 py-1 rounded-lg border border-amber-500/30">
+                खोलें →
+              </span>
             </div>
 
             {categories.map(cat => {

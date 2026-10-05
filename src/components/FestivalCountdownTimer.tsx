@@ -15,30 +15,33 @@ interface TimeRemaining {
   isToday: boolean;
 }
 
-// Exact 2026 Festival Muhurat Target Dates (ISO 8601)
-const FESTIVAL_TARGET_DATES_2026: Record<string, string> = {
-  diwali: '2026-11-08T18:15:00', // 8 November 2026 सायं 06:15 (कार्तिक अमावस्या - महालक्ष्मी पूजन)
+// Exact Muhurat Target Dates for Upcoming Festivals (2026 & 2027)
+const FESTIVAL_TARGET_DATES: Record<string, string> = {
+  karwa_chauth: '2026-10-29T20:15:00', // 29 October 2026 (करवा चौथ चंद्र दर्शन)
   dhanteras: '2026-11-06T17:45:00', // 6 November 2026 सायं 05:45 (धनतेरस व कुबेर पूजा)
-  govardhan: '2026-11-09T06:30:00', // 9 November 2026 (गोवर्धन पूजा व अन्नकूट)
+  diwali: '2026-11-08T18:15:00', // 8 November 2026 सायं 06:15 (कार्तिक अमावस्या - महालक्ष्मी पूजन)
   bhai_dooj: '2026-11-10T13:15:00', // 10 November 2026 (भाई दूज)
   chhath_puja: '2026-11-15T17:30:00', // 15 November 2026 (छठ महापर्व संध्या अर्घ्य)
-  karwa_chauth: '2026-10-29T20:15:00', // 29 October 2026 (करवा चौथ चंद्र दर्शन)
-  sharad_purnima: '2026-10-25T19:00:00', // 25 October 2026 (शरद पूर्णिमा)
+  guru_nanak_jayanti: '2026-11-24T06:00:00', // 24 November 2026 (गुरु नानक जयंती)
+  samvidhan_diwas: '2026-11-26T09:00:00', // 26 November 2026 (संविधान दिवस)
+  christmas: '2026-12-25T00:00:00', // 25 December 2026 (क्रिसमस)
+  newyear: '2027-01-01T00:00:00', // 1 January 2027 (नव वर्ष 2027)
+  makar_sankranti: '2027-01-14T07:15:00', // 14 January 2027 (मकर संक्रांति 2027)
+  republic_day: '2027-01-26T08:00:00', // 26 January 2027 (गणतंत्र दिवस 2027)
+  shivratri: '2027-03-06T23:45:00', // 6 March 2027 (महाशिवरात्रि 2027)
+  holi: '2027-03-22T08:00:00', // 22 March 2027 (होली 2027)
 };
 
 export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
   festivals,
   onSelectFestival
 }) => {
-  // Top upcoming major festivals for quick switching
-  const majorFestivals = festivals.filter(f => 
-    ['diwali', 'dhanteras', 'chhath_puja', 'karwa_chauth'].includes(f.id) || f.category === 'hindu'
-  ).slice(0, 4);
+  // Top upcoming major festivals in ascending order
+  const majorFestivals = festivals.filter(f => f.countdownDays > 0).slice(0, 5);
 
-  const [selectedId, setSelectedId] = useState<string>('diwali');
+  const [selectedId, setSelectedId] = useState<string>(() => festivals[0]?.id || 'karwa_chauth');
 
   const targetFestival = festivals.find(f => f.id === selectedId) || 
-    festivals.find(f => f.id === 'diwali') || 
     festivals[0];
 
   const calculateTimeLeft = (): TimeRemaining => {
@@ -49,8 +52,8 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
     const now = new Date();
     let targetDate: Date;
 
-    if (FESTIVAL_TARGET_DATES_2026[targetFestival.id]) {
-      targetDate = new Date(FESTIVAL_TARGET_DATES_2026[targetFestival.id]);
+    if (FESTIVAL_TARGET_DATES[targetFestival.id]) {
+      targetDate = new Date(FESTIVAL_TARGET_DATES[targetFestival.id]);
     } else {
       const daysFromData = targetFestival.countdownDays ?? 0;
       targetDate = new Date();
@@ -97,113 +100,136 @@ export const FestivalCountdownTimer: React.FC<FestivalCountdownTimerProps> = ({
         <div className="relative z-10 flex flex-wrap items-center gap-1.5 pb-4 mb-4 border-b border-amber-500/20">
           <span className="text-[11px] font-bold text-amber-400 mr-1 flex items-center gap-1">
             <span>⏱️</span>
-            <span>काउंटडाउन देखें:</span>
+            <span>आगामी महापर्व काउंटडाउन:</span>
           </span>
-          {majorFestivals.map(fest => (
-            <button
-              key={fest.id}
-              type="button"
-              onClick={() => setSelectedId(fest.id)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                targetFestival.id === fest.id
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20 scale-105'
-                  : 'bg-stone-900/80 text-stone-300 border border-stone-800 hover:border-amber-500/40'
-              }`}
-            >
-              <span>{fest.id === 'diwali' ? '🪔' : fest.id === 'dhanteras' ? '🪙' : '☀️'}</span>
-              <span>{fest.nameHi.split('•')[0].trim()}</span>
-            </button>
-          ))}
+          {majorFestivals.map((fest) => {
+            const isSelected = targetFestival.id === fest.id;
+            return (
+              <button
+                key={fest.id}
+                onClick={() => setSelectedId(fest.id)}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 shadow-md shadow-amber-500/30 scale-105'
+                    : 'bg-stone-900/80 text-stone-300 hover:text-white border border-stone-800 hover:border-amber-500/40'
+                }`}
+              >
+                <span>{fest.nameHi.split('•')[0].trim()}</span>
+                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-stone-950 animate-ping" />}
+              </button>
+            );
+          })}
         </div>
       )}
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
-        
-        {/* Left Side: Festival Name & Urgency Message */}
-        <div className="space-y-2 text-center lg:text-left flex-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider animate-pulse">
-            <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span>आगामी पावन महापर्व • उलटी गिनती शुरू</span>
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        {/* Left Side: Festival Title, Date & Description */}
+        <div className="lg:col-span-6 space-y-2 text-left">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-400/30">
+            <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>{targetFestival.badge} • लाइव काउंटडाउन</span>
           </div>
 
-          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-serif tracking-tight drop-shadow-md">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-serif tracking-tight">
             {targetFestival.nameHi}
-          </h3>
+          </h2>
 
-          <p className="text-xs sm:text-sm text-stone-300 max-w-xl line-clamp-2">
-            {targetFestival.taglineHi}
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1 text-xs text-amber-200/90 font-medium">
-            <span className="flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-lg border border-amber-500/30">
+          <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs text-amber-200/90 font-medium">
+            <span className="flex items-center gap-1 bg-black/40 px-2.5 py-1 rounded-lg border border-amber-500/20">
               <Calendar className="w-3.5 h-3.5 text-amber-400" />
               <span>{targetFestival.dateLabel}</span>
             </span>
-            <span className="flex items-center gap-1 text-emerald-300 font-semibold bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{targetFestival.shubhMuhurat}</span>
+            <span className="flex items-center gap-1 bg-black/40 px-2.5 py-1 rounded-lg border border-amber-500/20">
+              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+              <span>शुभ मुहूर्त व पूजन विधि</span>
             </span>
           </div>
-        </div>
 
-        {/* Right Side: Live Countdown Digital Flip Boxes & CTA */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
-          
-          {/* 4 Time Digit Cards */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center">
-            {/* Days */}
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-black/70 border border-amber-500/40 min-w-[62px] sm:min-w-[72px] shadow-lg shadow-amber-500/10 backdrop-blur-md">
-              <span className="block text-xl sm:text-2xl lg:text-3xl font-black text-amber-300 font-mono">
-                {String(timeLeft.days).padStart(2, '0')}
-              </span>
-              <span className="text-[10px] sm:text-xs text-stone-400 font-bold uppercase tracking-wider">
-                दिन (Days)
-              </span>
-            </div>
+          <p className="text-xs sm:text-sm text-stone-300 line-clamp-2 leading-relaxed pt-1">
+            {targetFestival.shubhMuhurat || targetFestival.taglineHi}
+          </p>
 
-            {/* Hours */}
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-black/70 border border-amber-500/40 min-w-[62px] sm:min-w-[72px] shadow-lg shadow-amber-500/10 backdrop-blur-md">
-              <span className="block text-xl sm:text-2xl lg:text-3xl font-black text-amber-300 font-mono">
-                {String(timeLeft.hours).padStart(2, '0')}
-              </span>
-              <span className="text-[10px] sm:text-xs text-stone-400 font-bold uppercase tracking-wider">
-                घंटे (Hrs)
-              </span>
-            </div>
-
-            {/* Minutes */}
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-black/70 border border-amber-500/40 min-w-[62px] sm:min-w-[72px] shadow-lg shadow-amber-500/10 backdrop-blur-md">
-              <span className="block text-xl sm:text-2xl lg:text-3xl font-black text-amber-300 font-mono">
-                {String(timeLeft.minutes).padStart(2, '0')}
-              </span>
-              <span className="text-[10px] sm:text-xs text-stone-400 font-bold uppercase tracking-wider">
-                मिनट (Min)
-              </span>
-            </div>
-
-            {/* Seconds (Pulsing) */}
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-black/70 border border-amber-500/60 min-w-[62px] sm:min-w-[72px] shadow-lg shadow-amber-500/20 backdrop-blur-md ring-1 ring-amber-400/40">
-              <span className="block text-xl sm:text-2xl lg:text-3xl font-black text-yellow-300 font-mono animate-pulse">
-                {String(timeLeft.seconds).padStart(2, '0')}
-              </span>
-              <span className="text-[10px] sm:text-xs text-amber-400 font-bold uppercase tracking-wider">
-                सेकंड (Sec)
-              </span>
-            </div>
+          <div className="pt-2">
+            <button
+              onClick={() => onSelectFestival(targetFestival)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/30 transition-transform active:scale-95 cursor-pointer"
+            >
+              <span>{targetFestival.nameHi.split('•')[0].trim()} का जादुई कार्ड बनाएँ</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-
-          {/* Action CTA Button */}
-          <button
-            type="button"
-            onClick={() => onSelectFestival(targetFestival)}
-            className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition cursor-pointer active:scale-95 group shrink-0"
-          >
-            <span>विशिंग कार्ड बनाएँ</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
-          </button>
-
         </div>
 
+        {/* Right Side: High-Impact Digital Flip-Style Countdown Clock */}
+        <div className="lg:col-span-6 flex flex-col items-center lg:items-end">
+          {timeLeft.isToday ? (
+            <div className="p-6 rounded-2xl bg-amber-500/20 border-2 border-amber-400 text-center space-y-2 animate-bounce">
+              <span className="text-4xl">🎉 🪔 🌸</span>
+              <h3 className="text-xl sm:text-2xl font-black text-amber-300 font-serif">
+                आज ही है {targetFestival.nameHi}!
+              </h3>
+              <p className="text-xs text-stone-200">
+                आप सभी को यह पावन महापर्व अत्यंत मंगलमय व कल्याणकारी हो!
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              {/* Days Box */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-18 sm:w-20 sm:h-22 rounded-2xl bg-stone-900/90 border-2 border-amber-500/60 shadow-xl flex items-center justify-center backdrop-blur-md">
+                  <span className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-yellow-400 font-mono tracking-wider">
+                    {String(timeLeft.days).padStart(2, '0')}
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest mt-1.5">
+                  दिन (Days)
+                </span>
+              </div>
+
+              <span className="text-2xl sm:text-3xl font-black text-amber-400/80 -mt-6">:</span>
+
+              {/* Hours Box */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-18 sm:w-20 sm:h-22 rounded-2xl bg-stone-900/90 border-2 border-amber-500/60 shadow-xl flex items-center justify-center backdrop-blur-md">
+                  <span className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-yellow-400 font-mono tracking-wider">
+                    {String(timeLeft.hours).padStart(2, '0')}
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest mt-1.5">
+                  घंटे (Hours)
+                </span>
+              </div>
+
+              <span className="text-2xl sm:text-3xl font-black text-amber-400/80 -mt-6">:</span>
+
+              {/* Minutes Box */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-18 sm:w-20 sm:h-22 rounded-2xl bg-stone-900/90 border-2 border-amber-500/60 shadow-xl flex items-center justify-center backdrop-blur-md">
+                  <span className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-yellow-400 font-mono tracking-wider">
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest mt-1.5">
+                  मिनट (Mins)
+                </span>
+              </div>
+
+              <span className="text-2xl sm:text-3xl font-black text-amber-400/80 -mt-6">:</span>
+
+              {/* Seconds Box */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-18 sm:w-20 sm:h-22 rounded-2xl bg-stone-900/90 border-2 border-amber-500/60 shadow-xl flex items-center justify-center backdrop-blur-md">
+                  <span className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-yellow-400 font-mono tracking-wider">
+                    {String(timeLeft.seconds).padStart(2, '0')}
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest mt-1.5">
+                  सेकंड (Secs)
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

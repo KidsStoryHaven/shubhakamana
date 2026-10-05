@@ -18,7 +18,8 @@ import {
   Globe, 
   ShieldCheck,
   CheckCircle2,
-  HelpCircle
+  HelpCircle,
+  Sun
 } from 'lucide-react';
 
 interface FestivalsPortalProps {
@@ -77,6 +78,49 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
 
       {/* 2. Daily Mantra Sanskrit Shloka Widget (24h daily refresh) */}
       <DailyMantraWidget />
+
+      {/* 🌅 Shubh Prabhat - Daily 100 Suvichar Spotlight Banner */}
+      <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-950/90 via-stone-900 to-yellow-950/80 p-5 sm:p-6 shadow-2xl">
+        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-44 h-44 bg-yellow-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative z-10">
+          <div className="space-y-2 max-w-2xl text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 text-xs font-black border border-amber-500/40 shadow-sm">
+              <Sun className="w-3.5 h-3.5 text-yellow-400 animate-spin" />
+              <span>प्रतिदिन १०० नए विचार • Daily Fresh 100 Thoughts</span>
+            </div>
+
+            <h3 className="text-xl sm:text-2xl font-black text-amber-100 font-serif">
+              🌅 शुभ प्रभात • आज के १०० पावन सुविचार एवं फोटो कार्ड
+            </h3>
+
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              अपनी <strong>बड़ी फ़ोटो</strong> व <strong>नाम</strong> जोड़कर WhatsApp स्टेटस व इमेज कार्ड मुफ़्त बनाएँ। अनलिमिटेड बैकग्राउंड्स, हिंदी, English, मराठी व गुजराती में उपलब्ध!
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-amber-300 font-semibold pt-1">
+              <span className="bg-stone-900/90 px-2.5 py-0.5 rounded-lg border border-stone-800">📸 बड़ी फोटो सपोर्ट</span>
+              <span className="bg-stone-900/90 px-2.5 py-0.5 rounded-lg border border-stone-800">🖼️ अनलिमिटेड बैकग्राउंड</span>
+              <span className="bg-stone-900/90 px-2.5 py-0.5 rounded-lg border border-stone-800">🌐 4 भाषाएँ</span>
+              <span className="bg-stone-900/90 px-2.5 py-0.5 rounded-lg border border-stone-800">⚡ 100% Free HD Download</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (onNavigateToPath) {
+                onNavigateToPath('/shubh-prabhat/');
+              } else {
+                window.location.pathname = '/shubh-prabhat/';
+              }
+            }}
+            className="shrink-0 w-full md:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-amber-500/25 transition cursor-pointer active:scale-95"
+          >
+            <span>आज के १०० सुविचार खोलें</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
 
       {/* 3. Daily Hindu Panchang & Shubh Muhurat Widget */}
       <PanchangWidget />

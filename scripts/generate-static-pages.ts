@@ -372,6 +372,23 @@ function run() {
           </div>
         </article>
       `
+    },
+    {
+      slug: 'shubh-prabhat',
+      title: '🌅 शुभ प्रभात • आज के १०० पावन सुविचार एवं फोटो कार्ड | Shubhakamna.in',
+      description: 'प्रतिदिन स्वतः बदलने वाले १०० दिव्य सुविचार अपनी बड़ी फ़ोटो व नाम के साथ जोड़कर WhatsApp स्टेटस व इमेज कार्ड बनाएँ। हिंदी, अंग्रेजी, मराठी व गुजराती में दैनिक विचार।',
+      h1: '🌅 शुभ प्रभात • आज के १०० पावन सुविचार एवं फोटो कार्ड',
+      body: `
+        <article class="max-w-4xl mx-auto py-8 px-4 text-stone-200 space-y-6">
+          <nav aria-label="Breadcrumb" class="text-xs text-stone-400 mb-4"><a href="/" class="hover:underline">Home</a> &gt; <span class="text-amber-300">शुभ प्रभात</span></nav>
+          <h1 class="text-3xl font-bold text-white font-serif">🌅 शुभ प्रभात • आज के १०० पावन सुविचार</h1>
+          <p class="text-stone-300 leading-relaxed">प्रतिदिन प्रातःकालीन १०० नए पावन सुविचार, सकारात्मक ऊर्जा और अपनी बड़ी फ़ोटो व नाम जोड़कर स्टेटस इमेज बनाने की निःशुल्क सुविधा।</p>
+          <div class="p-6 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-amber-200 space-y-2">
+            <h2 class="text-lg font-bold text-amber-300">दैनिक १०० सुविचार व फ़ोटो कार्ड स्टूडियो</h2>
+            <p class="text-xs text-stone-300">अमृत वचन, आध्यात्मिक ज्ञान, प्रेरणादायक विचार, कर्म दर्शन और पारिवारिक संस्कारों पर आधारित दैनिक विचार हिंदी, अंग्रेजी, मराठी व गुजराती में उपलब्ध हैं।</p>
+          </div>
+        </article>
+      `
     }
   ];
 
@@ -401,6 +418,7 @@ function run() {
   const today = new Date().toISOString().slice(0, 10);
   const sitemapUrls = [
     `  <url>\n    <loc>${SITE_ORIGIN}/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`,
+    `  <url>\n    <loc>${SITE_ORIGIN}/shubh-prabhat/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>`,
     `  <url>\n    <loc>${SITE_ORIGIN}/about/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
     `  <url>\n    <loc>${SITE_ORIGIN}/privacy-policy/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
     `  <url>\n    <loc>${SITE_ORIGIN}/contact/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
@@ -471,8 +489,13 @@ function run() {
       deitySlides: FESTIVAL_DEITY_GALLERIES,
       wishCategories: WISH_CATEGORIES
     };
-    fs.writeFileSync(publicSiteDataPath, JSON.stringify(siteDataContent, null, 2), 'utf-8');
+  } else {
+    // Keep festivals & categories in sync with latest code updates
+    siteDataContent.festivals = FESTIVALS;
+    siteDataContent.categories = FESTIVAL_CATEGORIES;
+    siteDataContent.updatedAt = new Date().toISOString();
   }
+  fs.writeFileSync(publicSiteDataPath, JSON.stringify(siteDataContent, null, 2), 'utf-8');
 
   // Ensure dist has a copy too
   fs.writeFileSync(path.join(distDir, 'site-data.json'), JSON.stringify(siteDataContent, null, 2), 'utf-8');

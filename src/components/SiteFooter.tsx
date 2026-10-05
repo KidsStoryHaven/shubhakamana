@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, ShieldCheck, Info, FileText, Heart, Globe } from 'lucide-react';
+import { Mail, ShieldCheck, Info, FileText, Heart, Globe, Sun } from 'lucide-react';
 import { getAllCategories } from '../data/wishesData';
 
 interface SiteFooterProps {
@@ -51,6 +51,19 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({ onNavigateToPath }) => {
               Company & Legal
             </h3>
             <ul className="space-y-2 text-xs sm:text-sm">
+              <li>
+                <a
+                  href="/shubh-prabhat/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigateToPath('/shubh-prabhat/');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 font-bold transition-colors flex items-center gap-1.5"
+                >
+                  <Sun className="w-3.5 h-3.5 text-yellow-400" />
+                  <span>🌅 शुभ प्रभात (Daily 100 Suvichar)</span>
+                </a>
+              </li>
               <li>
                 <a
                   href="/about/"
