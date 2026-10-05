@@ -68,6 +68,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
   const [customBadge1, setCustomBadge1] = useState<string>('');
   const [customBadge2, setCustomBadge2] = useState<string>('');
   const [fontScale, setFontScale] = useState<number>(1.5);
+  const [photoSizeOption, setPhotoSizeOption] = useState<number>(1.25);
 
   const activeStyle = useMemo(() => getSuvicharStyleById(selectedStyleId), [selectedStyleId]);
 
@@ -185,7 +186,8 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
         headlineOverride: headlineWord,
         customBadge1: customBadge1.trim() || undefined,
         customBadge2: customBadge2.trim() || undefined,
-        fontSizeMultiplier: fontScale
+        fontSizeMultiplier: fontScale,
+        photoScale: photoSizeOption
       });
 
       // 1. Download file
@@ -238,7 +240,8 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
             headlineOverride: headlineWord,
             customBadge1: customBadge1.trim() || undefined,
             customBadge2: customBadge2.trim() || undefined,
-            fontSizeMultiplier: fontScale
+            fontSizeMultiplier: fontScale,
+            photoScale: photoSizeOption
           });
 
           const file = new File([blob], fileName, { type: 'image/jpeg' });
@@ -599,9 +602,19 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                         <span>✨ {b1} • {b2} ✨</span>
                       </div>
 
-                      {/* 👑 Large Round User Photo */}
+                      {/* 👑 Dynamic Round User Photo */}
                       {senderPhoto ? (
-                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl border-2 border-yellow-300 ring-4 ring-amber-500/50">
+                        <div 
+                          className={`relative rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl border-2 border-yellow-300 ring-4 ring-amber-500/50 transition-all duration-300 ${
+                            photoSizeOption <= 0.85
+                              ? 'w-16 h-16 sm:w-18 sm:h-18'
+                              : photoSizeOption <= 1.0
+                                ? 'w-20 h-20 sm:w-22 sm:h-22'
+                                : photoSizeOption <= 1.3
+                                  ? 'w-24 h-24 sm:w-28 sm:h-28'
+                                  : 'w-28 h-28 sm:w-34 sm:h-34'
+                          }`}
+                        >
                           <img
                             src={senderPhoto}
                             alt={senderName}
@@ -685,40 +698,78 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 </label>
 
                 {senderPhoto ? (
-                  <div className="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-yellow-200 shadow-md shrink-0">
-                        <img src={senderPhoto} alt="User" className="w-full h-full rounded-full object-cover" />
-                        <span className="absolute -bottom-0.5 -right-0.5 bg-amber-500 text-stone-950 text-[9px] font-black w-4 h-4 rounded-full border border-yellow-100 flex items-center justify-center">
-                          ★
-                        </span>
+                  <div className="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/40 space-y-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-yellow-200 shadow-md shrink-0">
+                          <img src={senderPhoto} alt="User" className="w-full h-full rounded-full object-cover" />
+                          <span className="absolute -bottom-0.5 -right-0.5 bg-amber-500 text-stone-950 text-[9px] font-black w-4 h-4 rounded-full border border-yellow-100 flex items-center justify-center">
+                            ★
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-amber-300">
+                            ✅ आपकी फ़ोटो कार्ड पर सेट है!
+                          </p>
+                          <p className="text-[10px] text-stone-300">
+                            डाउनलोड व शेयर करने पर कार्ड पर यह स्पष्ट दिखेगी
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-black text-amber-300">
-                          ✅ आपकी बड़ी फ़ोटो कार्ड पर सेट है!
-                        </p>
-                        <p className="text-[10px] text-stone-300">
-                          डाउनलोड व शेयर करने पर कार्ड पर यह बड़ी व स्पष्ट दिखेगी
-                        </p>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-bold transition cursor-pointer"
+                        >
+                          बदलें
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSenderPhoto(null);
+                            localStorage.removeItem('shubhakamna_my_photo');
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-red-900/60 text-stone-300 hover:text-red-300 text-xs font-bold transition cursor-pointer"
+                        >
+                          हटाएँ
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-bold transition cursor-pointer"
-                      >
-                        बदलें
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSenderPhoto(null);
-                          localStorage.removeItem('shubhakamna_my_photo');
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-red-900/60 text-stone-300 hover:text-red-300 text-xs font-bold transition cursor-pointer"
-                      >
-                        हटाएँ
-                      </button>
+                    {/* 📐 User Photo Size Controller */}
+                    <div className="pt-2 border-t border-amber-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-amber-300">
+                          फ़ोटो का साइज़ (Photo Size on Card):
+                        </span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 font-bold">
+                          {photoSizeOption === 0.85 && 'छोटा (Small)'}
+                          {photoSizeOption === 1.0 && 'मध्यम (Medium)'}
+                          {photoSizeOption === 1.25 && 'बड़ा (Large - डिफ़ॉल्ट)'}
+                          {photoSizeOption === 1.55 && 'बहुत बड़ा (Extra Large)'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[
+                          { scale: 0.85, label: 'छोटा' },
+                          { scale: 1.0, label: 'मध्यम' },
+                          { scale: 1.25, label: 'बड़ा' },
+                          { scale: 1.55, label: 'बहुत बड़ा' }
+                        ].map((item) => (
+                          <button
+                            key={item.scale}
+                            type="button"
+                            onClick={() => setPhotoSizeOption(item.scale)}
+                            className={`px-2 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border text-center ${
+                              photoSizeOption === item.scale
+                                ? 'bg-amber-500 text-stone-950 border-amber-400 font-black shadow-md'
+                                : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (

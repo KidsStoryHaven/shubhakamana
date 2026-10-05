@@ -1092,6 +1092,40 @@ export const FESTIVAL_DEITY_GALLERIES: Record<string, DivineDeitySlide[]> = {
         auraColor: '#ca8a04'
       })
     }
+  ],
+
+  // ==========================================
+  // 10. DHAMMACHAKRA PRAVARTAN DIN (दीक्षाभूमि, डॉ. आंबेडकर, भगवान बुद्ध)
+  // Google Drive Live Sync Folder: 1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo
+  // ==========================================
+  dhammachakra_pravartan: [
+    {
+      id: 'gdrive_1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX_1',
+      godName: 'बोधिसत्व डॉ. बी.आर. आंबेडकर & भगवान बुद्ध',
+      title: 'धम्मचक्र प्रवर्तन दिवस • ऐतिहासिक दीक्षाभूमि दर्शन #1',
+      tagline: '14 अक्टूबर 1956 • नागपुर की पावन दीक्षाभूमि पर ऐतिहासिक धम्मदीक्षा',
+      badge: '✨ मुख्य दर्शन',
+      mantra: '॥ नमो बुद्धाय • जय भीम ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX'
+    },
+    {
+      id: 'gdrive_1AskvmdECDQzblbMO2QEUiKwqEvev3rnA_2',
+      godName: 'बोधिसत्व डॉ. बी.आर. आंबेडकर & भगवान बुद्ध',
+      title: 'धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #2',
+      tagline: 'प्रज्ञा, शील और करुणा का अमर संदेश',
+      badge: '☸️ सद्धम्म दर्शन',
+      mantra: '॥ बुद्धं शरणं गच्छामि • धम्मं शरणं गच्छामि • संघं शरणं गच्छामि ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1AskvmdECDQzblbMO2QEUiKwqEvev3rnA'
+    },
+    {
+      id: 'gdrive_1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE_3',
+      godName: 'बोधिसत्व डॉ. बी.आर. आंबेडकर & भगवान बुद्ध',
+      title: 'धम्मचक्र प्रवर्तन दिवस • पावन दर्शन #3',
+      tagline: 'आत्मसम्मान, समता और बंधुत्व की अमर ज्योति',
+      badge: '🌸 पावन दर्शन',
+      mantra: '॥ अत्त दीपो भव • भवतु सब्ब मंगलं ॥',
+      imageUrl: 'https://lh3.googleusercontent.com/d/1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE'
+    }
   ]
 };
 

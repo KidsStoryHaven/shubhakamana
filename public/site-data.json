@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "updatedAt": "2026-10-05T09:38:03.713Z",
+  "updatedAt": "2026-10-05T10:40:30.882Z",
   "festivals": [
     {
       "id": "navratri",
@@ -52,7 +52,8 @@
       "dateLabel": "14 अक्टूबर 2026",
       "countdownDays": 9,
       "badge": "☸️ सद्धम्म विजय",
-      "heroImage": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
+      "heroImage": "https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX",
+      "gdriveFolderUrl": "https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo",
       "themeColor": {
         "gradient": "from-blue-950 via-yellow-950 to-stone-950",
         "border": "border-blue-400/40",
@@ -2106,6 +2107,305 @@
         "badge": "☸️ नमो बुद्धाय",
         "mantra": "॥ बुद्धं शरणं गच्छामि • धम्मं शरणं गच्छामि • संघं शरणं गच्छामि ॥",
         "imageUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%20800%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%3CradialGradient%20id%3D%22deityBg%22%20cx%3D%2250%25%22%20cy%3D%2245%25%22%20r%3D%2275%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2378350f%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23451a03%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230a0502%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%20%20%3Cfilter%20id%3D%22deityGlow%22%20x%3D%22-30%25%22%20y%3D%22-30%25%22%20width%3D%22160%25%22%20height%3D%22160%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%2210%22%20result%3D%22coloredBlur%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeMerge%3E%3CfeMergeNode%20in%3D%22coloredBlur%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%0A%20%20%20%20%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22goldBorder%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fef08a%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23fbbf24%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b45309%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%3Crect%20width%3D%221200%22%20height%3D%22800%22%20fill%3D%22url(%23deityBg)%22%2F%3E%0A%0A%20%20%20%20%20%20%3C!--%20Sacred%20Mandala%20Rings%20in%20Background%20--%3E%0A%20%20%20%20%20%20%3Cg%20opacity%3D%220.3%22%20transform%3D%22translate(600%2C%20390)%22%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22280%22%20fill%3D%22none%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22230%22%20fill%3D%22none%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%2210%208%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22170%22%20fill%3D%22none%22%20stroke%3D%22%23fef08a%22%20stroke-width%3D%223%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22120%22%20fill%3D%22none%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%0A%20%20%20%20%20%20%3C!--%20Royal%20Border%20Frame%20--%3E%0A%20%20%20%20%20%20%3Crect%20x%3D%2225%22%20y%3D%2225%22%20width%3D%221150%22%20height%3D%22750%22%20rx%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22url(%23goldBorder)%22%20stroke-width%3D%223%22%20opacity%3D%220.75%22%2F%3E%0A%20%20%20%20%20%20%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%221130%22%20height%3D%22730%22%20rx%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%221%22%20opacity%3D%220.4%22%2F%3E%0A%0A%20%20%20%20%20%20%3C!--%20Top%20Badge%20%2F%20Header%20--%3E%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(600%2C%2095)%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%22-180%22%20y%3D%22-22%22%20width%3D%22360%22%20height%3D%2244%22%20rx%3D%2222%22%20fill%3D%22%23000000%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%222%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%220%22%20y%3D%227%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fde047%22%20font-family%3D%22serif%22%20font-size%3D%2220%22%20font-weight%3D%22bold%22%3E%E2%9C%A8%20%E0%A4%AA%E0%A4%BE%E0%A4%B5%E0%A4%A8%20%E0%A4%B8%E0%A4%BE%E0%A4%95%E0%A5%8D%E0%A4%B7%E0%A4%BE%E0%A4%A4%20%E0%A4%A6%E0%A4%BF%E0%A4%B5%E0%A5%8D%E0%A4%AF%20%E0%A4%A6%E0%A4%B0%E0%A5%8D%E0%A4%B6%E0%A4%A8%20%E2%9C%A8%3C%2Ftext%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%0A%20%20%20%20%20%20%3C!--%20God%20Name%20Title%20--%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22600%22%20y%3D%22180%22%20text-anchor%3D%22middle%22%20fill%3D%22%23ffffff%22%20font-family%3D%22serif%22%20font-size%3D%2248%22%20font-weight%3D%22900%22%20filter%3D%22url(%23deityGlow)%22%3E%0A%20%20%20%20%20%20%20%20%E0%A4%AD%E0%A4%97%E0%A4%B5%E0%A4%BE%E0%A4%A8%20%E0%A4%AC%E0%A5%81%E0%A4%A6%E0%A5%8D%E0%A4%A7%20%E0%A4%B8%E0%A4%82%E0%A4%AC%E0%A5%8B%E0%A4%A7%E0%A4%BF%20%E0%A4%A6%E0%A4%B0%E0%A5%8D%E0%A4%B6%E0%A4%A8%0A%20%20%20%20%20%20%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22600%22%20y%3D%22225%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fef08a%22%20font-family%3D%22sans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22600%22%3E%0A%20%20%20%20%20%20%20%20%E0%A4%AC%E0%A5%8B%E0%A4%A7%E0%A4%97%E0%A4%AF%E0%A4%BE%20%E0%A4%AE%E0%A5%87%E0%A4%82%20%E0%A4%AC%E0%A5%8B%E0%A4%A7%E0%A4%BF%E0%A4%B5%E0%A5%83%E0%A4%95%E0%A5%8D%E0%A4%B7%20%E0%A4%A4%E0%A4%B2%E0%A5%87%20%E0%A4%9C%E0%A5%8D%E0%A4%9E%E0%A4%BE%E0%A4%A8%20%E0%A4%AA%E0%A5%8D%E0%A4%B0%E0%A4%BE%E0%A4%AA%E0%A5%8D%E0%A4%A4%20%E0%A4%95%E0%A4%B0%E0%A4%A8%E0%A5%87%20%E0%A4%B5%E0%A4%BE%E0%A4%B2%E0%A5%87%20%E0%A4%AE%E0%A4%B9%E0%A4%BE%E0%A4%AE%E0%A4%BE%E0%A4%A8%E0%A4%B5%0A%20%20%20%20%20%20%3C%2Ftext%3E%0A%0A%20%20%20%20%20%20%3C!--%20Central%20Sacred%20Deity%20Emblem%20%2F%20Divine%20Radiance%20Aura%20--%3E%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(600%2C%20410)%22%20filter%3D%22url(%23deityGlow)%22%3E%0A%20%20%20%20%20%20%20%20%3C!--%20Radiant%20Halo%20(Tejomay%20Aura)%20--%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22130%22%20fill%3D%22%23ca8a04%22%20opacity%3D%220.25%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%22105%22%20fill%3D%22%23000000%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%225%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%2295%22%20fill%3D%22none%22%20stroke%3D%22%23fef08a%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%226%206%22%2F%3E%0A%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20%20%3C!--%20Sacred%20Icon%20of%20the%20Deity%20--%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%220%22%20y%3D%2238%22%20text-anchor%3D%22middle%22%20font-size%3D%22105%22%20select-none%3D%22true%22%3E%E2%98%B8%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%0A%20%20%20%20%20%20%3C!--%20Bottom%20God%20Name%20Banner%20--%3E%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(600%2C%20595)%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%22-240%22%20y%3D%22-25%22%20width%3D%22480%22%20height%3D%2250%22%20rx%3D%2225%22%20fill%3D%22%23000000%22%20stroke%3D%22url(%23goldBorder)%22%20stroke-width%3D%223%22%20opacity%3D%220.9%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%220%22%20y%3D%228%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fef08a%22%20font-family%3D%22serif%22%20font-size%3D%2228%22%20font-weight%3D%22bold%22%3E%0A%20%20%20%20%20%20%20%20%20%20%E0%A5%A5%20%E0%A4%A4%E0%A4%A5%E0%A4%BE%E0%A4%97%E0%A4%A4%20%E0%A4%97%E0%A5%8C%E0%A4%A4%E0%A4%AE%20%E0%A4%AC%E0%A5%81%E0%A4%A6%E0%A5%8D%E0%A4%A7%20%E0%A5%A5%0A%20%20%20%20%20%20%20%20%3C%2Ftext%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%0A%20%20%20%20%20%20%3C!--%20Sacred%20Mantra%20%2F%20Stuti%20Box%20at%20Bottom%20--%3E%0A%20%20%20%20%20%20%3Crect%20x%3D%22100%22%20y%3D%22660%22%20width%3D%221000%22%20height%3D%2270%22%20rx%3D%2216%22%20fill%3D%22%23050505%22%20stroke%3D%22%23fde047%22%20stroke-width%3D%221.5%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22600%22%20y%3D%22705%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fef08a%22%20font-family%3D%22serif%22%20font-size%3D%2221%22%20font-weight%3D%22bold%22%3E%0A%20%20%20%20%20%20%20%20%E0%A5%A5%20%E0%A4%85%E0%A4%A4%E0%A5%8D%E0%A4%A4%20%E0%A4%A6%E0%A5%80%E0%A4%AA%E0%A5%8B%20%E0%A4%AD%E0%A4%B5%20(%E0%A4%85%E0%A4%AA%E0%A4%A8%E0%A4%BE%20%E0%A4%A6%E0%A5%80%E0%A4%AA%E0%A4%95%20%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%AF%E0%A4%82%20%E0%A4%AC%E0%A4%A8%E0%A5%8B)%20%E2%80%A2%20%E0%A4%AD%E0%A4%B5%E0%A4%A4%E0%A5%81%20%E0%A4%B8%E0%A4%AC%E0%A5%8D%E0%A4%AC%20%E0%A4%AE%E0%A4%82%E0%A4%97%E0%A4%B2%E0%A4%82%20%E0%A5%A5%0A%20%20%20%20%20%20%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E"
+      }
+    ],
+    "dhammachakra_pravartan": [
+      {
+        "id": "gdrive_1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX_1",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #1",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "✨ मुख्य दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX"
+      },
+      {
+        "id": "gdrive_1AskvmdECDQzblbMO2QEUiKwqEvev3rnA_2",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #2",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1AskvmdECDQzblbMO2QEUiKwqEvev3rnA"
+      },
+      {
+        "id": "gdrive_1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE_3",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #3",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE"
+      },
+      {
+        "id": "gdrive_flip-list-last-modified-header_4",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #4",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/flip-list-last-modified-header"
+      },
+      {
+        "id": "gdrive_entry-1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX_5",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #5",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/entry-1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX"
+      },
+      {
+        "id": "gdrive_entry-1AskvmdECDQzblbMO2QEUiKwqEvev3rnA_6",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #6",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/entry-1AskvmdECDQzblbMO2QEUiKwqEvev3rnA"
+      },
+      {
+        "id": "gdrive_entry-1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE_7",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #7",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/entry-1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE"
+      },
+      {
+        "id": "gdrive_AA2YrTsvNqqtS27bFj62rqO38zdQBMgP8g_8",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #8",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AA2YrTsvNqqtS27bFj62rqO38zdQBMgP8g"
+      },
+      {
+        "id": "gdrive_AA2YrTtmjaleZ4d_o1nhaBsvbGkiz9S8Fw_9",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #9",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AA2YrTtmjaleZ4d_o1nhaBsvbGkiz9S8Fw"
+      },
+      {
+        "id": "gdrive_AIzaSyD_InbmSFufIEps5UAt2NmB_3LvBH3Sz_8_10",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #10",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AIzaSyD_InbmSFufIEps5UAt2NmB_3LvBH3Sz_8"
+      },
+      {
+        "id": "gdrive_AIzaSyB-cPcIPE_o4mYfAz0ebn_mMRcfxq5PXT4_11",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #11",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AIzaSyB-cPcIPE_o4mYfAz0ebn_mMRcfxq5PXT4"
+      },
+      {
+        "id": "gdrive_AIzaSyDKPo3lyh1TvNSku7gw7jDDlYr1zo7tHQs_12",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #12",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AIzaSyDKPo3lyh1TvNSku7gw7jDDlYr1zo7tHQs"
+      },
+      {
+        "id": "gdrive_PowertrainDoclistAdjacent_off_13",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #13",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/PowertrainDoclistAdjacent_off"
+      },
+      {
+        "id": "gdrive_PowertrainDoclistAdjacentM1_off_14",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #14",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/PowertrainDoclistAdjacentM1_off"
+      },
+      {
+        "id": "gdrive_PowertrainDoclistAdjacentM2_off_15",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #15",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/PowertrainDoclistAdjacentM2_off"
+      },
+      {
+        "id": "gdrive_PtDoclistSwappableExecutor_off_16",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #16",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/PtDoclistSwappableExecutor_off"
+      },
+      {
+        "id": "gdrive_UnmaskedResourceErrorsCapture_17",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #17",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/UnmaskedResourceErrorsCapture"
+      },
+      {
+        "id": "gdrive_CAMSFBUXmrS-NbK-BOSJBacGg-KDAB0H_18",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #18",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/CAMSFBUXmrS-NbK-BOSJBacGg-KDAB0H"
+      },
+      {
+        "id": "gdrive_AIzaSyAWGrfCCr7albM3lmCc937gx4uIphbpeKQ_19",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #19",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AIzaSyAWGrfCCr7albM3lmCc937gx4uIphbpeKQ"
+      },
+      {
+        "id": "gdrive_AIzaSyC1qbk75NzWBvSaDh6KnsjjA9pIrP4lYIE_20",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #20",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AIzaSyC1qbk75NzWBvSaDh6KnsjjA9pIrP4lYIE"
+      },
+      {
+        "id": "gdrive_mipmoemfdkcjnciiahakfhgleehhhmlf_21",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #21",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/mipmoemfdkcjnciiahakfhgleehhhmlf"
+      },
+      {
+        "id": "gdrive_6Lc4F8gUAAAAAOHkRsIXXBopZ5UuiDcDkL0DKrQK_22",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #22",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/6Lc4F8gUAAAAAOHkRsIXXBopZ5UuiDcDkL0DKrQK"
+      },
+      {
+        "id": "gdrive_RQsiRZmWr0suK1NZr2K0W7ervatJ_23",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #23",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/RQsiRZmWr0suK1NZr2K0W7ervatJ"
+      },
+      {
+        "id": "gdrive_dn2eBWeEf0suK1NZr2K0SuwzdMFo_24",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #24",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/dn2eBWeEf0suK1NZr2K0SuwzdMFo"
+      },
+      {
+        "id": "gdrive_Wk947wVTF0suK1NZr2K0SExP43hN_25",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #25",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/Wk947wVTF0suK1NZr2K0SExP43hN"
+      },
+      {
+        "id": "gdrive_6PSdkFYUx0suK1NZr2K0SmPPgaGe_26",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #26",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/6PSdkFYUx0suK1NZr2K0SmPPgaGe"
+      },
+      {
+        "id": "gdrive_EbMHvv4He0suK1NZr2K0RPEdyDqb_27",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #27",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/EbMHvv4He0suK1NZr2K0RPEdyDqb"
+      },
+      {
+        "id": "gdrive_sUy6oSGdZ0suK1NZr2K0YHRkZ8ZC_28",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #28",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/sUy6oSGdZ0suK1NZr2K0YHRkZ8ZC"
+      },
+      {
+        "id": "gdrive_hAi6ytsWq0suK1NZr2K0RuQ6URqY_29",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #29",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/hAi6ytsWq0suK1NZr2K0RuQ6URqY"
+      },
+      {
+        "id": "gdrive_gU249iFkc0suK1NZr2K0PDkPf28y_30",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #30",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/gU249iFkc0suK1NZr2K0PDkPf28y"
+      },
+      {
+        "id": "gdrive_lmjegmlicamnimmfhcmpkclmigmmcbeh_31",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #31",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/lmjegmlicamnimmfhcmpkclmigmmcbeh"
+      },
+      {
+        "id": "gdrive_ANONYMOUS_17612595759507348808_32",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #32",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/ANONYMOUS_17612595759507348808"
+      },
+      {
+        "id": "gdrive_AIzaSyCIGHYEdm91p31HKyJSoU4at7IqhCViXuA_33",
+        "godName": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026",
+        "title": "धम्मचक्र प्रवर्तन दिवस • 14 अक्टूबर 2026 • पावन दर्शन #33",
+        "tagline": "भक्तों की सभी मनोकामना पूर्ण करने वाले पावन स्वरूप",
+        "badge": "☸️ पावन दर्शन",
+        "mantra": "॥ नमो बुद्धाय जय भीम ॥",
+        "imageUrl": "https://lh3.googleusercontent.com/d/AIzaSyCIGHYEdm91p31HKyJSoU4at7IqhCViXuA"
       }
     ]
   },

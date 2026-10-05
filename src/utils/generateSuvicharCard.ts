@@ -27,13 +27,30 @@ export interface SuvicharCardOptions {
   customBadge1?: string;
   customBadge2?: string;
   fontSizeMultiplier?: number; // Default 1.5x font size multiplier
+  photoScale?: number; // User custom photo size multiplier (0.8, 1.0, 1.25, 1.5, 1.8)
 }
 
 function loadImg(src: string): Promise<HTMLImageElement | null> {
-  if (!src) return Promise.resolve(null);
+  if (!src || typeof src !== 'string') return Promise.resolve(null);
+  const cleanSrc = src.trim();
+  if (!cleanSrc) return Promise.resolve(null);
+
+  // If it's a data URL (base64) or blob URL, load directly (no crossOrigin needed)
+  if (cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = (e) => {
+        console.warn('Failed to load inline data photo:', e);
+        resolve(null);
+      };
+      img.src = cleanSrc;
+    });
+  }
+
   return new Promise((resolve) => {
-    const directSrc = resolveDirectImageUrl(src);
-    const fallbacks = getGoogleDriveFallbackUrls(src);
+    const directSrc = resolveDirectImageUrl(cleanSrc);
+    const fallbacks = getGoogleDriveFallbackUrls(cleanSrc);
     let fallbackIdx = 0;
 
     const img = new Image();
@@ -43,7 +60,11 @@ function loadImg(src: string): Promise<HTMLImageElement | null> {
       if (fallbackIdx < fallbacks.length) {
         img.src = fallbacks[fallbackIdx++];
       } else {
-        resolve(null);
+        // Fallback: try direct image without crossOrigin
+        const plainImg = new Image();
+        plainImg.onload = () => resolve(plainImg);
+        plainImg.onerror = () => resolve(null);
+        plainImg.src = cleanSrc;
       }
     };
 
@@ -276,7 +297,8 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     headlineOverride,
     customBadge1,
     customBadge2,
-    fontSizeMultiplier = 1.5
+    fontSizeMultiplier = 1.5,
+    photoScale = 1.25
   } = options;
 
   const style = getSuvicharStyleById(styleId);
@@ -438,8 +460,9 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   const headlineText = headlineOverride ? headlineOverride.trim() : '';
 
   // 5. SAFE BOTTOM AREA CALCULATION (User photo, sender plate, short link)
-  const hasUserPhoto = !!(userImg && userImg.complete && userImg.width > 0);
-  const photoR = hasUserPhoto ? (isStory ? 130 : 90) : 0;
+  const hasUserPhoto = !!(userImg && ((userImg.width > 0) || (userImg.naturalWidth > 0) || userImg.complete));
+  const basePhotoR = isStory ? 110 : 78;
+  const photoR = hasUserPhoto ? Math.round(basePhotoR * photoScale) : 0;
   const plateH = isStory ? 76 : 58;
   const plateW = isStory ? 660 : 540;
   const plateX = (width - plateW) / 2;
@@ -624,9 +647,11 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
     ctx.clip();
 
-    const uScale = Math.max((photoR * 2) / userImg.width, (photoR * 2) / userImg.height);
-    const uW = userImg.width * uScale;
-    const uH = userImg.height * uScale;
+    const naturalW = userImg.naturalWidth || userImg.width || 1;
+    const naturalH = userImg.naturalHeight || userImg.height || 1;
+    const uScale = Math.max((photoR * 2) / naturalW, (photoR * 2) / naturalH);
+    const uW = naturalW * uScale;
+    const uH = naturalH * uScale;
     const uX = photoX - uW / 2;
     const uY = photoY - uH / 2;
     ctx.drawImage(userImg, uX, uY, uW, uH);

@@ -18,8 +18,8 @@ import {
   getDefaultBackgroundForCategory 
 } from '../data/cardBackgroundsData';
 import { DivineDeitySlide } from '../data/divineGodsData';
-import { getStoredFestivals, getStoredDeitySlides } from '../data/festivalStore';
-import { resolveDirectImageUrl, resolveDirectAudioUrl } from '../utils/googleDriveHelper';
+import { getStoredFestivals, getStoredDeitySlides, saveStoredDeitySlides } from '../data/festivalStore';
+import { resolveDirectImageUrl, resolveDirectAudioUrl, fetchPhotosFromGoogleDriveFolder } from '../utils/googleDriveHelper';
 import { AdBanner } from './AdBanner';
 import { YouTubeStatsBar } from './YouTubeStatsBar';
 import { awardUserPoints } from '../data/userStore';
@@ -231,27 +231,18 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     const resolvedHero = resolveDirectImageUrl(fest.heroImage);
 
     if (rawSlides && rawSlides.length > 0) {
-      // Map stored slides with resolved image URLs
-      const mapped = rawSlides.map(s => ({
-        ...s,
-        imageUrl: resolveDirectImageUrl(s.imageUrl)
-      }));
+      const validSlides = rawSlides
+        .filter(s => s && s.imageUrl && typeof s.imageUrl === 'string' && s.imageUrl.trim().length > 0)
+        .map(s => ({
+          ...s,
+          imageUrl: resolveDirectImageUrl(s.imageUrl)
+        }));
 
-      if (resolvedHero && mapped[0]?.imageUrl !== resolvedHero) {
-        const customSlide: DivineDeitySlide = {
-          id: `${fest.id}-hero-main`,
-          godName: fest.nameHi,
-          title: fest.greetingTitle || fest.nameHi,
-          tagline: fest.taglineHi || 'पावन ईश्वरीय दर्शन',
-          badge: fest.badge || '✨ पावन दर्शन',
-          mantra: fest.mantraOrShloka || '॥ ॐ श्रीं ह्रीं क्लीं ॥',
-          imageUrl: resolvedHero
-        };
-        const others = mapped.filter(s => s.imageUrl !== resolvedHero);
-        return [customSlide, ...others];
+      if (validSlides.length > 0) {
+        return validSlides;
       }
-      return mapped;
     }
+
     if (resolvedHero) {
       return [
         {
@@ -269,6 +260,39 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   };
 
   const [deitySlides, setDeitySlides] = useState<DivineDeitySlide[]>(() => getResolvedDeitySlides(festival));
+
+  // 🔄 Automatic Google Drive Folder Live-Sync (Fetches latest photos whenever folder is updated)
+  useEffect(() => {
+    const festGdriveUrl = festival.gdriveFolderUrl || (festival.id === 'dhammachakra_pravartan' ? 'https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo' : undefined);
+    
+    if (festGdriveUrl) {
+      let isMounted = true;
+      fetchPhotosFromGoogleDriveFolder(festGdriveUrl, festival.nameHi)
+        .then(res => {
+          if (isMounted && res.success && res.photos.length > 0) {
+            const driveSlides: DivineDeitySlide[] = res.photos.map((p, idx) => ({
+              id: p.id,
+              godName: festival.nameHi,
+              title: p.title || `${festival.nameHi} • पावन दर्शन #${idx + 1}`,
+              tagline: p.tagline || festival.taglineHi || 'पावन दर्शन',
+              badge: idx === 0 ? '✨ मुख्य दर्शन' : '☸️ पावन दर्शन',
+              mantra: festival.mantraOrShloka || '॥ नमो बुद्धाय जय भीम ॥',
+              imageUrl: p.imageUrl
+            }));
+            
+            setDeitySlides(driveSlides);
+            saveStoredDeitySlides(festival.id, driveSlides);
+          }
+        })
+        .catch(err => {
+          console.warn('Auto GDrive live sync error:', err);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [festival.id, festival.gdriveFolderUrl, festival.nameHi, festival.taglineHi, festival.mantraOrShloka]);
 
   useEffect(() => {
     const handleDataChanged = () => {

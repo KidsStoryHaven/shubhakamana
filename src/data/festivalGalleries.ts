@@ -85,8 +85,9 @@ const AUTHENTIC_FESTIVAL_PHOTOS: Record<string, string[]> = {
     'https://images.unsplash.com/photo-1532375810709-75b1da00537c?auto=format&fit=crop&w=1200&q=80', // Ashoka Chakra
   ],
   dhammachakra_pravartan: [
-    'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80', // Lord Buddha statue
-    'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80', // Constitution
+    'https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX',
+    'https://lh3.googleusercontent.com/d/1AskvmdECDQzblbMO2QEUiKwqEvev3rnA',
+    'https://lh3.googleusercontent.com/d/1iZrCagmt2UBKWhlINizQeY2mlHiCVKyE',
   ],
   buddha_purnima: [
     'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80', // Lord Buddha golden statue in meditation

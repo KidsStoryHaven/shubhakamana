@@ -152,7 +152,8 @@ export const FESTIVALS: Festival[] = [
     dateLabel: '14 अक्टूबर 2026',
     countdownDays: 9,
     badge: '☸️ सद्धम्म विजय',
-    heroImage: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
+    heroImage: 'https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX',
+    gdriveFolderUrl: 'https://drive.google.com/drive/folders/1gU8In8_FP6pbh7HTCvtr8tM8mAIqbZpo',
     themeColor: {
       gradient: 'from-blue-950 via-yellow-950 to-stone-950',
       border: 'border-blue-400/40',
