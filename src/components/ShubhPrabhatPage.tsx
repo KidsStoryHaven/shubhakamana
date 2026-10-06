@@ -85,8 +85,30 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
   const [isSharing, setIsSharing] = useState(false);
   const [downloadSuccessNotice, setDownloadSuccessNotice] = useState<boolean>(false);
 
+  // Collapsible Font & Background Customizer Options (Minimized by default)
+  const [showCustomizerOptions, setShowCustomizerOptions] = useState<boolean>(false);
+
   // Live Day & Time String (auto-updates every minute)
   const [currentDayTime, setCurrentDayTime] = useState(() => getDayAndTimeFormatted(selectedLang));
+
+  // Parse Shared Link URL Parameters on Load
+  const [sharedSenderName, setSharedSenderName] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const name = urlParams.get('n') || urlParams.get('sender') || urlParams.get('from');
+      const wishNum = urlParams.get('w');
+      if (name) {
+        setSharedSenderName(name.trim());
+        setSenderName(name.trim());
+      }
+      if (wishNum && !isNaN(Number(wishNum))) {
+        const idx = Math.max(0, Math.min(dailySuvichars.length - 1, Number(wishNum) - 1));
+        setSelectedSuvichar(dailySuvichars[idx]);
+      }
+    } catch {}
+  }, [dailySuvichars]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -354,6 +376,18 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
 
       <div className="max-w-5xl mx-auto px-4 pt-6 pb-12 space-y-8">
         
+        {/* Shared Recipient Greeting Banner */}
+        {sharedSenderName && (
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 border-2 border-amber-400 text-center space-y-1 shadow-xl animate-pulse my-2">
+            <p className="text-xs sm:text-sm font-black text-amber-300">
+              🌅 {sharedSenderName} ने आपके लिए आज का सुंदर शुभ प्रभात सुविचार कार्ड भेजा है! ✨
+            </p>
+            <p className="text-[11px] text-stone-200 font-medium">
+              नीचे बना हुआ कार्ड देखें और 1-क्लिक में अपना नाम लिखकर जवाब भेजें ➔
+            </p>
+          </div>
+        )}
+
         {/* Page Hero Header */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-950/80 via-yellow-900/60 to-amber-950/80 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-extrabold shadow-lg">
@@ -815,8 +849,27 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 )}
               </div>
 
-              {/* 🎨 3. 8 SPECIAL SUVICHAR CARD & FONT STYLES (MATCHING USER REFERENCE IMAGE) */}
-              <div className="space-y-2 p-3.5 rounded-2xl bg-black/60 border border-amber-500/40">
+              {/* 🎨 Collapsible Accordion Toggle for Extra Font Styles & Background Options (Minimized by default for 1-second ultra-fast loading) */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomizerOptions(!showCustomizerOptions)}
+                  className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/80 via-stone-900 to-amber-950/80 hover:from-amber-900/90 hover:to-amber-900/90 border-2 border-amber-500/50 text-amber-300 font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer shadow-lg active:scale-98"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>🎨 फ़ॉन्ट, बैकग्राउंड व डिज़ाइन्स बदलें (८ स्पेशल प्रभात स्टाइल)</span>
+                  </span>
+                  <span className="text-[11px] bg-amber-500 text-stone-950 px-2.5 py-0.5 rounded-full font-black shadow">
+                    {showCustomizerOptions ? '▲ छिपाएँ' : '▼ खोलें'}
+                  </span>
+                </button>
+              </div>
+
+              {showCustomizerOptions && (
+                <div className="space-y-4 pt-1 animate-fadeIn">
+                  {/* 🎨 3. 8 SPECIAL SUVICHAR CARD & FONT STYLES (MATCHING USER REFERENCE IMAGE) */}
+                  <div className="space-y-2 p-3.5 rounded-2xl bg-black/60 border border-amber-500/40">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-400" />
@@ -1142,6 +1195,8 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   })}
                 </div>
               </div>
+            </div>
+          )}
 
               {/* ✨ 3D WhatsApp & Social Media Embed Preview Card (Placed Above Action Buttons) */}
               <ThreeDSharePreviewCard
@@ -1154,64 +1209,48 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 onShareWhatsApp={() => handleWhatsAppShare()}
                 onCopyLink={() => handleCopyLink(selectedSuvichar.id)}
                 isCopied={copiedId === selectedSuvichar.id}
+                showButtons={false}
               />
 
-              {/* 5. Main Action Buttons: Download HD Card & Direct WhatsApp Share */}
-              <div className="pt-2 space-y-2.5">
+              {/* 5. Main Clean 2 Action Buttons: 1. WhatsApp & Social Share with Image + Magic Link, 2. HD Card Download */}
+              <div className="pt-2 space-y-3">
+                {/* 1. Share on WhatsApp / Social with Image & Magic Link Message */}
                 <button
-                  onClick={handleDownloadCard}
-                  disabled={isDownloading}
-                  className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-amber-500/30 transition cursor-pointer disabled:opacity-50"
+                  onClick={() => handleWhatsAppShare()}
+                  disabled={isSharing}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 hover:from-emerald-500 hover:to-green-400 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-green-900/40 transform active:scale-98 transition cursor-pointer disabled:opacity-50 border border-green-400/40"
                 >
-                  {isDownloading ? (
+                  {isSharing ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>HD सुविचार फ़ोटो तैयार हो रही है...</span>
+                      <Loader2 className="w-5 h-5 animate-spin text-white" />
+                      <span>जादुई स्टेटस व लिंक शेयर हो रहा है...</span>
                     </>
                   ) : (
                     <>
-                      <Download className="w-5 h-5" />
-                      <span>HD सुविचार फ़ोटो कार्ड डाउनलोड करें (Free)</span>
+                      <Share2 className="w-5 h-5 text-white animate-bounce" />
+                      <span>🚀 WhatsApp व सोशल मीडिया पर शेयर करें (फ़ोटो व जादुई लिंक)</span>
                     </>
                   )}
                 </button>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleWhatsAppShare()}
-                    disabled={isSharing}
-                    className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-md disabled:opacity-50"
-                  >
-                    {isSharing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>शेयर हो रहा है...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Share2 className="w-4 h-4" />
-                        <span>WhatsApp पर भेजें (शॉर्ट लिंक सहित)</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => handleCopyLink(selectedSuvichar.id)}
-                    className="py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer"
-                  >
-                    {copiedId === selectedSuvichar.id ? (
-                      <>
-                        <Check className="w-4 h-4 text-emerald-400" />
-                        <span className="text-emerald-400">लिंक कॉपी हुआ!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span>पेज का शॉर्ट लिंक कॉपी करें</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                {/* 2. Download HD Card Image */}
+                <button
+                  onClick={handleDownloadCard}
+                  disabled={isDownloading}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/30 transition cursor-pointer disabled:opacity-50 border border-yellow-200"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin text-stone-950" />
+                      <span>HD सुविचार फ़ोटो कार्ड बन रहा है...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5 text-stone-950" />
+                      <span>🖼️ HD सुविचार फ़ोटो कार्ड डाउनलोड करें (Free)</span>
+                    </>
+                  )}
+                </button>
               </div>
 
             </div>

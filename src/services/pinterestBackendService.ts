@@ -356,75 +356,81 @@ export async function publishPinToPinterestApi(
  */
 export async function processNextScheduledPin(): Promise<PinterestScheduleState> {
   const state = globalScheduleState;
-  if (!state.isActive || !state.config.accessToken || !state.config.boardId) {
-    state.isActive = false;
+  try {
+    if (!state.isActive || !state.config.accessToken || !state.config.boardId) {
+      state.isActive = false;
+      saveScheduleState();
+      return state;
+    }
+
+    const items = getDaily100Suvichar();
+    if (state.currentIndex >= items.length) {
+      state.currentIndex = 0; // Loop over back to beginning or completed
+    }
+
+    const index = state.currentIndex;
+    const suvichar = items[index];
+
+    const payload = preparePinPayload(suvichar, index, state.config);
+
+    // Update log to publishing
+    let logItem = state.logs.find(l => l.id === suvichar.id);
+    if (!logItem) {
+      logItem = {
+        id: suvichar.id,
+        suvicharNumber: suvichar.number,
+        title: payload.title,
+        status: 'publishing',
+        isPromotional15Percent: payload.isPromotional,
+        destinationLink: payload.link
+      };
+      state.logs.push(logItem);
+    } else {
+      logItem.status = 'publishing';
+      logItem.isPromotional15Percent = payload.isPromotional;
+      logItem.destinationLink = payload.link;
+    }
+
+    state.lastRunTime = new Date().toISOString();
+
+    const result = await publishPinToPinterestApi(
+      state.config.accessToken,
+      state.config.boardId,
+      payload.title,
+      payload.description,
+      payload.link,
+      payload.imageBase64
+    );
+
+    state.publishedCount++;
+
+    if (result.success) {
+      logItem.status = 'success';
+      logItem.pinId = result.pinId;
+      logItem.pinLink = result.pinLink;
+      logItem.publishedAt = new Date().toISOString();
+      state.successCount++;
+      if (payload.isPromotional) {
+        state.promotionalCount++;
+      }
+    } else {
+      logItem.status = 'error';
+      logItem.errorMsg = result.error;
+      state.errorCount++;
+    }
+
+    state.currentIndex = (state.currentIndex + 1) % items.length;
+
+    const nextIntervalMs = Math.max(1, state.config.intervalMinutes) * 60 * 1000;
+    state.nextRunTime = new Date(Date.now() + nextIntervalMs).toISOString();
+
+    saveScheduleState();
+    return state;
+  } catch (err: any) {
+    console.error('Error in Pinterest scheduled pin processing:', err);
     saveScheduleState();
     return state;
   }
-
-  const items = getDaily100Suvichar();
-  if (state.currentIndex >= items.length) {
-    state.currentIndex = 0; // Loop over back to beginning or completed
-  }
-
-  const index = state.currentIndex;
-  const suvichar = items[index];
-
-  const payload = preparePinPayload(suvichar, index, state.config);
-
-  // Update log to publishing
-  let logItem = state.logs.find(l => l.id === suvichar.id);
-  if (!logItem) {
-    logItem = {
-      id: suvichar.id,
-      suvicharNumber: suvichar.number,
-      title: payload.title,
-      status: 'publishing',
-      isPromotional15Percent: payload.isPromotional,
-      destinationLink: payload.link
-    };
-    state.logs.push(logItem);
-  } else {
-    logItem.status = 'publishing';
-    logItem.isPromotional15Percent = payload.isPromotional;
-    logItem.destinationLink = payload.link;
-  }
-
-  state.lastRunTime = new Date().toISOString();
-
-  const result = await publishPinToPinterestApi(
-    state.config.accessToken,
-    state.config.boardId,
-    payload.title,
-    payload.description,
-    payload.link,
-    payload.imageBase64
-  );
-
-  state.publishedCount++;
-
-  if (result.success) {
-    logItem.status = 'success';
-    logItem.pinId = result.pinId;
-    logItem.pinLink = result.pinLink;
-    logItem.publishedAt = new Date().toISOString();
-    state.successCount++;
-    if (payload.isPromotional) {
-      state.promotionalCount++;
-    }
-  } else {
-    logItem.status = 'error';
-    logItem.errorMsg = result.error;
-    state.errorCount++;
-  }
-
-  state.currentIndex = (state.currentIndex + 1) % items.length;
-
-  const nextIntervalMs = Math.max(1, state.config.intervalMinutes) * 60 * 1000;
-  state.nextRunTime = new Date(Date.now() + nextIntervalMs).toISOString();
-
-  saveScheduleState();
-  return state;
 }
 
 /**
@@ -486,13 +492,13 @@ export function stopBackendSchedule(): PinterestScheduleState {
   return globalScheduleState;
 }
 
-// Auto load state and start scheduler on server boot if token is configured
+// Auto load state on server boot
 loadScheduleState();
 
-const envToken = process.env.PINTEREST_ACCESS_TOKEN || globalScheduleState.config.accessToken || '4ff1fb45b5fabaabdccdbaed60a5772a77de7188';
+const envToken = process.env.PINTEREST_ACCESS_TOKEN || (globalScheduleState.isActive ? globalScheduleState.config.accessToken : '');
 const envBoard = process.env.PINTEREST_BOARD_ID || globalScheduleState.config.boardId || 'https://pin.it/2deDHysm8';
 
-if (envToken && envBoard) {
+if (envToken && envBoard && globalScheduleState.isActive) {
   startBackendSchedule({
     accessToken: envToken,
     boardId: envBoard,

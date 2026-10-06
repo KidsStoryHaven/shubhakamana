@@ -36,7 +36,7 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
   onShareWhatsApp,
   onCopyLink,
   isCopied,
-  showButtons = true
+  showButtons = false
 }) => {
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);

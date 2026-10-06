@@ -23,6 +23,7 @@ class FestiveAudioEngine {
   private isMuted: boolean = false;
   private currentAudioElement: HTMLAudioElement | null = null;
   private isPlayingBirthdaySong: boolean = false;
+  private isSpeakingAnnouncement: boolean = false;
 
   private initContext() {
     if (!this.ctx && typeof window !== 'undefined') {
@@ -75,6 +76,7 @@ class FestiveAudioEngine {
 
   public stopAll() {
     this.notifySongStatus(false);
+    this.isSpeakingAnnouncement = false;
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
       this.currentAudioElement.currentTime = 0;
@@ -631,6 +633,161 @@ class FestiveAudioEngine {
         break;
       default:
         this.playTempleBell();
+    }
+  }
+
+  /**
+   * T-Series Bhakti Style Sweet Devotional Melody (Harmonium / Tanpura / Shehnai / Chime)
+   */
+  public playBhaktiSangeetMelody(durationSec: number = 18) {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      // Sweet Yaman / Bhairavi Raga Harmonium Chords (Sa - Pa - Ga - Dha)
+      const bhakthiFreqs = [261.63, 329.63, 392.00, 493.88, 523.25]; // C4, E4, G4, B4, C5
+      
+      // Continuous Tanpura Drone for sweet spiritual ambiance
+      const droneOsc = this.ctx.createOscillator();
+      const droneGain = this.ctx.createGain();
+      droneOsc.type = 'sine';
+      droneOsc.frequency.setValueAtTime(130.81, now); // C3 Sub-drone
+      droneGain.gain.setValueAtTime(0.01, now);
+      droneGain.gain.linearRampToValueAtTime(0.07, now + 0.8);
+      droneGain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+      droneOsc.connect(droneGain);
+      droneGain.connect(this.ctx.destination);
+      droneOsc.start(now);
+      droneOsc.stop(now + durationSec + 0.1);
+
+      // Sweet Harmonium & Chime Arpeggio Notes
+      let noteDelay = 0;
+      for (let cycle = 0; cycle < Math.floor(durationSec / 1.8); cycle++) {
+        bhakthiFreqs.forEach((freq, idx) => {
+          if (!this.ctx) return;
+          const noteStart = now + noteDelay;
+          noteDelay += 0.35 + (idx % 2 === 0 ? 0.05 : 0);
+
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle'; // Warm Harmonium Tone
+          osc.frequency.setValueAtTime(freq, noteStart);
+
+          gain.gain.setValueAtTime(0.001, noteStart);
+          gain.gain.linearRampToValueAtTime(0.06, noteStart + 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.55);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(noteStart);
+          osc.stop(noteStart + 0.60);
+        });
+      }
+    } catch {}
+  }
+
+  /**
+   * Personalized Festival Voice Announcement Script:
+   * "महेंद्र ने आपको नवरात्रि की पावन शुभकामना भेजी है..."
+   */
+  public playPersonalizedFestivalWishAnnouncement(
+    senderName: string = 'आपके शुभचिंतक',
+    festivalName: string = 'त्योहार',
+    festivalId: string = '',
+    forceRestart: boolean = false,
+    onComplete?: () => void
+  ) {
+    if (this.isMuted) return;
+
+    // If audio is already playing continuously, do NOT restart unless explicitly forced
+    if (this.isSpeakingAnnouncement && !forceRestart) {
+      return;
+    }
+
+    this.stopAll();
+    this.isSpeakingAnnouncement = true;
+    this.initContext();
+
+    const name = senderName.trim() || 'आपके शुभचिंतक';
+    const fest = festivalName.trim() || 'पावन पर्व';
+
+    // Pure clear voice announcement (Background music muted per user request)
+
+    // Determine deity blessing message based on festival ID / name
+    let deityBlessing = 'भगवान की दिव्य कृपा से आपकी और आपके पूरे परिवार की सभी इच्छाएँ जल्दी पूरी हों।';
+    const fid = (festivalId || '').toLowerCase();
+    const fname = (festivalName || '').toLowerCase();
+
+    if (fid.includes('navratri') || fid.includes('durga') || fname.includes('नवरात्रि') || fname.includes('दुर्गा')) {
+      deityBlessing = 'जय माता दी! माँ अम्बे आपकी और आपके परिवार की सभी इच्छाएँ जल्दी पूरी करें।';
+    } else if (fid.includes('diwali') || fid.includes('dhanteras') || fid.includes('lakshmi') || fname.includes('दीपावली') || fname.includes('लक्ष्मी')) {
+      deityBlessing = 'शुभ दीपावली! माँ लक्ष्मी एवं भगवान श्री गणेश आपके घर में सुख, शांति और अपार समृद्धि भर दें।';
+    } else if (fid.includes('ganesh') || fname.includes('गणेश')) {
+      deityBlessing = 'जय श्री गणेशा! विघ्नहर्ता भगवान श्री गणेश आपके सभी संकट दूर करें और मनोकामनाएँ पूरी करें।';
+    } else if (fid.includes('shiv') || fid.includes('shravan') || fname.includes('शिव') || fname.includes('महादेव')) {
+      deityBlessing = 'हर हर महादेव! भगवान भोलेनाथ की असीम कृपा आप पर और आपके परिवार पर सदा बनी रहे।';
+    } else if (fid.includes('holi') || fname.includes('होली')) {
+      deityBlessing = 'होली की हार्दिक शुभकामनाएँ! राधा-कृष्ण का पावन प्रेम और खुशियों के रंग आपके जीवन में सदा महकते रहें।';
+    } else if (fid.includes('ram') || fid.includes('hanuman') || fname.includes('राम') || fname.includes('हनुमान')) {
+      deityBlessing = 'जय श्री राम! प्रभु श्री राम और श्री हनुमान जी महाराज का आशीर्वाद आप पर सदा बना रहे।';
+    } else if (fid.includes('buddha') || fid.includes('dhammachakra') || fname.includes('बुद्ध') || fname.includes('धम्मचक्र')) {
+      deityBlessing = 'नमो बुद्धाय! भगवान बुद्ध का ज्ञान, शांति और करुणा का पावन मार्ग आपके जीवन को रोशन करे।';
+    } else if (fid.includes('eid') || fid.includes('ramzan') || fname.includes('ईद')) {
+      deityBlessing = 'ईद मुबारक! अल्लाह ताआला आपकी और आपके परिवार की सभी दुआएँ क़बूल फरमाएँ।';
+    } else if (fid.includes('christmas') || fid.includes('newyear') || fname.includes('क्रिसमस')) {
+      deityBlessing = 'हैप्पी न्यू ईयर! प्रभु यीशु आपके जीवन में सुख, शांति, अच्छा स्वास्थ्य और तरक्की लाएँ।';
+    } else if (fid.includes('birthday') || fname.includes('जन्मदिन')) {
+      deityBlessing = 'जन्मदिन की लख-लख बधाई! ईश्वर आपको दीर्घायु, उत्तम स्वास्थ्य और अपार सफलता प्रदान करें।';
+    }
+
+    const phrases = [
+      `${name} ने आपको ${fest} की पावन शुभकामना भेजी है!`,
+      `आपको और आपके पूरे परिवार को ${fest} की प्यार भरी शुभकामनाएँ।`,
+      deityBlessing,
+      `आप भी अपना नाम और फोटो लगाकर अपने परिवार और दोस्तों को ज़रूर शेयर करें।`,
+      `इस पावन संदेश को ग्यारह लोगों को शेयर करें ताकि सभी लोगों तक यह शुभ संदेश पहुँचे।`,
+      `एक बार फिर आपको ${fest} की बहुत-बहुत शुभकामनाएँ!`
+    ];
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+
+      let delay = 400; // Slight delay for temple bell chime to start
+      phrases.forEach((phrase, idx) => {
+        setTimeout(() => {
+          if (this.isMuted) return;
+          const utterance = new SpeechSynthesisUtterance(phrase);
+          utterance.lang = 'hi-IN'; // Force Hindi Devanagari Voice
+          utterance.rate = 0.88; // Madhur, gentle devotional speaking speed
+          utterance.pitch = 1.0; // Warm natural pitch
+          utterance.volume = 1.0;
+
+          // Prefer Hindi voice (hi-IN)
+          const voices = window.speechSynthesis.getVoices();
+          const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN')) || voices[0];
+          if (hindiVoice) utterance.voice = hindiVoice;
+
+          window.speechSynthesis.speak(utterance);
+
+          // Stop cleanly after the last phrase finishes
+          if (idx === phrases.length - 1) {
+            utterance.onend = () => {
+              this.stopAll();
+              if (onComplete) onComplete();
+            };
+          }
+        }, delay);
+
+        // Adjust phrase delay based on character count
+        delay += Math.max(2200, phrase.length * 90);
+      });
+    } else {
+      setTimeout(() => {
+        this.stopAll();
+        if (onComplete) onComplete();
+      }, 16000);
     }
   }
 

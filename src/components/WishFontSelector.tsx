@@ -28,26 +28,30 @@ export const WishFontSelector: React.FC<WishFontSelectorProps> = ({
   onSelectColorTheme,
   title = '🔤 फॉन्ट व रंगीन स्टाइल चुनें (Choose Font & Color Style)',
   subtitle = 'दैनिक सुप्रभात, सुविचार व त्योहारों के लिए रंगीन देवनागरी फॉन्ट',
-  compact = false,
+  compact = true,
   onClose,
   showCloseButton = false
 }) => {
-  const [isExpanded, setIsExpanded] = useState(!compact);
+  // Always default to minimized (false) unless explicitly expanded
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'font' | 'color'>('font');
   const currentFont = getWishFontById(selectedFontId);
   const currentColorTheme = selectedColorThemeId ? getColorThemeById(selectedColorThemeId) : null;
 
   return (
     <div className="rounded-2xl bg-stone-950/90 border border-amber-500/40 p-3 sm:p-4 shadow-xl space-y-3">
-      {/* Header with currently active font badge & accordion toggle / close */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+      {/* Header with currently active font badge & accordion toggle button */}
+      <div 
+        onClick={() => setIsExpanded(prev => !prev)}
+        className="flex items-center justify-between gap-2 flex-wrap cursor-pointer select-none group"
+      >
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40">
+          <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 group-hover:scale-105 transition">
             <Type className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-xs sm:text-sm font-bold text-amber-300">
+              <h3 className="text-xs sm:text-sm font-bold text-amber-300 group-hover:text-yellow-200 transition">
                 {title}
               </h3>
               <span 
@@ -70,21 +74,31 @@ export const WishFontSelector: React.FC<WishFontSelectorProps> = ({
           </div>
         </div>
 
+        {/* Prominent Arrow Toggle Button */}
         <div className="flex items-center gap-1.5">
-          {!compact && (
-            <button
-              type="button"
-              onClick={() => setIsExpanded(prev => !prev)}
-              className="text-xs text-amber-300 hover:text-white px-2.5 py-1 rounded-xl bg-stone-900 border border-stone-800 flex items-center gap-1 transition cursor-pointer"
-            >
-              <span>{isExpanded ? 'कम विकल्प' : 'सभी फ़ॉन्ट्स देखें'}</span>
-              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(prev => !prev);
+            }}
+            className="text-xs text-amber-300 hover:text-white px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-amber-500/40 flex items-center gap-1.5 transition cursor-pointer font-bold shadow-md active:scale-95"
+          >
+            <span>{isExpanded ? 'फॉन्ट छुपाएँ' : 'फॉन्ट बदलें'}</span>
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4 text-amber-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-amber-400 animate-bounce" />
+            )}
+          </button>
+
           {showCloseButton && onClose && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               className="p-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700 transition cursor-pointer"
               title="सेक्शन बंद करें"
               aria-label="Close font selector"

@@ -314,8 +314,8 @@ export default function App() {
       }
     }
 
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top immediately so upper section is visible first
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
 
   // 4. Centralized Go Home Handler
@@ -332,7 +332,7 @@ export default function App() {
       } catch {}
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
 
   // 5. Universal Path Navigator (for clean URLs like /about/ or /birthday-wishes-for-mother/)
