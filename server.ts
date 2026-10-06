@@ -292,6 +292,15 @@ async function startServer() {
   const distPath = path.join(__dirname, 'dist');
   const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
 
+  // SEO Canonical Normalization: 301 Redirect non-www to www to prevent duplicate indexing in Google
+  app.use((req, res, next) => {
+    const host = req.headers.host || '';
+    if (host === 'shubhakamna.in') {
+      return res.redirect(301, `https://www.shubhakamna.in${req.originalUrl || req.url}`);
+    }
+    next();
+  });
+
   const isSocialCrawler = (userAgent: string = '') => {
     return /whatsapp|facebookexternalhit|twitterbot|telegrambot|linkedinbot|pinterest|slackbot|applebot|discordbot|googlebot/i.test(userAgent);
   };
@@ -386,6 +395,13 @@ async function startServer() {
       modifiedHtml = modifiedHtml.replace(/<meta property="og:image" content=".*?" \/>/i, `<meta property="og:image" content="${ogImage}" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />`);
       modifiedHtml = modifiedHtml.replace(/<meta name="twitter:title" content=".*?" \/>/i, `<meta name="twitter:title" content="${title}" />`);
       modifiedHtml = modifiedHtml.replace(/<meta name="twitter:description" content=".*?" \/>/i, `<meta name="twitter:description" content="${description}" />`);
+
+      const canonicalUrl = `https://www.shubhakamna.in${urlObj.pathname}`;
+      if (/<link rel="canonical" href=".*?" \/>/i.test(modifiedHtml)) {
+        modifiedHtml = modifiedHtml.replace(/<link rel="canonical" href=".*?" \/>/i, `<link rel="canonical" href="${canonicalUrl}" />`);
+      } else {
+        modifiedHtml = modifiedHtml.replace('</head>', `<link rel="canonical" href="${canonicalUrl}" />\n</head>`);
+      }
 
       return modifiedHtml;
     } catch {
