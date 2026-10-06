@@ -88,6 +88,7 @@ import {
   deleteUploadedAudioFile
 } from '../utils/audioStorage';
 import { optimizeImageForWeb } from '../utils/imageOptimizer';
+import { PinterestAutoPublisher } from './PinterestAutoPublisher';
 import { 
   resolveDirectImageUrl, 
   resolveDirectAudioUrl,
@@ -166,8 +167,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     handleCloseOrExit();
   };
 
-  // Active Tab: 'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'
-  const [activeTab, setActiveTab] = useState<'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup'>('festivals');
+  // Active Tab: 'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup' | 'pinterest'
+  const [activeTab, setActiveTab] = useState<'festivals' | 'seo_pages' | 'audio' | 'users' | 'photos' | 'categories' | 'ads' | 'backup' | 'pinterest'>('festivals');
 
   // Audio Testing & Upload State
   const [testingAudioKey, setTestingAudioKey] = useState<string | null>(null);
@@ -1215,6 +1216,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         >
           <span>💾</span>
           <span>बैकअप, रिस्टोर व पिन</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('pinterest')}
+          className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'pinterest'
+              ? 'border-amber-400 text-amber-300'
+              : 'border-transparent text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          <span>📌</span>
+          <span>Pinterest ऑटो-पब्लिशर (100 सुविचार)</span>
+          <span className="text-[10px] bg-red-500/20 text-red-300 px-1.5 py-0.2 rounded-full font-mono font-bold">
+            Auto Pin 🚀
+          </span>
         </button>
       </div>
 

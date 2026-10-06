@@ -2,6 +2,14 @@ import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { 
+  startBackendSchedule, 
+  stopBackendSchedule, 
+  loadScheduleState, 
+  generateWatermarkedCardSvg,
+  processNextScheduledPin,
+  resolvePinterestBoardId
+} from './src/services/pinterestBackendService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -287,6 +295,135 @@ async function startServer() {
   });
 
   // ==========================================
+  // PINTEREST AUTO-PUBLISHER API (Pinterest API v5)
+  // ==========================================
+  app.post('/api/pinterest/publish-pin', async (req, res) => {
+    try {
+      const { accessToken, boardId, title, description, link, imageUrl, imageBase64 } = req.body || {};
+
+      if (!accessToken || !boardId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Pinterest Access Token (API Key) और Board ID आवश्यक हैं।'
+        });
+      }
+
+      let mediaSource: any = {};
+      if (imageBase64) {
+        const cleanBase64 = imageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+        mediaSource = {
+          source_type: 'image_base64',
+          content_type: 'image/jpeg',
+          data: cleanBase64
+        };
+      } else if (imageUrl) {
+        mediaSource = {
+          source_type: 'image_url',
+          url: imageUrl
+        };
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Pin बनाने के लिए फ़ोटो की URL या Image Base64 होना आवश्यक है।'
+        });
+      }
+
+      const targetBoardId = await resolvePinterestBoardId(accessToken, boardId);
+
+      const pinPayload = {
+        board_id: targetBoardId,
+        title: title || 'Shubhakamna.in - 3D Wish',
+        description: description || 'www.shubhakamna.in',
+        link: link || 'https://www.shubhakamna.in/',
+        media_source: mediaSource
+      };
+
+      const response = await fetch('https://api.pinterest.com/v5/pins', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(pinPayload)
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('Pinterest API error:', responseData);
+        return res.status(response.status).json({
+          success: false,
+          message: responseData.message || responseData.error || 'Pinterest API error',
+          details: responseData
+        });
+      }
+
+      return res.json({
+        success: true,
+        pinId: responseData.id,
+        link: responseData.link || `https://pinterest.com/pin/${responseData.id}`,
+        data: responseData
+      });
+
+    } catch (err: any) {
+      console.error('Pinterest Publish Pin server error:', err);
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Server error while publishing to Pinterest'
+      });
+    }
+  });
+
+  // GET /api/pinterest/schedule-status
+  app.get('/api/pinterest/schedule-status', (req, res) => {
+    try {
+      const state = loadScheduleState();
+      return res.json({ success: true, state });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // POST /api/pinterest/start-schedule
+  app.post('/api/pinterest/start-schedule', (req, res) => {
+    try {
+      const { accessToken, boardId, intervalMinutes, promotionalPercentage } = req.body || {};
+      if (!accessToken || !boardId) {
+        return res.status(400).json({ success: false, message: 'Access Token और Board ID आवश्यक हैं।' });
+      }
+      const newState = startBackendSchedule({
+        accessToken,
+        boardId,
+        intervalMinutes: Number(intervalMinutes) || 10,
+        promotionalPercentage: Number(promotionalPercentage) || 15
+      });
+      return res.json({ success: true, message: 'Backend automated Pinterest scheduler started!', state: newState });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // POST /api/pinterest/stop-schedule
+  app.post('/api/pinterest/stop-schedule', (req, res) => {
+    try {
+      const newState = stopBackendSchedule();
+      return res.json({ success: true, message: 'Backend Pinterest scheduler paused.', state: newState });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // POST /api/pinterest/trigger-next-pin
+  app.post('/api/pinterest/trigger-next-pin', async (req, res) => {
+    try {
+      const state = await processNextScheduledPin();
+      return res.json({ success: true, message: 'Triggered next scheduled pin!', state });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // ==========================================
   // VITE DEV MIDDLEWARE / STATIC ASSETS & 3D OG PREVIEW INJECTOR
   // ==========================================
   const distPath = path.join(__dirname, 'dist');
@@ -307,7 +444,7 @@ async function startServer() {
 
   const getDynamicOGHtml = (reqUrl: string, userAgent: string, rawHtml: string) => {
     try {
-      const urlObj = new URL(reqUrl, 'https://shubhakamna.in');
+      const urlObj = new URL(reqUrl, 'https://www.shubhakamna.in');
       let sender = urlObj.searchParams.get('n') || urlObj.searchParams.get('sender') || urlObj.searchParams.get('from') || '';
       let festId = urlObj.searchParams.get('f') || urlObj.searchParams.get('festival') || '';
       const bname = urlObj.searchParams.get('bname') || '';
@@ -463,8 +600,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
-    console.log(`✨ Shubhakamna Server running at http://localhost:${PORT} (${isProduction ? 'Production' : 'Development'})`);
+  app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`✨ Shubhakamna Server running at http://0.0.0.0:${PORT} (${isProduction ? 'Production' : 'Development'})`);
   });
 }
 

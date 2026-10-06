@@ -95,10 +95,11 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
     setShowMoreSocials(true);
   };
 
-  const handleSocialShare = (platform: 'facebook' | 'telegram' | 'twitter') => {
+  const handleSocialShare = (platform: 'facebook' | 'telegram' | 'twitter' | 'pinterest') => {
     let url = '';
     const text = encodeURIComponent(`${previewTitle}\n\n${previewDescription}`);
     const encodedShareUrl = encodeURIComponent(shareUrl);
+    const mediaUrl = encodeURIComponent(heroImage || userPhoto || 'https://shubhakamna.in/logo.svg');
 
     if (platform === 'facebook') {
       url = `https://www.facebook.com/sharer/sharer.php?u=${encodedShareUrl}`;
@@ -106,6 +107,8 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
       url = `https://t.me/share/url?url=${encodedShareUrl}&text=${text}`;
     } else if (platform === 'twitter') {
       url = `https://twitter.com/intent/tweet?url=${encodedShareUrl}&text=${text}`;
+    } else if (platform === 'pinterest') {
+      url = `https://pinterest.com/pin/create/button/?url=${encodedShareUrl}&media=${mediaUrl}&description=${text}`;
     }
 
     if (url) {
@@ -421,7 +424,7 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
               <p className="text-[11px] font-bold text-stone-300">
                 ⚡ 1-क्लिक में सोशल मीडिया पर भेजें:
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   onClick={() => handleSocialShare('facebook')}
                   className="py-2 px-3 rounded-lg bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow cursor-pointer transition"
@@ -434,6 +437,12 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Telegram</span>
+                </button>
+                <button
+                  onClick={() => handleSocialShare('pinterest')}
+                  className="py-2 px-3 rounded-lg bg-[#E60023] hover:bg-[#ad081b] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow cursor-pointer transition"
+                >
+                  <span>📌 Pinterest</span>
                 </button>
                 <button
                   onClick={() => handleSocialShare('twitter')}

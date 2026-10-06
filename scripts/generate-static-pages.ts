@@ -463,11 +463,16 @@ function run() {
 `;
   fs.writeFileSync(path.join(distDir, '_headers'), headersContent, 'utf-8');
 
-  // If a legacy _redirects exists in dist, delete it to prevent Cloudflare redirect loop errors
-  const legacyRedirectsPath = path.join(distDir, '_redirects');
-  if (fs.existsSync(legacyRedirectsPath)) {
-    fs.unlinkSync(legacyRedirectsPath);
-  }
+  // 4B. Generate Cloudflare Pages _redirects
+  console.log('⚡ Generating Cloudflare Pages _redirects...');
+  const redirectsContent = `# Cloudflare Pages Edge 301 Canonical Redirects (non-www -> www)
+http://shubhakamna.in/* https://www.shubhakamna.in/:splat 301!
+https://shubhakamna.in/* https://www.shubhakamna.in/:splat 301!
+
+# Cloudflare Pages Single Page Application (SPA) Fallback
+/* /index.html 200
+`;
+  fs.writeFileSync(path.join(distDir, '_redirects'), redirectsContent, 'utf-8');
 
   // 5. Generate / Sync Global site-data.json
   console.log('📦 Bundling Global site-data.json for instant multi-device sync...');
