@@ -34,17 +34,49 @@
     <meta name="keywords" content="Shubhakamna, shubhakamna.in, diwali wishes with name, new year 2026 wishes generator, happy birthday wish with name and song, holi wishes online, hindu god wallpapers 4k, shivratri wishes, ram navami greeting, whatsapp viral wish link, deepawali status maker" />
     <link rel="canonical" href="https://shubhakamna.in/" />
 
-    <!-- Google AdSense Verification & Auto-Ads -->
+    <!-- Google AdSense Verification -->
     <meta name="google-adsense-account" content="ca-pub-6209832120523132" />
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6209832120523132" crossorigin="anonymous"></script>
 
-    <!-- Google Analytics (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q5QVZRXPNM"></script>
+    <!-- Deferred Non-Blocking Third-Party Analytics & AdSense Loader -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-Q5QVZRXPNM');
+      (function() {
+        function loadThirdPartyScripts() {
+          if (window._thirdPartyLoaded) return;
+          window._thirdPartyLoaded = true;
+
+          // Load Google Analytics
+          var gaScript = document.createElement('script');
+          gaScript.async = true;
+          gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-Q5QVZRXPNM';
+          document.head.appendChild(gaScript);
+
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-Q5QVZRXPNM');
+
+          // Load Google AdSense
+          var adsScript = document.createElement('script');
+          adsScript.async = true;
+          adsScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6209832120523132';
+          adsScript.crossOrigin = 'anonymous';
+          document.head.appendChild(adsScript);
+        }
+
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(function() {
+            setTimeout(loadThirdPartyScripts, 1800);
+          });
+        } else {
+          window.addEventListener('load', function() {
+            setTimeout(loadThirdPartyScripts, 1800);
+          });
+        }
+        
+        ['touchstart', 'scroll', 'mousemove', 'keydown'].forEach(function(evt) {
+          window.addEventListener(evt, loadThirdPartyScripts, { once: true, passive: true });
+        });
+      })();
     </script>
     
     <!-- PWA Web App Manifest & Mobile Meta -->

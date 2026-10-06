@@ -10,7 +10,6 @@ import {
   parseSuvicharContent 
 } from '../data/suvicharStylesData';
 import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from './googleDriveHelper';
-import html2canvas from 'html2canvas';
 
 export interface SuvicharCardOptions {
   suvichar: SuvicharItem;
@@ -116,6 +115,8 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   // 1. Direct 1-to-1 Pixel Perfect Capture from Live Screen Preview Element if available
   if (targetElement) {
     try {
+      const html2canvasModule = await import('html2canvas');
+      const html2canvas = html2canvasModule.default;
       const capturedCanvas = await html2canvas(targetElement, {
         scale: 4, // 4x Super Retina 8K Resolution
         useCORS: true,

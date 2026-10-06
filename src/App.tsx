@@ -3,29 +3,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Navbar } from './components/Navbar';
 import { FestivalsPortal } from './components/FestivalsPortal';
-import { FestivalWishPage } from './components/FestivalWishPage';
-import { AdminPanel } from './components/AdminPanel';
 import { AdBanner } from './components/AdBanner';
-import { LeaderboardModal } from './components/LeaderboardModal';
-import { UserAuthModal } from './components/UserAuthModal';
-import { LoginPromptPopup } from './components/LoginPromptPopup';
-import { LivePointsTickerBanner } from './components/LivePointsTickerBanner';
 import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
 import { getStoredFestivals, getStoredCategories, initGlobalSiteDataSync } from './data/festivalStore';
 import { getStoredAdSettings } from './data/adStore';
 import { parseWishUrl } from './utils/shortUrl';
 import { updatePageSEO, getFestivalSEOMetadata, resetPortalSEO } from './utils/seoManager';
-import { SEOPage } from './components/SEOPage';
-import { AboutPage } from './components/AboutPage';
-import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
-import { ContactPage } from './components/ContactPage';
 import { SiteFooter } from './components/SiteFooter';
 import { StickyWhatsAppChannel } from './components/StickyWhatsAppChannel';
 import { WishCategory, getCategoryBySlug, getAllCategories } from './data/wishesData';
-import { ShubhPrabhatPage } from './components/ShubhPrabhatPage';
+
+// Code-split secondary pages & modals for maximum initial load performance
+const FestivalWishPage = lazy(() => import('./components/FestivalWishPage').then(m => ({ default: m.FestivalWishPage })));
+const SEOPage = lazy(() => import('./components/SEOPage').then(m => ({ default: m.SEOPage })));
+const AboutPage = lazy(() => import('./components/AboutPage').then(m => ({ default: m.AboutPage })));
+const PrivacyPolicyPage = lazy(() => import('./components/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
+const ContactPage = lazy(() => import('./components/ContactPage').then(m => ({ default: m.ContactPage })));
+const ShubhPrabhatPage = lazy(() => import('./components/ShubhPrabhatPage').then(m => ({ default: m.ShubhPrabhatPage })));
+const LeaderboardModal = lazy(() => import('./components/LeaderboardModal').then(m => ({ default: m.LeaderboardModal })));
+const UserAuthModal = lazy(() => import('./components/UserAuthModal').then(m => ({ default: m.UserAuthModal })));
+const AdminPanel = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 
 export type StaticRouteType = 'about' | 'privacy-policy' | 'contact' | 'shubh-prabhat';
 
@@ -389,20 +389,22 @@ export default function App() {
 
   if (isAdminOpen) {
     return (
-      <AdminPanel
-        onClose={() => {
-          setIsAdminOpen(false);
-          try {
-            if (window.location.pathname.toLowerCase().includes('admin') || window.location.search.includes('admin')) {
-              window.history.pushState({}, '', '/');
-            }
-          } catch {}
-        }}
-        onPreviewFestival={(f) => {
-          setIsAdminOpen(false);
-          handleSelectFestival(f);
-        }}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-stone-950 flex items-center justify-center text-stone-300">Loading Admin...</div>}>
+        <AdminPanel
+          onClose={() => {
+            setIsAdminOpen(false);
+            try {
+              if (window.location.pathname.toLowerCase().includes('admin') || window.location.search.includes('admin')) {
+                window.history.pushState({}, '', '/');
+              }
+            } catch {}
+          }}
+          onPreviewFestival={(f: Festival) => {
+            setIsAdminOpen(false);
+            handleSelectFestival(f);
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -434,18 +436,20 @@ export default function App() {
 
         {/* Static Page Body */}
         <main className="flex-1 w-full">
-          {staticPageRoute === 'about' && (
-            <AboutPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
-          )}
-          {staticPageRoute === 'privacy-policy' && (
-            <PrivacyPolicyPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
-          )}
-          {staticPageRoute === 'contact' && (
-            <ContactPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
-          )}
-          {staticPageRoute === 'shubh-prabhat' && (
-            <ShubhPrabhatPage onBackToPortal={() => handleGoHome()} />
-          )}
+          <Suspense fallback={<div className="min-h-[300px] flex items-center justify-center text-stone-400">Loading...</div>}>
+            {staticPageRoute === 'about' && (
+              <AboutPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+            )}
+            {staticPageRoute === 'privacy-policy' && (
+              <PrivacyPolicyPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+            )}
+            {staticPageRoute === 'contact' && (
+              <ContactPage onGoHome={() => handleGoHome()} onNavigateTo={handleNavigateToPath} />
+            )}
+            {staticPageRoute === 'shubh-prabhat' && (
+              <ShubhPrabhatPage onBackToPortal={() => handleGoHome()} />
+            )}
+          </Suspense>
         </main>
 
         {/* Sticky Bottom Ad Banner */}
@@ -457,21 +461,27 @@ export default function App() {
         {/* Unified Site Footer */}
         <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
-        {/* Monthly Rewards Leaderboard Modal */}
-        <LeaderboardModal
-          isOpen={isLeaderboardOpen}
-          onClose={() => setIsLeaderboardOpen(false)}
-          onOpenAuth={() => setIsAuthOpen(true)}
-        />
+        <Suspense fallback={null}>
+          {/* Monthly Rewards Leaderboard Modal */}
+          {isLeaderboardOpen && (
+            <LeaderboardModal
+              isOpen={isLeaderboardOpen}
+              onClose={() => setIsLeaderboardOpen(false)}
+              onOpenAuth={() => setIsAuthOpen(true)}
+            />
+          )}
 
-        {/* User Login & Signup Modal */}
-        <UserAuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-          onSuccess={() => {
-            setIsAuthOpen(false);
-          }}
-        />
+          {/* User Login & Signup Modal */}
+          {isAuthOpen && (
+            <UserAuthModal
+              isOpen={isAuthOpen}
+              onClose={() => setIsAuthOpen(false)}
+              onSuccess={() => {
+                setIsAuthOpen(false);
+              }}
+            />
+          )}
+        </Suspense>
       </div>
     );
   }
@@ -499,7 +509,9 @@ export default function App() {
 
         {/* SEO Landing Page Component */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <SEOPage category={selectedWishCategory} onNavigate={handleNavigateToPath} />
+          <Suspense fallback={<div className="min-h-[300px] flex items-center justify-center text-stone-400">Loading...</div>}>
+            <SEOPage category={selectedWishCategory} onNavigate={handleNavigateToPath} />
+          </Suspense>
         </main>
 
         {/* Sticky Bottom Ad Banner */}
@@ -511,21 +523,27 @@ export default function App() {
         {/* Unified Site Footer */}
         <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
-        {/* Monthly Rewards Leaderboard Modal */}
-        <LeaderboardModal
-          isOpen={isLeaderboardOpen}
-          onClose={() => setIsLeaderboardOpen(false)}
-          onOpenAuth={() => setIsAuthOpen(true)}
-        />
+        <Suspense fallback={null}>
+          {/* Monthly Rewards Leaderboard Modal */}
+          {isLeaderboardOpen && (
+            <LeaderboardModal
+              isOpen={isLeaderboardOpen}
+              onClose={() => setIsLeaderboardOpen(false)}
+              onOpenAuth={() => setIsAuthOpen(true)}
+            />
+          )}
 
-        {/* User Login & Signup Modal */}
-        <UserAuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-          onSuccess={() => {
-            setIsAuthOpen(false);
-          }}
-        />
+          {/* User Login & Signup Modal */}
+          {isAuthOpen && (
+            <UserAuthModal
+              isOpen={isAuthOpen}
+              onClose={() => setIsAuthOpen(false)}
+              onSuccess={() => {
+                setIsAuthOpen(false);
+              }}
+            />
+          )}
+        </Suspense>
       </div>
     );
   }
@@ -538,14 +556,16 @@ export default function App() {
           <AdBanner slotId="header" />
         </div>
 
-        <FestivalWishPage
-          festival={selectedFestival}
-          initialSenderName={urlData.senderName}
-          initialLang={urlData.lang}
-          onBackToPortal={() => handleGoHome()}
-          onSelectAnotherFestival={(f) => handleSelectFestival(f)}
-          allFestivals={festivals}
-        />
+        <Suspense fallback={<div className="min-h-[300px] flex items-center justify-center text-stone-400">Loading Wish...</div>}>
+          <FestivalWishPage
+            festival={selectedFestival}
+            initialSenderName={urlData.senderName}
+            initialLang={urlData.lang}
+            onBackToPortal={() => handleGoHome()}
+            onSelectAnotherFestival={(f) => handleSelectFestival(f)}
+            allFestivals={festivals}
+          />
+        </Suspense>
 
         {/* Sticky Bottom Ad Banner */}
         <AdBanner slotId="sticky_bottom" />
@@ -556,21 +576,27 @@ export default function App() {
         {/* Unified Site Footer */}
         <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
-        {/* Monthly Rewards Leaderboard Modal */}
-        <LeaderboardModal
-          isOpen={isLeaderboardOpen}
-          onClose={() => setIsLeaderboardOpen(false)}
-          onOpenAuth={() => setIsAuthOpen(true)}
-        />
+        <Suspense fallback={null}>
+          {/* Monthly Rewards Leaderboard Modal */}
+          {isLeaderboardOpen && (
+            <LeaderboardModal
+              isOpen={isLeaderboardOpen}
+              onClose={() => setIsLeaderboardOpen(false)}
+              onOpenAuth={() => setIsAuthOpen(true)}
+            />
+          )}
 
-        {/* User Login & Signup Modal */}
-        <UserAuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-          onSuccess={() => {
-            setIsAuthOpen(false);
-          }}
-        />
+          {/* User Login & Signup Modal */}
+          {isAuthOpen && (
+            <UserAuthModal
+              isOpen={isAuthOpen}
+              onClose={() => setIsAuthOpen(false)}
+              onSuccess={() => {
+                setIsAuthOpen(false);
+              }}
+            />
+          )}
+        </Suspense>
       </div>
     );
   }
@@ -645,21 +671,27 @@ export default function App() {
       {/* Unified Professional Site Footer */}
       <SiteFooter onNavigateToPath={handleNavigateToPath} />
 
-      {/* Monthly Rewards Leaderboard Modal */}
-      <LeaderboardModal
-        isOpen={isLeaderboardOpen}
-        onClose={() => setIsLeaderboardOpen(false)}
-        onOpenAuth={() => setIsAuthOpen(true)}
-      />
+      <Suspense fallback={null}>
+        {/* Monthly Rewards Leaderboard Modal */}
+        {isLeaderboardOpen && (
+          <LeaderboardModal
+            isOpen={isLeaderboardOpen}
+            onClose={() => setIsLeaderboardOpen(false)}
+            onOpenAuth={() => setIsAuthOpen(true)}
+          />
+        )}
 
-      {/* User Login & Signup Modal */}
-      <UserAuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onSuccess={() => {
-          setIsAuthOpen(false);
-        }}
-      />
+        {/* User Login & Signup Modal */}
+        {isAuthOpen && (
+          <UserAuthModal
+            isOpen={isAuthOpen}
+            onClose={() => setIsAuthOpen(false)}
+            onSuccess={() => {
+              setIsAuthOpen(false);
+            }}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

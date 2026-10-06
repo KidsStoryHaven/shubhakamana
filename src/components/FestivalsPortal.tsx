@@ -209,6 +209,11 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
                 src={resolveDirectImageUrl(featuredFestival.heroImage)}
                 alt={featuredFestival.nameHi}
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                width={600}
+                height={450}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent flex items-end p-4">
                 <span className="text-xs text-amber-300 font-medium flex items-center gap-1">
@@ -288,6 +293,10 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
                 src={resolveDirectImageUrl(fest.heroImage)}
                 alt={fest.nameHi}
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                loading="lazy"
+                decoding="async"
+                width={360}
+                height={202}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent" />
               
