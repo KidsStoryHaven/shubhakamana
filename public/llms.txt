@@ -1,0 +1,13 @@
+# Shubhakamna.in
+
+> Bharat ka paavan shubhakamna portal for personalized festival wishes, 3D greeting cards, and devotional status maker.
+
+## Core Features & Pages
+- [Home & Festival Wishes](https://www.shubhakamna.in/): Create personalized festive greeting cards with your name and photo for Diwali, New Year, Holi, Rakshabandhan, and more.
+- [Shubh Prabhat Suvichar](https://www.shubhakamna.in/shubh-prabhat): Daily motivational suvichar and morning cards with 3D embossed Devanagari typography.
+- [Birthday Surprises](https://www.shubhakamna.in/birthday): Custom birthday wishing cards with music and photo.
+- [Devotional Katha & Vrat](https://www.shubhakamna.in/katha): Sacred Kathas and aartis with floating audio player.
+
+## Optional Data & APIs
+- [Sitemap](https://www.shubhakamna.in/sitemap.xml): XML sitemap for search crawlers.
+- [Site Data](https://www.shubhakamna.in/site-data.json): Festival and celebration metadata repository.

@@ -438,8 +438,16 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static assets from dist
-    app.use(express.static(distPath));
+    // Serve static assets from dist with 1-year immutable caching
+    app.use(express.static(distPath, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        }
+      }
+    }));
 
     app.get('*', (req, res) => {
       const targetFile = path.join(distPath, 'index.html');

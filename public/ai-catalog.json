@@ -1,0 +1,22 @@
+{
+  "title": "Shubhakamna.in AI Catalog",
+  "description": "Catalog of interactive greeting card generators and devotional portals on Shubhakamna.in",
+  "version": "1.0.0",
+  "resources": [
+    {
+      "name": "Festival Wish Generator",
+      "url": "https://www.shubhakamna.in/",
+      "description": "Create 3D personalized festive wishes with name and photo."
+    },
+    {
+      "name": "Shubh Prabhat Suvichar",
+      "url": "https://www.shubhakamna.in/shubh-prabhat",
+      "description": "Daily morning suvichar cards with 3D typography."
+    },
+    {
+      "name": "Birthday Surprise Maker",
+      "url": "https://www.shubhakamna.in/birthday",
+      "description": "Custom birthday greeting cards with audio and name personalization."
+    }
+  ]
+}
