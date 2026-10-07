@@ -324,8 +324,22 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   const activeHeroImage = deitySlides[safeActiveIndex]?.imageUrl || festival.heroImage;
 
   useEffect(() => {
+    try {
+      const parsed = parseWishUrl(window.location.search);
+      if (parsed.customImage && deitySlides && deitySlides.length > 0) {
+        const foundIdx = deitySlides.findIndex(
+          s => s.imageUrl === parsed.customImage || 
+               s.imageUrl.includes(parsed.customImage!) || 
+               (parsed.customImage!.includes('/d/') && s.imageUrl.includes(parsed.customImage!.split('/d/')[1]?.split(/[^a-zA-Z0-9_-]/)[0]))
+        );
+        if (foundIdx >= 0) {
+          setActiveImageIndex(foundIdx);
+          return;
+        }
+      }
+    } catch {}
     setActiveImageIndex(0);
-  }, [festival.id]);
+  }, [festival.id, deitySlides]);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [copiedWishIndex, setCopiedWishIndex] = useState<number | null>(null);
@@ -574,7 +588,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
   // Generate the clean, short viral share link
   const getShareUrl = () => {
-    return createShortWishUrl(senderName, festival.id, selectedLanguage, isBirthday ? birthdayPerson : undefined);
+    const currentSlideImg = activeHeroImage || (deitySlides && deitySlides[activeImageIndex]?.imageUrl) || deitySlides[0]?.imageUrl || festival.heroImage;
+    return createShortWishUrl(
+      senderName, 
+      festival.id, 
+      selectedLanguage, 
+      isBirthday ? birthdayPerson : undefined,
+      currentSlideImg?.startsWith('http') ? currentSlideImg : undefined
+    );
   };
 
   const handleWhatsAppShare = async () => {

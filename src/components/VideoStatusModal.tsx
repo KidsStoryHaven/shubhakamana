@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Festival } from '../data/festivals';
 import { DivineDeitySlide } from '../data/divineGodsData';
+import { openWhatsAppUniversal } from '../utils/shareWithImageHelper';
 import { 
   loadStatusImage, 
   loadAllSlideImages,
@@ -249,8 +250,7 @@ export const VideoStatusModal: React.FC<VideoStatusModalProps> = ({
     const text = isBirthday
       ? `🎂 *${birthdayPerson || 'आकाश'}* के लिए 8K वीडियो स्टेटस देखें व अपने नाम से बनाएं:\n👉 ${shareUrl}\n\n— *${senderName}*`
       : `🪔 *${festival.nameHi}* का 8K वीडियो स्टेटस देखें व अपने नाम का स्टेटस बनाएं:\n👉 ${shareUrl}\n\n— *${senderName}*`;
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.open(waUrl, '_blank');
+    openWhatsAppUniversal(text);
   };
 
   const handleCopyLink = () => {

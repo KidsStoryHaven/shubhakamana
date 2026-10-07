@@ -12,6 +12,7 @@ import { getWishFontById } from '../data/wishFontsData';
 import { festiveAudio } from '../utils/festiveAudio';
 import { getUploadedAudioFile } from '../utils/audioStorage';
 import { awardUserPoints } from '../data/userStore';
+import { openWhatsAppUniversal } from '../utils/shareWithImageHelper';
 import { 
   Sparkles, 
   Download, 
@@ -373,8 +374,7 @@ export const WishCardGenerator: React.FC<WishCardGeneratorProps> = ({
       } catch {}
     }
 
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(caption)}`;
-    window.open(waUrl, '_blank');
+    openWhatsAppUniversal(caption);
   };
 
   const handleFacebookShare = () => {

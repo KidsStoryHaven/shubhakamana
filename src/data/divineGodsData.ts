@@ -110,7 +110,7 @@ function createDeitySvg(params: {
     </svg>
   `;
 
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.trim())}`;
 }
 
 export const FESTIVAL_DEITY_GALLERIES: Record<string, DivineDeitySlide[]> = {

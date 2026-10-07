@@ -38,6 +38,7 @@ import {
 } from '../data/suvicharStylesData';
 import { generateSuvicharCardBlob, SuvicharAspectRatio } from '../utils/generateSuvicharCard';
 import { awardUserPoints } from '../data/userStore';
+import { openWhatsAppUniversal } from '../utils/shareWithImageHelper';
 import { ThreeDSharePreviewCard } from './ThreeDSharePreviewCard';
 import { TemplateEngine, TemplateEngineId, THREE_D_TEMPLATES } from './TemplateEngine';
 
@@ -330,12 +331,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
       } catch {}
 
       const waText = `🌅 शुभ प्रभात! आज का पावन सुविचार कार्ड देखें:\n${shareUrl}`;
-      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-      if (isMobile) {
-        window.location.href = `whatsapp://send?text=${encodeURIComponent(waText)}`;
-      } else {
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, '_blank');
-      }
+      openWhatsAppUniversal(waText);
       awardUserPoints('whatsapp_share', 'Shubh Prabhat Suvichar');
       setDownloadSuccessNotice(true);
       setTimeout(() => setDownloadSuccessNotice(false), 7000);

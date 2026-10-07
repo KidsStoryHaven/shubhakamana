@@ -89,9 +89,14 @@ export function resolveDirectImageUrl(url: string | null | undefined): string {
   if (!url || typeof url !== 'string') return '';
   const trimmed = url.trim();
 
+  // Return base64/SVG data URIs or blobs untouched
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return trimmed;
+  }
+
   const gDriveId = extractGoogleDriveFileId(trimmed);
   if (gDriveId) {
-    // lh3.googleusercontent.com/d/ is Google's ultra fast CORS-enabled direct asset renderer
+    // High-speed Google User Content CDN link (direct HTTPS, no cookie required)
     return `https://lh3.googleusercontent.com/d/${gDriveId}`;
   }
 
@@ -121,9 +126,9 @@ export function getGoogleDriveFallbackUrls(urlOrId: string): string[] {
   const gDriveId = extractGoogleDriveFileId(urlOrId);
   if (!gDriveId) return [];
   return [
+    `/api/drive-image/${gDriveId}`,
     `https://lh3.googleusercontent.com/d/${gDriveId}`,
-    `https://drive.google.com/thumbnail?id=${gDriveId}&sz=w1600`,
-    `https://docs.google.com/uc?export=view&id=${gDriveId}`
+    `https://drive.google.com/thumbnail?id=${gDriveId}&sz=w1600`
   ];
 }
 

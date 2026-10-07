@@ -400,12 +400,23 @@ function run() {
 
     let html = baseHtml;
     const canonicalUrl = `${SITE_ORIGIN}/${sp.slug}/`;
+    const isNoIndexPage = ['about', 'privacy-policy', 'contact'].includes(sp.slug);
 
     html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(sp.title)}</title>`);
     html = html.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${escapeHtml(sp.description)}" />`);
     html = html.replace(/<link\s+rel=["']canonical["'][\s\S]*?>/i, `<link rel="canonical" href="${canonicalUrl}" />`);
     html = html.replace(/<meta\s+property=["']og:title["'][\s\S]*?>/i, `<meta property="og:title" content="${escapeHtml(sp.title)}" />`);
     html = html.replace(/<meta\s+property=["']og:description["'][\s\S]*?>/i, `<meta property="og:description" content="${escapeHtml(sp.description)}" />`);
+    
+    if (isNoIndexPage) {
+      const robotsMeta = '<meta name="robots" content="noindex, nofollow, noarchive" />\n    <meta name="googlebot" content="noindex, nofollow, noarchive" />\n    <meta name="bingbot" content="noindex, nofollow, noarchive" />';
+      if (html.includes('<meta name="robots"')) {
+        html = html.replace(/<meta\s+name=["']robots["'][\s\S]*?>/i, robotsMeta);
+      } else {
+        html = html.replace('</head>', `    ${robotsMeta}\n  </head>`);
+      }
+    }
+
     html = html.replace(/<div id="root"><\/div>/, `<div id="root">${sp.body}</div>`);
 
     const outPath = path.join(pageDir, 'index.html');
@@ -413,15 +424,12 @@ function run() {
     console.log(`✅ Generated: /${sp.slug}/index.html (${(html.length / 1024).toFixed(1)} KB)`);
   });
 
-  // 2. Generate sitemap.xml
+  // 2. Generate sitemap.xml (Exclude noindex pages like about, privacy, contact)
   console.log('📄 Generating sitemap.xml...');
   const today = new Date().toISOString().slice(0, 10);
   const sitemapUrls = [
     `  <url>\n    <loc>${SITE_ORIGIN}/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`,
     `  <url>\n    <loc>${SITE_ORIGIN}/shubh-prabhat/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>`,
-    `  <url>\n    <loc>${SITE_ORIGIN}/about/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
-    `  <url>\n    <loc>${SITE_ORIGIN}/privacy-policy/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
-    `  <url>\n    <loc>${SITE_ORIGIN}/contact/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
     ...WISH_CATEGORIES.map(
       cat => `  <url>\n    <loc>${SITE_ORIGIN}/${cat.slug}/</loc>\n    <lastmod>${cat.updatedAt || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${cat.parentSlug ? '0.8' : '0.9'}</priority>\n  </url>`
     )
@@ -433,8 +441,32 @@ function run() {
 
   // 3. Generate robots.txt
   console.log('🤖 Generating robots.txt...');
-  const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`;
+  const robotsTxt = `User-agent: *
+Disallow: /about
+Disallow: /about/
+Disallow: /about-us
+Disallow: /about-us/
+Disallow: /privacy-policy
+Disallow: /privacy-policy/
+Disallow: /privacy
+Disallow: /privacy/
+Disallow: /contact
+Disallow: /contact/
+Disallow: /contact-us
+Disallow: /contact-us/
+Disallow: /disclaimer
+Disallow: /disclaimer/
+Disallow: /terms
+Disallow: /terms/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Allow: /
+
+Sitemap: ${SITE_ORIGIN}/sitemap.xml
+`;
   fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt, 'utf-8');
+  fs.writeFileSync(path.join(__dirname, '..', 'public', 'robots.txt'), robotsTxt, 'utf-8');
   console.log('✅ Generated: robots.txt');
 
   // 4. Generate Cloudflare Pages _headers
@@ -452,6 +484,18 @@ function run() {
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=86400
+
+/about*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/privacy-policy*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/contact*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/admin*
+  X-Robots-Tag: noindex, nofollow, noarchive
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable

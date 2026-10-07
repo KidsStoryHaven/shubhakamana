@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Share2, Sparkles, X, Download, Smartphone } from 'lucide-react';
+import { openWhatsAppUniversal } from '../utils/shareWithImageHelper';
 
 interface StatusShareModalProps {
   isOpen: boolean;
@@ -17,14 +18,7 @@ export const StatusShareModal: React.FC<StatusShareModalProps> = ({
   if (!isOpen) return null;
 
   const handleOpenWhatsApp = () => {
-    const waUrl = `whatsapp://send?text=${encodeURIComponent(captionText)}`;
-    const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(captionText)}`;
-
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = waUrl;
-    } else {
-      window.open(webWaUrl, '_blank');
-    }
+    openWhatsAppUniversal(captionText);
     onClose();
   };
 

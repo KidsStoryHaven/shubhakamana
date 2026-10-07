@@ -134,6 +134,67 @@ async function startServer() {
   });
 
   // ==========================================
+  // DIRECT UNIVERSAL GOOGLE DRIVE IMAGE STREAMER
+  // Serves Google Drive images reliably across ALL browsers (Safari, Chrome, iOS, Android)
+  // ==========================================
+  const driveImageCache = new Map<string, { buffer: Buffer; contentType: string; time: number }>();
+
+  app.get('/api/drive-image/:fileId', async (req, res) => {
+    const fileId = req.params.fileId;
+    if (!fileId || !/^[a-zA-Z0-9_-]{15,60}$/.test(fileId)) {
+      return res.status(400).json({ error: 'Invalid Google Drive File ID' });
+    }
+
+    // 1. Check in-memory cache
+    const cached = driveImageCache.get(fileId);
+    if (cached && (Date.now() - cached.time < 1000 * 60 * 60 * 24)) { // 24 hours
+      res.setHeader('Content-Type', cached.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.send(cached.buffer);
+    }
+
+    const candidateUrls = [
+      `https://lh3.googleusercontent.com/d/${fileId}`,
+      `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
+      `https://docs.google.com/uc?export=download&id=${fileId}`
+    ];
+
+    for (const url of candidateUrls) {
+      try {
+        const upstream = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+          },
+          redirect: 'follow'
+        });
+
+        if (upstream.ok) {
+          const contentType = upstream.headers.get('content-type') || 'image/jpeg';
+          if (contentType.includes('image') || contentType.includes('binary') || contentType.includes('octet-stream')) {
+            const arrayBuf = await upstream.arrayBuffer();
+            const buffer = Buffer.from(arrayBuf);
+            if (buffer.length > 1000) {
+              const cleanType = contentType.includes('image') ? contentType : 'image/jpeg';
+              driveImageCache.set(fileId, { buffer, contentType: cleanType, time: Date.now() });
+
+              res.setHeader('Content-Type', cleanType);
+              res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+              res.setHeader('Access-Control-Allow-Origin', '*');
+              return res.send(buffer);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Drive Image Fetch] Attempt failed for ${url}:`, err);
+      }
+    }
+
+    return res.status(404).json({ error: 'Image could not be retrieved from Google Drive' });
+  });
+
+  // ==========================================
   // GOOGLE DRIVE PUBLIC FOLDER PHOTO FETCHER
   // ==========================================
   const handleFetchGdriveFolder = async (folderInput: string, festivalNameInput: string = 'पावन उत्सव') => {
@@ -482,23 +543,92 @@ async function startServer() {
     return /whatsapp|facebookexternalhit|twitterbot|telegrambot|linkedinbot|pinterest|slackbot|applebot|discordbot|googlebot/i.test(userAgent);
   };
 
+  const KNOWN_FESTIVALS_MAP: Record<string, string> = {
+    'diwali': 'शुभ दीपावली',
+    'dhammachakra_pravartan': 'धम्मचक्र प्रवर्तन दिवस',
+    'karwa_chauth': 'करवा चौथ',
+    'dhanteras': 'धनतेरस',
+    'bhai_dooj': 'भाई दूज',
+    'chhath_puja': 'छठ पूजा',
+    'guru_nanak_jayanti': 'गुरु नानक जयंती',
+    'samvidhan_diwas': 'संविधान दिवस',
+    'christmas': 'क्रिसमस',
+    'newyear': 'नव वर्ष 2026',
+    'makar_sankranti': 'मकर संक्रांति',
+    'republic_day': 'गणतंत्र दिवस',
+    'ramadan': 'माह-ए-रमज़ान',
+    'ravidas_jayanti': 'संत रविदास जयंती',
+    'shivratri': 'महाशिवरात्रि',
+    'eid_ul_fitr': 'ईद-उल-फ़ितर',
+    'holi': 'होली',
+    'good_friday': 'गुड फ्राइडे',
+    'easter': 'ईस्टर',
+    'baisakhi': 'बैसाखी',
+    'ambedkar_jayanti': 'डॉ. अम्बेडकर जयंती',
+    'ramnavami': 'राम नवमी',
+    'mahavir_jayanti': 'महावीर जयंती',
+    'eid_ul_adha': 'बकरीद (ईद-उल-अज़हा)',
+    'buddha_purnima': 'बुद्ध पूर्णिमा',
+    'muharram': 'मोहर्रम',
+    'independence_day': 'स्वतंत्रता दिवस',
+    'eid_milad': 'ईद मिलाद-उन-नबी',
+    'rakshabandhan': 'रक्षाबंधन',
+    'janmashtami': 'कृष्ण जन्माष्टमी',
+    'ganesh_chaturthi': 'गणेश चतुर्थी',
+    'birthday': 'जन्मदिन',
+    'suprabhat': 'शुभ प्रभात'
+  };
+
   const getDynamicOGHtml = (reqUrl: string, userAgent: string, rawHtml: string) => {
     try {
       const urlObj = new URL(reqUrl, 'https://www.shubhakamna.in');
       let sender = urlObj.searchParams.get('n') || urlObj.searchParams.get('sender') || urlObj.searchParams.get('from') || '';
       let festId = urlObj.searchParams.get('f') || urlObj.searchParams.get('festival') || '';
       const bname = urlObj.searchParams.get('bname') || '';
-      const customImg = urlObj.searchParams.get('img') || '';
-      const w = urlObj.searchParams.get('w') || '';
+      const customImg = urlObj.searchParams.get('img') || urlObj.searchParams.get('image') || '';
+      let w = urlObj.searchParams.get('w') || '';
 
-      // Parse short code pattern ?w=Rahul_diwali or ?w=diwali
+      // Clean trailing language code (_en, _mr, etc.)
       if (w) {
-        const parts = w.split('_');
-        if (parts.length >= 2) {
-          if (!sender) sender = parts[0];
-          if (!festId) festId = parts[1];
-        } else if (parts.length === 1) {
-          if (!festId) festId = parts[0];
+        const langMatches = ['_hi', '_mr', '_en', '_gu', '_bn', '_te', '_ta', '_kn', '_pa'];
+        for (const lm of langMatches) {
+          if (w.toLowerCase().endsWith(lm)) {
+            w = w.slice(0, -lm.length);
+            break;
+          }
+        }
+
+        // Check if exact match for known festival
+        const knownKeys = Object.keys(KNOWN_FESTIVALS_MAP).sort((a, b) => b.length - a.length);
+        const exactFest = knownKeys.find(k => k === w.toLowerCase() || k.replace(/_/g, '-') === w.toLowerCase());
+
+        if (exactFest) {
+          if (!festId) festId = exactFest;
+        } else {
+          // Check if ends with _<festivalId>
+          let found = false;
+          for (const k of knownKeys) {
+            const patterns = [`_${k}`, `-${k}`, `_${k.replace(/_/g, '-')}`, `-${k.replace(/_/g, '-')}`];
+            for (const p of patterns) {
+              if (w.toLowerCase().endsWith(p)) {
+                if (!festId) festId = k;
+                if (!sender) sender = w.slice(0, -p.length).replace(/[_ -]+/g, ' ').trim();
+                found = true;
+                break;
+              }
+            }
+            if (found) break;
+          }
+
+          if (!found) {
+            const lastUnder = w.lastIndexOf('_');
+            if (lastUnder > 0) {
+              if (!sender) sender = w.slice(0, lastUnder).replace(/[_ -]+/g, ' ').trim();
+              if (!festId) festId = w.slice(lastUnder + 1);
+            } else if (!festId) {
+              festId = w;
+            }
+          }
         }
       }
 
@@ -527,7 +657,7 @@ async function startServer() {
           ogImage = 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1200&h=630&q=85';
         }
       } else {
-        let festName = 'पावन पर्व';
+        let festName = KNOWN_FESTIVALS_MAP[festId] || 'पावन पर्व';
 
         // Dynamic lookup from site-data.json if exists
         try {
@@ -550,13 +680,6 @@ async function startServer() {
             }
           }
         } catch {}
-
-        if (festId.includes('dhammachakra') || urlObj.pathname.includes('dhammachakra')) {
-          festName = 'धम्मचक्र प्रवर्तन दिवस';
-          if (!customImg) ogImage = 'https://lh3.googleusercontent.com/d/1fFyb7kQ-lczPPYGvfC5xLYkOEVAIkWjX';
-        } else if (festId.includes('diwali') || urlObj.pathname.includes('diwali')) {
-          festName = 'शुभ दीपावली';
-        }
 
         title = sender 
           ? `✨ ${sender} ने आपके लिए भेजा है ${festName} का खास 3D जादुई सरप्राइज! 🎁`
@@ -592,7 +715,8 @@ async function startServer() {
     const isCrawler = isSocialCrawler(userAgent);
     const hasShareQuery = !!(req.query.w || req.query.n || req.query.f || req.query.festival || req.query.bname || req.query.from);
 
-    if (isCrawler || (hasShareQuery && req.headers.accept?.includes('text/html'))) {
+    // Only serve pre-rendered dynamic HTML to verified social crawlers OR in built production mode
+    if (isCrawler || (hasDist && hasShareQuery && req.headers.accept?.includes('text/html'))) {
       const templatePath = hasDist 
         ? path.join(distPath, 'index.html') 
         : path.join(__dirname, 'index.html');

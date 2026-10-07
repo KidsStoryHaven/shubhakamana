@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Sun, Moon, Clock, Share2, Sparkles, Compass } from 'lucide-react';
 import { festiveAudio } from '../utils/festiveAudio';
+import { openWhatsAppUniversal } from '../utils/shareWithImageHelper';
 
 interface PanchangData {
   dateStr: string;
@@ -50,14 +51,7 @@ export const PanchangWidget: React.FC<{ onShareSuprabhat?: () => void }> = ({ on
     festiveAudio.playTempleBell();
     const shareText = `☀️ *आज का पावन दैनिक पंचांग • Shubhakamna.in* 🪔\n📅 ${panchang.dateStr}\n🔱 ${panchang.hindiDate} (${panchang.samvat})\n\n✨ *तिथि:* ${panchang.tithi}\n🌟 *नक्षत्र:* ${panchang.nakshatra}\n🌅 *सूर्योदय:* ${panchang.sunrise} | *सूर्यास्त:* ${panchang.sunset}\n✅ *शुभ मुहूर्त:* ${panchang.shubhMuhurat}\n⚠️ *राहुकाल:* ${panchang.rahuKaal}\n\n👉 अपने नाम व फोटो की जादुई विशिंग लिंक यहाँ बनाएँ:\nhttps://shubhakamna.in/?f=suprabhat`;
 
-    const waUrl = `whatsapp://send?text=${encodeURIComponent(shareText)}`;
-    const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = waUrl;
-    } else {
-      window.open(webWaUrl, '_blank');
-    }
+    openWhatsAppUniversal(shareText);
   };
 
   return (

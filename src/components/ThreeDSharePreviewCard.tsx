@@ -12,6 +12,7 @@ import {
   Send, 
   Loader2 
 } from 'lucide-react';
+import { resolveDirectImageUrl } from '../utils/googleDriveHelper';
 
 interface ThreeDSharePreviewCardProps {
   festivalName: string;
@@ -158,7 +159,8 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
       ctx.fillText('3D जादुई विशिंग कार्ड 🎁', 1130, 96);
 
       // Hero Image
-      const imgUrl = heroImage || userPhoto || 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=1200&h=630&q=85';
+      const rawImg = heroImage || userPhoto || 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=1200&h=630&q=85';
+      const imgUrl = resolveDirectImageUrl(rawImg);
       const img = new Image();
       img.crossOrigin = 'anonymous';
 
@@ -304,7 +306,7 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
               {/* Image Banner */}
               <div className="relative aspect-[16/9] w-full bg-stone-950 overflow-hidden">
                 <img 
-                  src={heroImage || userPhoto || 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=800&q=80'} 
+                  src={resolveDirectImageUrl(heroImage || userPhoto || 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=800&q=80')} 
                   alt="3D Preview"
                   referrerPolicy="no-referrer"
                   loading="eager"

@@ -4,6 +4,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 import { WishCardGenerator } from './WishCardGenerator';
 import { updatePageSEO } from '../utils/seoManager';
 import { resolveDirectImageUrl } from '../utils/googleDriveHelper';
+import { openWhatsAppUniversal } from '../utils/shareWithImageHelper';
 import { 
   Copy, 
   Check, 
@@ -59,12 +60,7 @@ export const SEOPage: React.FC<SEOPageProps> = ({ category, onNavigate }) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
     const pageUrl = `${origin}/${category.slug}/`;
     const message = `${text}\n\n👇 अपने नाम का सुंदर कार्ड यहाँ बनाएं:\n${pageUrl}`;
-    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-    if (isMobile) {
-      window.location.href = `whatsapp://send?text=${encodeURIComponent(message)}`;
-    } else {
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
-    }
+    openWhatsAppUniversal(message);
   };
 
   const breadcrumbs = getBreadcrumbTrail(category);
