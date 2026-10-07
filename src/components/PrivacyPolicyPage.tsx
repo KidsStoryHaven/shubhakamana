@@ -14,7 +14,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onGoHome, 
       description: 'Read the official Privacy Policy for Shubhakamna.in. Learn how we handle visitor information, cookies, Google AdSense, analytics, and user privacy rights.',
       keywords: 'privacy policy, shubhakamna privacy, data policy, cookie policy, google adsense privacy',
       canonicalUrl: 'https://shubhakamna.in/privacy-policy/',
-      ogType: 'article'
+      ogType: 'article',
+      robots: 'noindex, nofollow, noarchive'
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);

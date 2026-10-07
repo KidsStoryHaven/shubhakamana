@@ -330,8 +330,12 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
       } catch {}
 
       const waText = `🌅 शुभ प्रभात! आज का पावन सुविचार कार्ड देखें:\n${shareUrl}`;
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
-      window.open(waUrl, '_blank');
+      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+      if (isMobile) {
+        window.location.href = `whatsapp://send?text=${encodeURIComponent(waText)}`;
+      } else {
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, '_blank');
+      }
       awardUserPoints('whatsapp_share', 'Shubh Prabhat Suvichar');
       setDownloadSuccessNotice(true);
       setTimeout(() => setDownloadSuccessNotice(false), 7000);

@@ -1,4 +1,5 @@
 import { festiveAudio } from './festiveAudio';
+import { universalSpeech, SpeechPlaybackHandle } from './universalSpeechPlayer';
 
 export interface KathaParagraph {
   id: number;
@@ -57,36 +58,17 @@ class KathaAudioEngine {
   private activeSentenceIndex = 0;
   private currentSentences: string[] = [];
   private speed = 0.92;
-  private isMuted = false;
   private elapsedSeconds = 0;
   private activeFestivalId = 'navratri';
   private currentSections: KathaParagraph[] = KATHA_SECTIONS;
   private listeners: Set<KathaStateListener> = new Set();
   private timer: NodeJS.Timeout | null = null;
-  private keepAliveTimer: NodeJS.Timeout | null = null;
   private droneCtx: AudioContext | null = null;
-  private synth: SpeechSynthesis | null = null;
-  private currentUtterance: SpeechSynthesisUtterance | null = null;
-  private cachedVoices: SpeechSynthesisVoice[] = [];
+  private currentPlaybackHandle: SpeechPlaybackHandle | null = null;
+  private sentenceAdvanceTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      this.synth = window.speechSynthesis;
-      this.initVoices();
-    }
-  }
-
-  private initVoices() {
-    if (!this.synth) return;
-    const load = () => {
-      try {
-        this.cachedVoices = this.synth?.getVoices() || [];
-      } catch {}
-    };
-    load();
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = load;
-    }
+    // Universal speech initialized
   }
 
   /**
@@ -148,39 +130,7 @@ class KathaAudioEngine {
     });
   }
 
-  private getFemaleVoice(): SpeechSynthesisVoice | null {
-    if (!this.synth) return null;
-    if (this.cachedVoices.length === 0) {
-      this.cachedVoices = this.synth.getVoices();
-    }
-    const voices = this.cachedVoices;
-    if (!voices || voices.length === 0) return null;
-
-    // 1. Preferred Hindi devotional female voice
-    const preferred = voices.find(v => 
-      (v.lang.toLowerCase().includes('hi') || v.lang.toLowerCase().includes('in')) && 
-      (v.name.toLowerCase().includes('female') || 
-       v.name.toLowerCase().includes('swara') || 
-       v.name.toLowerCase().includes('lekha') || 
-       v.name.toLowerCase().includes('kalpana') ||
-       v.name.toLowerCase().includes('google') ||
-       v.name.toLowerCase().includes('natural'))
-    );
-    if (preferred) return preferred;
-
-    // 2. Any Hindi voice
-    const anyHi = voices.find(v => v.lang.toLowerCase().includes('hi'));
-    if (anyHi) return anyHi;
-
-    // 3. Any Indian regional / Indian English voice
-    const anyIN = voices.find(v => v.lang.toLowerCase().includes('in') || v.name.toLowerCase().includes('india'));
-    if (anyIN) return anyIN;
-
-    return voices[0] || null;
-  }
-
   private startTanpura() {
-    if (this.isMuted) return;
     try {
       if (!this.droneCtx && typeof window !== 'undefined') {
         const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -201,7 +151,7 @@ class KathaAudioEngine {
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        gain.gain.setValueAtTime(0.008, ctx.currentTime);
+        gain.gain.setValueAtTime(0.006, ctx.currentTime);
 
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
@@ -218,7 +168,7 @@ class KathaAudioEngine {
   private stopTanpura() {
     try {
       if (this.droneCtx) {
-        this.droneCtx.close();
+        this.droneCtx.close().catch(() => {});
         this.droneCtx = null;
       }
     } catch {}
@@ -230,16 +180,6 @@ class KathaAudioEngine {
       this.elapsedSeconds += 1;
       this.notify();
     }, 1000);
-
-    // Chrome keep-alive hack: resume every 8 seconds if speaking
-    if (this.keepAliveTimer) clearInterval(this.keepAliveTimer);
-    this.keepAliveTimer = setInterval(() => {
-      if (this.isPlaying && this.synth) {
-        if (this.synth.paused) {
-          this.synth.resume();
-        }
-      }
-    }, 8000);
   }
 
   private stopTimer() {
@@ -247,9 +187,9 @@ class KathaAudioEngine {
       clearInterval(this.timer);
       this.timer = null;
     }
-    if (this.keepAliveTimer) {
-      clearInterval(this.keepAliveTimer);
-      this.keepAliveTimer = null;
+    if (this.sentenceAdvanceTimeout) {
+      clearTimeout(this.sentenceAdvanceTimeout);
+      this.sentenceAdvanceTimeout = null;
     }
   }
 
@@ -280,11 +220,12 @@ class KathaAudioEngine {
     this.isPlaying = false;
     this.stopTimer();
     this.stopTanpura();
-    if (this.synth) {
-      try {
-        this.synth.cancel();
-      } catch {}
+    if (this.currentPlaybackHandle) {
+      this.currentPlaybackHandle.stop();
+      this.currentPlaybackHandle = null;
     }
+    universalSpeech.stopAll();
+
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('shubhakamna_katha_paused'));
     }
@@ -359,44 +300,62 @@ class KathaAudioEngine {
       this.currentSentences = [];
       return;
     }
-    // Title is first sentence
-    const fullText = `${para.title}। ${para.text}`;
-    // Split cleanly on Hindi poorn-viraam (।), period, question mark, or exclamation
-    const rawChunks = fullText
-      .split(/([।?!.\n]+)/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
 
-    const merged: string[] = [];
-    for (let i = 0; i < rawChunks.length; i += 2) {
-      const text = rawChunks[i];
-      const punct = rawChunks[i + 1] || '।';
-      if (text) {
-        merged.push(`${text}${punct}`);
+    const fullText = `${para.title}। ${para.text}`;
+    
+    // Split cleanly into manageable audio phrases (<= 130 characters)
+    const segments = fullText.split(/([।?!.\n]+)/).map(s => s.trim()).filter(Boolean);
+    const combined: string[] = [];
+    for (let i = 0; i < segments.length; i += 2) {
+      const t = segments[i];
+      const p = segments[i + 1] || '।';
+      if (t) combined.push(`${t}${p}`);
+    }
+
+    const finalPhrases: string[] = [];
+    for (const item of combined) {
+      if (item.length <= 130) {
+        finalPhrases.push(item);
+      } else {
+        // Split on comma or space
+        const words = item.split(/([,،\s]+)/).filter(Boolean);
+        let cur = '';
+        for (const w of words) {
+          if ((cur + w).length > 120 && cur.trim().length > 0) {
+            finalPhrases.push(cur.trim());
+            cur = w;
+          } else {
+            cur += w;
+          }
+        }
+        if (cur.trim().length > 0) {
+          finalPhrases.push(cur.trim());
+        }
       }
     }
 
-    this.currentSentences = merged.length > 0 ? merged : [fullText];
+    this.currentSentences = finalPhrases.length > 0 ? finalPhrases : [fullText];
     if (this.activeSentenceIndex >= this.currentSentences.length) {
       this.activeSentenceIndex = 0;
     }
   }
 
   private speakNextSentence() {
-    if (!this.synth || !this.isPlaying) return;
+    if (!this.isPlaying) return;
 
-    if (this.synth.paused) {
-      this.synth.resume();
+    if (this.sentenceAdvanceTimeout) {
+      clearTimeout(this.sentenceAdvanceTimeout);
+      this.sentenceAdvanceTimeout = null;
     }
 
+    // Check if current chapter completed
     if (this.activeSentenceIndex >= this.currentSentences.length) {
-      // Current chapter completed! Advance to next chapter
       if (this.activeParaIndex + 1 < this.currentSections.length) {
         this.activeParaIndex++;
         this.activeSentenceIndex = 0;
         this.prepareChapterSentences();
         this.notify();
-        setTimeout(() => {
+        this.sentenceAdvanceTimeout = setTimeout(() => {
           if (this.isPlaying) this.speakNextSentence();
         }, 300);
       } else {
@@ -413,56 +372,28 @@ class KathaAudioEngine {
       return;
     }
 
-    try {
-      this.synth.cancel();
-    } catch {}
-
-    const u = new SpeechSynthesisUtterance(sentenceText);
-    u.lang = 'hi-IN'; // CRITICAL: Always set Hindi language explicitly
-    u.pitch = 1.05;
-    u.rate = this.speed;
-    u.volume = this.isMuted ? 0 : 1.0;
-
-    const voice = this.getFemaleVoice();
-    if (voice) {
-      u.voice = voice;
-    }
-
-    u.onend = () => {
-      if (!this.isPlaying) return;
-      this.activeSentenceIndex++;
-      // Natural 140ms breathing pause between sentences
-      setTimeout(() => {
-        if (this.isPlaying) {
-          this.speakNextSentence();
-        }
-      }, 140);
-    };
-
-    u.onerror = (e) => {
-      if (e.error === 'canceled' || e.error === 'interrupted') {
-        return; // Ignore user pause/skip cancel events
-      }
-      console.warn('Katha sentence speech error:', e.error);
-      if (this.isPlaying) {
+    this.currentPlaybackHandle = universalSpeech.speak(sentenceText, {
+      speed: this.speed,
+      onEnd: () => {
+        if (!this.isPlaying) return;
         this.activeSentenceIndex++;
-        setTimeout(() => {
-          if (this.isPlaying) this.speakNextSentence();
-        }, 150);
+        this.sentenceAdvanceTimeout = setTimeout(() => {
+          if (this.isPlaying) {
+            this.speakNextSentence();
+          }
+        }, 140);
+      },
+      onError: (err) => {
+        console.warn('Katha sentence error, advancing:', err);
+        if (this.isPlaying) {
+          this.activeSentenceIndex++;
+          this.sentenceAdvanceTimeout = setTimeout(() => {
+            if (this.isPlaying) this.speakNextSentence();
+          }, 150);
+        }
       }
-    };
+    });
 
-    this.currentUtterance = u;
-    // Keep reference globally to prevent Chromium GC premature termination
-    if (typeof window !== 'undefined') {
-      (window as unknown as { __katha_utterance: SpeechSynthesisUtterance }).__katha_utterance = u;
-    }
-
-    try {
-      this.synth.speak(u);
-    } catch (err) {
-      console.warn('SpeechSynthesis speak failed:', err);
-    }
     this.notify();
   }
 }

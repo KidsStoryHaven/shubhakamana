@@ -66,6 +66,7 @@ export function updatePageSEO(meta: Partial<SEOMetadata>): void {
   const ogImage = meta.ogImage || DEFAULT_SEO.ogImage || '';
   const ogType = meta.ogType || DEFAULT_SEO.ogType || 'website';
   const robots = meta.robots || DEFAULT_SEO.robots || 'index, follow, max-image-preview:large';
+  const isNoIndex = robots.toLowerCase().includes('noindex');
 
   // 1. Browser Window & Tab Title
   document.title = title;
@@ -73,8 +74,15 @@ export function updatePageSEO(meta: Partial<SEOMetadata>): void {
   // 2. Standard Search Engine Meta Tags
   setMetaTag('name', 'description', description);
   setMetaTag('name', 'keywords', keywords);
-  setMetaTag('name', 'robots', robots);
-  setMetaTag('name', 'googlebot', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
+  setMetaTag('name', 'robots', isNoIndex ? 'noindex, nofollow, noarchive' : robots);
+  setMetaTag(
+    'name', 
+    'googlebot', 
+    isNoIndex 
+      ? 'noindex, nofollow, noarchive' 
+      : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+  );
+  setMetaTag('name', 'bingbot', isNoIndex ? 'noindex, nofollow, noarchive' : 'index, follow');
   
   // 3. Canonical URL
   setLinkTag('canonical', canonicalUrl);

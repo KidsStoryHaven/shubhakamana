@@ -146,6 +146,7 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
           key={currentSlide.id || `slide-${safeIndex}`}
           src={resolveDirectImageUrl(currentSlide.imageUrl)}
           alt={currentSlide.title || festivalName}
+          referrerPolicy="no-referrer"
           loading="eager"
           decoding="async"
           onError={(e) => {
@@ -288,6 +289,7 @@ export const FestivalImageSlider: React.FC<FestivalImageSliderProps> = ({
                     <img
                       src={resolveDirectImageUrl(slide.imageUrl)}
                       alt={slide.godName || slide.title}
+                      referrerPolicy="no-referrer"
                       loading="lazy"
                       onError={(e) => {
                         const fallbacks = getGoogleDriveFallbackUrls(slide.imageUrl);

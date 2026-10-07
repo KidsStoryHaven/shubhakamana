@@ -3,6 +3,8 @@
  * Pure client-side synthesis ensures zero network latency and 100% offline reliability.
  */
 
+import { universalSpeech } from './universalSpeechPlayer';
+
 class SoundEngine {
   private ctx: AudioContext | null = null;
 
@@ -175,31 +177,14 @@ class SoundEngine {
   }
 
   /**
-   * Speak Hindi text with native SpeechSynthesis
+   * Speak Hindi text with universal robust speech engine
    */
   speakHindi(text: string) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'hi-IN';
-    utterance.rate = 0.9; // Slightly slower, serene recitation rate
-    utterance.pitch = 1.0;
-
-    // Pick Hindi voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const hindiVoice = voices.find(v => v.lang.includes('hi') || v.name.toLowerCase().includes('hindi') || v.name.toLowerCase().includes('india'));
-    if (hindiVoice) {
-      utterance.voice = hindiVoice;
-    }
-
-    window.speechSynthesis.speak(utterance);
+    universalSpeech.speak(text, { speed: 0.90 });
   }
 
   stopSpeech() {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+    universalSpeech.stopAll();
   }
 }
 

@@ -14,7 +14,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onGoHome, onNavigateTo }) 
       description: 'Learn about Shubhakamna.in, an independent online platform dedicated to providing easy-to-understand festival greetings, cultural guides, and helpful content.',
       keywords: 'about shubhakamna, about us, festival greetings portal, independent greetings platform',
       canonicalUrl: 'https://shubhakamna.in/about/',
-      ogType: 'website'
+      ogType: 'website',
+      robots: 'noindex, nofollow, noarchive'
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);

@@ -5,6 +5,7 @@
  */
 
 import { resolveDirectAudioUrl } from './googleDriveHelper';
+import { universalSpeech } from './universalSpeechPlayer';
 
 export type FestiveSoundType = 
   | 'aarti' 
@@ -41,15 +42,15 @@ class FestiveAudioEngine {
 
   private getPreferredHindiVoice(): SpeechSynthesisVoice | null {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
-    if (this.cachedVoices.length === 0) {
-      this.cachedVoices = window.speechSynthesis.getVoices() || [];
-    }
-    const voices = this.cachedVoices;
+    const voices = (window.speechSynthesis.getVoices() || []).length > 0
+      ? window.speechSynthesis.getVoices()
+      : this.cachedVoices;
     if (!voices || voices.length === 0) return null;
 
-    const hindiVoice = voices.find(v => v.lang.toLowerCase().includes('hi')) ||
-      voices.find(v => v.lang.toLowerCase().includes('in') || v.name.toLowerCase().includes('india')) ||
-      voices[0];
+    const hindiVoice = voices.find(v => {
+      const l = v.lang.toLowerCase().replace('_', '-');
+      return l.startsWith('hi');
+    });
     return hindiVoice || null;
   }
 
@@ -105,13 +106,16 @@ class FestiveAudioEngine {
   public stopAll() {
     this.notifySongStatus(false);
     this.isSpeakingAnnouncement = false;
+    universalSpeech.stopAll();
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
       this.currentAudioElement.currentTime = 0;
       this.currentAudioElement = null;
     }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
     }
   }
 
@@ -803,69 +807,36 @@ class FestiveAudioEngine {
       `एक बार फिर आपको ${fest} की बहुत-बहुत शुभकामनाएँ!`
     ];
 
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-      } catch {}
-
-      let phraseIdx = 0;
-      const speakNext = () => {
-        if (!this.isSpeakingAnnouncement || this.isMuted) return;
-        if (phraseIdx >= phrases.length) {
-          this.isSpeakingAnnouncement = false;
-          if (onComplete) onComplete();
-          return;
-        }
-
-        const text = phrases[phraseIdx];
-        phraseIdx++;
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'hi-IN'; // Force Hindi Devanagari Voice
-        u.rate = 0.90; // Gentle devotional speaking speed
-        u.pitch = 1.05; // Warm natural pitch
-        u.volume = 1.0;
-
-        const voice = this.getPreferredHindiVoice();
-        if (voice) u.voice = voice;
-
-        u.onend = () => {
-          if (this.isSpeakingAnnouncement && !this.isMuted) {
-            setTimeout(speakNext, 180);
-          }
-        };
-
-        u.onerror = (e) => {
-          if (e.error === 'canceled' || e.error === 'interrupted') return;
-          console.warn('Voice announcement phrase error:', e.error);
-          if (this.isSpeakingAnnouncement && !this.isMuted) {
-            setTimeout(speakNext, 180);
-          }
-        };
-
-        this.currentUtterance = u;
-        (window as unknown as { __shubhakamna_voice_u: SpeechSynthesisUtterance }).__shubhakamna_voice_u = u;
-
-        try {
-          if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-          }
-          window.speechSynthesis.speak(u);
-        } catch (err) {
-          console.warn('speechSynthesis.speak error:', err);
-        }
-      };
-
-      // Slight 300ms pause for the bell chime
-      setTimeout(speakNext, 300);
-    } else {
-      setTimeout(() => {
-        this.stopAll();
+    let phraseIdx = 0;
+    const speakNext = () => {
+      if (!this.isSpeakingAnnouncement || this.isMuted) return;
+      if (phraseIdx >= phrases.length) {
+        this.isSpeakingAnnouncement = false;
         if (onComplete) onComplete();
-      }, 16000);
-    }
+        return;
+      }
+
+      const text = phrases[phraseIdx];
+      phraseIdx++;
+
+      universalSpeech.speak(text, {
+        speed: 0.92,
+        onEnd: () => {
+          if (this.isSpeakingAnnouncement && !this.isMuted) {
+            setTimeout(speakNext, 180);
+          }
+        },
+        onError: (err) => {
+          console.warn('Voice announcement phrase error:', err);
+          if (this.isSpeakingAnnouncement && !this.isMuted) {
+            setTimeout(speakNext, 180);
+          }
+        }
+      });
+    };
+
+    // Slight 350ms pause for the bell chime
+    setTimeout(speakNext, 350);
   }
 
   /**

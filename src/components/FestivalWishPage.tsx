@@ -393,7 +393,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     return '🪔 पावन घंटी व आरती की गूंज (Temple Bells)';
   };
 
-  const triggerFestivalSound = (sampleName?: string, userExplicit: boolean = false) => {
+  const triggerFestivalSound = (sampleName?: string, userExplicit: boolean = true) => {
     // If Katha is playing, pause it so voice wish plays cleanly
     kathaAudio.pause();
 
@@ -447,15 +447,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     updatePageSEO(getFestivalSEOMetadata(festival, senderName, selectedLanguage));
   }, [festival, senderName, selectedLanguage]);
 
-  // 🔊 Auto-scroll to top & Auto-play voice announcement on page load / opening festival
+  // 🔊 Auto-scroll to top on opening festival
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-
-    const autoPlayTimer = setTimeout(() => {
-      triggerFestivalSound(undefined, false);
-    }, 450);
-
-    return () => clearTimeout(autoPlayTimer);
   }, [festival.id]);
 
   const handleSoundToggle = () => {

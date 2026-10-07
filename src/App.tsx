@@ -43,8 +43,8 @@ export default function App() {
   
   const resolveStaticRoute = (pathStr: string): StaticRouteType | null => {
     const clean = pathStr.replace(/^\/+|\/+$/g, '').toLowerCase();
-    if (clean === 'about' || clean === 'about-us') return 'about';
-    if (clean === 'privacy-policy' || clean === 'privacy') return 'privacy-policy';
+    if (clean === 'about' || clean === 'about-us' || clean === 'disclaimer') return 'about';
+    if (clean === 'privacy-policy' || clean === 'privacy' || clean === 'terms') return 'privacy-policy';
     if (clean === 'contact' || clean === 'contact-us') return 'contact';
     if (clean === 'shubh-prabhat' || clean === 'shubhprabhat' || clean === 'suvichar' || clean === 'good-morning') return 'shubh-prabhat';
     return null;

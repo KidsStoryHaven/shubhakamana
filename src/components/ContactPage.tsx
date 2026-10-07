@@ -22,7 +22,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGoHome, onNavigateTo
       description: 'Contact the Shubhakamna.in team for questions regarding website content, corrections, feedback, technical assistance, privacy, or advertising inquiries.',
       keywords: 'contact shubhakamna, contact us, feedback, support, email shubhakamna',
       canonicalUrl: 'https://shubhakamna.in/contact/',
-      ogType: 'website'
+      ogType: 'website',
+      robots: 'noindex, nofollow, noarchive'
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);

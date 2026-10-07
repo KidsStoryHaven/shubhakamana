@@ -24,6 +24,15 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+  // Googlebot & Search Engine Protection: Prevent indexing of legal, contact, and admin routes
+  app.use((req, res, next) => {
+    const p = req.path.toLowerCase();
+    if (p.match(/^\/(about|about-us|privacy-policy|privacy|contact|contact-us|disclaimer|terms|admin)(\/|$)/)) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+    next();
+  });
+
   const dataFilePath = path.join(__dirname, 'public', 'site-data.json');
   const distDataFilePath = path.join(__dirname, 'dist', 'site-data.json');
 
@@ -91,6 +100,37 @@ async function startServer() {
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
+  });
+
+  // CORS-friendly image proxy for sharing and canvas generation
+  app.get('/api/proxy-image', async (req, res) => {
+    try {
+      const targetUrl = req.query.url as string;
+      if (!targetUrl || !targetUrl.startsWith('http')) {
+        return res.status(400).json({ error: 'Valid URL is required' });
+      }
+
+      const response = await fetch(targetUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        }
+      });
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'Failed to fetch image from upstream' });
+      }
+
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+
+      const arrayBuffer = await response.arrayBuffer();
+      return res.send(Buffer.from(arrayBuffer));
+    } catch (err) {
+      console.error('Error proxying image:', err);
+      return res.status(500).json({ error: 'Failed to proxy image' });
+    }
   });
 
   // ==========================================

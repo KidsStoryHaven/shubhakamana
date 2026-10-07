@@ -306,6 +306,14 @@ export const ThreeDSharePreviewCard: React.FC<ThreeDSharePreviewCardProps> = ({
                 <img 
                   src={heroImage || userPhoto || 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=800&q=80'} 
                   alt="3D Preview"
+                  referrerPolicy="no-referrer"
+                  loading="eager"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    if (!el.src.includes('unsplash.com')) {
+                      el.src = 'https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=800&q=80';
+                    }
+                  }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />

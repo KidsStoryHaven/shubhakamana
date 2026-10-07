@@ -1,7 +1,7 @@
 /**
  * Utility for 100% Working Image + Link Sharing to WhatsApp and Social Media.
  * Uses Web Share API (Level 2 with file support) so the real slide image
- * is attached directly into WhatsApp chat, with automatic download fallback.
+ * is attached directly into WhatsApp chat, with direct WhatsApp link fallback.
  */
 
 interface SharePhotoOptions {
@@ -20,25 +20,32 @@ export async function shareToWhatsAppWithPhoto(options: SharePhotoOptions): Prom
 
   let imageBlob: Blob | null = canvasBlob || null;
 
-  // 1. If no canvasBlob provided, fetch from imageUrl or proxy
+  // 1. If no canvasBlob provided, try to fetch from imageUrl or proxy
   if (!imageBlob && imageUrl) {
     try {
       if (imageUrl.startsWith('data:')) {
         const res = await fetch(imageUrl);
         imageBlob = await res.blob();
       } else {
-        // Try direct fetch or proxy
+        // Try direct fetch with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
-          const res = await fetch(imageUrl, { mode: 'cors' });
+          const res = await fetch(imageUrl, { mode: 'cors', signal: controller.signal });
+          clearTimeout(timeoutId);
           if (res.ok) {
             imageBlob = await res.blob();
           }
         } catch {
-          // If direct CORS fails, use server proxy or canvas draw
-          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-          const res = await fetch(proxyUrl);
-          if (res.ok) {
-            imageBlob = await res.blob();
+          // If direct CORS fails, try server proxy
+          try {
+            const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+            const proxyRes = await fetch(proxyUrl);
+            if (proxyRes.ok) {
+              imageBlob = await proxyRes.blob();
+            }
+          } catch {
+            // Ignored
           }
         }
       }
@@ -62,56 +69,33 @@ export async function shareToWhatsAppWithPhoto(options: SharePhotoOptions): Prom
         return { sharedWithFile: true };
       }
     } catch (err: any) {
-      // User cancelled share sheet or platform rejected file sharing
+      // User cancelled share sheet
       if (err.name === 'AbortError') {
         return { sharedWithFile: false };
       }
-      console.warn('Native file share failed, falling back to auto-download + WhatsApp link:', err);
+      console.warn('Native file share failed, proceeding to direct WhatsApp link:', err);
     }
   }
 
-  // 3. Fallback: Auto-Download Image to Device + Open WhatsApp with formatted text & link
-  if (imageBlob) {
-    try {
-      const blobUrl = URL.createObjectURL(imageBlob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-    } catch {}
-  } else if (imageUrl && !imageUrl.startsWith('data:')) {
-    // Trigger download via link
-    const a = document.createElement('a');
-    a.href = imageUrl;
-    a.target = '_blank';
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  // Copy text to clipboard so user can easily paste if needed
+  // 3. Copy text to clipboard so user has it ready
   try {
-    if (navigator.clipboard) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
       await navigator.clipboard.writeText(text);
     }
   } catch {}
 
-  // Open WhatsApp with text
+  // 4. Open WhatsApp directly with the magic wishing message and link
+  // (NEVER open remote image URLs with target="_blank" as that causes Google 400 errors)
   const waUrl = `whatsapp://send?text=${encodeURIComponent(text)}`;
   const webWaUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  if (isMobile) {
+    // Direct mobile WhatsApp app launch
     window.location.href = waUrl;
   } else {
+    // Desktop WhatsApp Web
     window.open(webWaUrl, '_blank');
-  }
-
-  if (onFallback) {
-    onFallback('📸 स्लाइडर फ़ोटो आपके फ़ोन में सेव हो गई है! WhatsApp में फ़ोटो अटैच करके भेजें ✓');
   }
 
   if (onSuccess) onSuccess();

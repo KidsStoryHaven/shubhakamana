@@ -77,6 +77,7 @@ import {
   ThumbsUp,
   Share2
 } from 'lucide-react';
+import { updatePageSEO } from '../utils/seoManager';
 import { 
   festiveAudio, 
   FESTIVE_SOUND_OPTIONS, 
@@ -249,6 +250,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // Load data on mount & subscribe to changes
   useEffect(() => {
+    updatePageSEO({
+      title: 'Admin Control Panel | Shubhakamna.in',
+      description: 'Administration Panel',
+      robots: 'noindex, nofollow, noarchive'
+    });
     loadAllData();
     const handleDataChange = () => loadAllData();
     window.addEventListener('shubhakamna_data_changed', handleDataChange);

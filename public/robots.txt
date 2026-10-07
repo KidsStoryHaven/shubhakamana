@@ -1,4 +1,23 @@
 User-agent: *
+Disallow: /about
+Disallow: /about/
+Disallow: /about-us
+Disallow: /about-us/
+Disallow: /privacy-policy
+Disallow: /privacy-policy/
+Disallow: /privacy
+Disallow: /privacy/
+Disallow: /contact
+Disallow: /contact/
+Disallow: /contact-us
+Disallow: /contact-us/
+Disallow: /disclaimer
+Disallow: /disclaimer/
+Disallow: /terms
+Disallow: /terms/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
 Allow: /
 
 Sitemap: https://shubhakamna.in/sitemap.xml

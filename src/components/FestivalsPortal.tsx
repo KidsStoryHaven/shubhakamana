@@ -208,6 +208,7 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
               <img
                 src={resolveDirectImageUrl(featuredFestival.heroImage)}
                 alt={featuredFestival.nameHi}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                 loading="eager"
                 fetchPriority="high"
@@ -292,6 +293,7 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
               <img
                 src={resolveDirectImageUrl(fest.heroImage)}
                 alt={fest.nameHi}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 loading="lazy"
                 decoding="async"
