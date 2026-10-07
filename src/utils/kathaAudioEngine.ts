@@ -54,6 +54,8 @@ type KathaStateListener = (state: KathaState) => void;
 class KathaAudioEngine {
   private isPlaying = false;
   private activeParaIndex = 0;
+  private activeSentenceIndex = 0;
+  private currentSentences: string[] = [];
   private speed = 0.92;
   private isMuted = false;
   private elapsedSeconds = 0;
@@ -61,13 +63,29 @@ class KathaAudioEngine {
   private currentSections: KathaParagraph[] = KATHA_SECTIONS;
   private listeners: Set<KathaStateListener> = new Set();
   private timer: NodeJS.Timeout | null = null;
+  private keepAliveTimer: NodeJS.Timeout | null = null;
   private droneCtx: AudioContext | null = null;
   private synth: SpeechSynthesis | null = null;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private cachedVoices: SpeechSynthesisVoice[] = [];
 
   constructor() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       this.synth = window.speechSynthesis;
+      this.initVoices();
+    }
+  }
+
+  private initVoices() {
+    if (!this.synth) return;
+    const load = () => {
+      try {
+        this.cachedVoices = this.synth?.getVoices() || [];
+      } catch {}
+    };
+    load();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = load;
     }
   }
 
@@ -85,6 +103,8 @@ class KathaAudioEngine {
       this.activeFestivalId = festivalId;
       this.currentSections = sections;
       this.activeParaIndex = 0;
+      this.activeSentenceIndex = 0;
+      this.currentSentences = [];
       this.elapsedSeconds = 0;
       this.notify();
     } else {
@@ -130,9 +150,15 @@ class KathaAudioEngine {
 
   private getFemaleVoice(): SpeechSynthesisVoice | null {
     if (!this.synth) return null;
-    const voices = this.synth.getVoices();
+    if (this.cachedVoices.length === 0) {
+      this.cachedVoices = this.synth.getVoices();
+    }
+    const voices = this.cachedVoices;
+    if (!voices || voices.length === 0) return null;
+
+    // 1. Preferred Hindi devotional female voice
     const preferred = voices.find(v => 
-      (v.lang.includes('hi') || v.lang.includes('HI')) && 
+      (v.lang.toLowerCase().includes('hi') || v.lang.toLowerCase().includes('in')) && 
       (v.name.toLowerCase().includes('female') || 
        v.name.toLowerCase().includes('swara') || 
        v.name.toLowerCase().includes('lekha') || 
@@ -141,29 +167,45 @@ class KathaAudioEngine {
        v.name.toLowerCase().includes('natural'))
     );
     if (preferred) return preferred;
-    const anyHi = voices.find(v => v.lang.includes('hi') || v.lang.includes('HI'));
+
+    // 2. Any Hindi voice
+    const anyHi = voices.find(v => v.lang.toLowerCase().includes('hi'));
     if (anyHi) return anyHi;
-    return voices.find(v => v.lang.includes('IN')) || voices[0] || null;
+
+    // 3. Any Indian regional / Indian English voice
+    const anyIN = voices.find(v => v.lang.toLowerCase().includes('in') || v.name.toLowerCase().includes('india'));
+    if (anyIN) return anyIN;
+
+    return voices[0] || null;
   }
 
   private startTanpura() {
-    if (this.isMuted || this.droneCtx) return;
+    if (this.isMuted) return;
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      this.droneCtx = ctx;
+      if (!this.droneCtx && typeof window !== 'undefined') {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AudioCtx) return;
+        this.droneCtx = new AudioCtx();
+      }
 
+      if (this.droneCtx && this.droneCtx.state === 'suspended') {
+        this.droneCtx.resume().catch(() => {});
+      }
+
+      const ctx = this.droneCtx;
+      if (!ctx) return;
+
+      // Soft spiritual drone harmonics
       [138.59, 207.65, 277.18].forEach(freq => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        gain.gain.setValueAtTime(0.012, ctx.currentTime);
+        gain.gain.setValueAtTime(0.008, ctx.currentTime);
 
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(360, ctx.currentTime);
+        filter.frequency.setValueAtTime(320, ctx.currentTime);
 
         osc.connect(filter);
         filter.connect(gain);
@@ -188,6 +230,16 @@ class KathaAudioEngine {
       this.elapsedSeconds += 1;
       this.notify();
     }, 1000);
+
+    // Chrome keep-alive hack: resume every 8 seconds if speaking
+    if (this.keepAliveTimer) clearInterval(this.keepAliveTimer);
+    this.keepAliveTimer = setInterval(() => {
+      if (this.isPlaying && this.synth) {
+        if (this.synth.paused) {
+          this.synth.resume();
+        }
+      }
+    }, 8000);
   }
 
   private stopTimer() {
@@ -195,11 +247,17 @@ class KathaAudioEngine {
       clearInterval(this.timer);
       this.timer = null;
     }
+    if (this.keepAliveTimer) {
+      clearInterval(this.keepAliveTimer);
+      this.keepAliveTimer = null;
+    }
   }
 
   public play(fromIndex?: number) {
     if (fromIndex !== undefined) {
       this.activeParaIndex = Math.max(0, Math.min(fromIndex, this.currentSections.length - 1));
+      this.activeSentenceIndex = 0;
+      this.currentSentences = [];
     }
 
     // Automatically pause background festive music / dhun
@@ -211,7 +269,10 @@ class KathaAudioEngine {
     this.isPlaying = true;
     this.startTimer();
     this.startTanpura();
-    this.speakCurrent();
+
+    // Prepare sentences for the active chapter
+    this.prepareChapterSentences();
+    this.speakNextSentence();
     this.notify();
   }
 
@@ -220,7 +281,9 @@ class KathaAudioEngine {
     this.stopTimer();
     this.stopTanpura();
     if (this.synth) {
-      this.synth.cancel();
+      try {
+        this.synth.cancel();
+      } catch {}
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('shubhakamna_katha_paused'));
@@ -238,6 +301,8 @@ class KathaAudioEngine {
 
   public restart() {
     this.activeParaIndex = 0;
+    this.activeSentenceIndex = 0;
+    this.currentSentences = [];
     this.elapsedSeconds = 0;
     this.play(0);
   }
@@ -245,81 +310,159 @@ class KathaAudioEngine {
   public next() {
     if (this.activeParaIndex < this.currentSections.length - 1) {
       this.activeParaIndex++;
+      this.activeSentenceIndex = 0;
+      this.currentSentences = [];
       if (this.isPlaying) {
-        this.speakCurrent();
-      } else {
-        this.notify();
+        this.prepareChapterSentences();
+        this.speakNextSentence();
       }
+      this.notify();
     }
   }
 
   public previous() {
     if (this.activeParaIndex > 0) {
       this.activeParaIndex--;
+      this.activeSentenceIndex = 0;
+      this.currentSentences = [];
       if (this.isPlaying) {
-        this.speakCurrent();
-      } else {
-        this.notify();
+        this.prepareChapterSentences();
+        this.speakNextSentence();
       }
+      this.notify();
     }
   }
 
   public setSpeed(newSpeed: number) {
     this.speed = newSpeed;
     if (this.isPlaying) {
-      this.speakCurrent();
+      // Re-speak current sentence with new speed
+      this.speakNextSentence();
     }
     this.notify();
   }
 
   public setPara(index: number) {
     this.activeParaIndex = Math.max(0, Math.min(index, this.currentSections.length - 1));
+    this.activeSentenceIndex = 0;
+    this.currentSentences = [];
     if (this.isPlaying) {
-      this.speakCurrent();
-    } else {
-      this.notify();
+      this.prepareChapterSentences();
+      this.speakNextSentence();
+    }
+    this.notify();
+  }
+
+  private prepareChapterSentences() {
+    const para = this.currentSections[this.activeParaIndex];
+    if (!para) {
+      this.currentSentences = [];
+      return;
+    }
+    // Title is first sentence
+    const fullText = `${para.title}। ${para.text}`;
+    // Split cleanly on Hindi poorn-viraam (।), period, question mark, or exclamation
+    const rawChunks = fullText
+      .split(/([।?!.\n]+)/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    const merged: string[] = [];
+    for (let i = 0; i < rawChunks.length; i += 2) {
+      const text = rawChunks[i];
+      const punct = rawChunks[i + 1] || '।';
+      if (text) {
+        merged.push(`${text}${punct}`);
+      }
+    }
+
+    this.currentSentences = merged.length > 0 ? merged : [fullText];
+    if (this.activeSentenceIndex >= this.currentSentences.length) {
+      this.activeSentenceIndex = 0;
     }
   }
 
-  private speakCurrent() {
-    if (!this.synth || this.activeParaIndex >= this.currentSections.length) {
-      this.pause();
+  private speakNextSentence() {
+    if (!this.synth || !this.isPlaying) return;
+
+    if (this.synth.paused) {
+      this.synth.resume();
+    }
+
+    if (this.activeSentenceIndex >= this.currentSentences.length) {
+      // Current chapter completed! Advance to next chapter
+      if (this.activeParaIndex + 1 < this.currentSections.length) {
+        this.activeParaIndex++;
+        this.activeSentenceIndex = 0;
+        this.prepareChapterSentences();
+        this.notify();
+        setTimeout(() => {
+          if (this.isPlaying) this.speakNextSentence();
+        }, 300);
+      } else {
+        // Entire story completed
+        this.pause();
+      }
       return;
     }
 
-    this.synth.cancel();
-
-    const para = this.currentSections[this.activeParaIndex];
-    if (!para) {
-      this.pause();
+    const sentenceText = this.currentSentences[this.activeSentenceIndex];
+    if (!sentenceText) {
+      this.activeSentenceIndex++;
+      this.speakNextSentence();
       return;
     }
 
-    const text = `${para.title}। ${para.text}`;
-    const u = new SpeechSynthesisUtterance(text);
-    u.pitch = 1.18;
+    try {
+      this.synth.cancel();
+    } catch {}
+
+    const u = new SpeechSynthesisUtterance(sentenceText);
+    u.lang = 'hi-IN'; // CRITICAL: Always set Hindi language explicitly
+    u.pitch = 1.05;
     u.rate = this.speed;
     u.volume = this.isMuted ? 0 : 1.0;
 
     const voice = this.getFemaleVoice();
-    if (voice) u.voice = voice;
+    if (voice) {
+      u.voice = voice;
+    }
 
     u.onend = () => {
-      if (this.activeParaIndex + 1 < this.currentSections.length) {
-        this.activeParaIndex++;
-        this.notify();
-        this.speakCurrent();
-      } else {
-        this.pause();
+      if (!this.isPlaying) return;
+      this.activeSentenceIndex++;
+      // Natural 140ms breathing pause between sentences
+      setTimeout(() => {
+        if (this.isPlaying) {
+          this.speakNextSentence();
+        }
+      }, 140);
+    };
+
+    u.onerror = (e) => {
+      if (e.error === 'canceled' || e.error === 'interrupted') {
+        return; // Ignore user pause/skip cancel events
+      }
+      console.warn('Katha sentence speech error:', e.error);
+      if (this.isPlaying) {
+        this.activeSentenceIndex++;
+        setTimeout(() => {
+          if (this.isPlaying) this.speakNextSentence();
+        }, 150);
       }
     };
 
-    u.onerror = () => {
-      this.pause();
-    };
-
     this.currentUtterance = u;
-    this.synth.speak(u);
+    // Keep reference globally to prevent Chromium GC premature termination
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __katha_utterance: SpeechSynthesisUtterance }).__katha_utterance = u;
+    }
+
+    try {
+      this.synth.speak(u);
+    } catch (err) {
+      console.warn('SpeechSynthesis speak failed:', err);
+    }
     this.notify();
   }
 }

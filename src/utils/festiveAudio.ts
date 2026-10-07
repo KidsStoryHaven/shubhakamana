@@ -24,6 +24,34 @@ class FestiveAudioEngine {
   private currentAudioElement: HTMLAudioElement | null = null;
   private isPlayingBirthdaySong: boolean = false;
   private isSpeakingAnnouncement: boolean = false;
+  private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private cachedVoices: SpeechSynthesisVoice[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const load = () => {
+        try {
+          this.cachedVoices = window.speechSynthesis.getVoices() || [];
+        } catch {}
+      };
+      load();
+      window.speechSynthesis.onvoiceschanged = load;
+    }
+  }
+
+  private getPreferredHindiVoice(): SpeechSynthesisVoice | null {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+    if (this.cachedVoices.length === 0) {
+      this.cachedVoices = window.speechSynthesis.getVoices() || [];
+    }
+    const voices = this.cachedVoices;
+    if (!voices || voices.length === 0) return null;
+
+    const hindiVoice = voices.find(v => v.lang.toLowerCase().includes('hi')) ||
+      voices.find(v => v.lang.toLowerCase().includes('in') || v.name.toLowerCase().includes('india')) ||
+      voices[0];
+    return hindiVoice || null;
+  }
 
   private initContext() {
     if (!this.ctx && typeof window !== 'undefined') {
@@ -492,7 +520,12 @@ class FestiveAudioEngine {
     // 2. Vocalization with the exact name requested:
     // "Happy birthday to you, happy birthday to you, happy birthday to Akash, happy birthday to you!"
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch {}
 
       const phrases = [
         'Happy birthday to you,',
@@ -501,35 +534,54 @@ class FestiveAudioEngine {
         'Happy birthday to you!'
       ];
 
-      let phraseDelay = 300;
-      phrases.forEach((phrase, idx) => {
-        setTimeout(() => {
-          if (!this.isPlayingBirthdaySong || this.isMuted) return;
-          const utterance = new SpeechSynthesisUtterance(phrase);
-          utterance.rate = 0.90; // Singing rhythmic cadence
-          utterance.pitch = idx === 2 ? 1.25 : 1.1; // Higher celebratory pitch for name
-          utterance.volume = 1.0;
+      let bdayIdx = 0;
+      const speakNextBday = () => {
+        if (!this.isPlayingBirthdaySong || this.isMuted) return;
+        if (bdayIdx >= phrases.length) {
+          this.notifySongStatus(false);
+          this.playPartyCheer();
+          if (onComplete) onComplete();
+          return;
+        }
 
-          // Attempt Hindi or Indian English voice for natural pronunciation
-          const voices = window.speechSynthesis.getVoices();
-          const preferredVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN')) || voices[0];
-          if (preferredVoice) utterance.voice = preferredVoice;
+        const phrase = phrases[bdayIdx];
+        const isNamePhrase = bdayIdx === 2;
+        bdayIdx++;
 
-          window.speechSynthesis.speak(utterance);
+        const utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.lang = 'en-IN';
+        utterance.rate = 0.90;
+        utterance.pitch = isNamePhrase ? 1.25 : 1.1;
+        utterance.volume = 1.0;
 
-          // On last phrase finish
-          if (idx === phrases.length - 1) {
-            utterance.onend = () => {
-              this.notifySongStatus(false);
-              this.playPartyCheer();
-              if (onComplete) onComplete();
-            };
+        const voice = this.getPreferredHindiVoice();
+        if (voice) utterance.voice = voice;
+
+        utterance.onend = () => {
+          if (this.isPlayingBirthdaySong && !this.isMuted) {
+            setTimeout(speakNextBday, 160);
           }
-        }, phraseDelay);
+        };
 
-        // Advance rhythm timing to match music bars
-        phraseDelay += (idx === 0 || idx === 1) ? 2900 : 3400;
-      });
+        utterance.onerror = (e) => {
+          if (e.error === 'canceled' || e.error === 'interrupted') return;
+          if (this.isPlayingBirthdaySong && !this.isMuted) {
+            setTimeout(speakNextBday, 160);
+          }
+        };
+
+        this.currentUtterance = utterance;
+        (window as unknown as { __shubhakamna_bday_u: SpeechSynthesisUtterance }).__shubhakamna_bday_u = utterance;
+
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          window.speechSynthesis.speak(utterance);
+        } catch {}
+      };
+
+      setTimeout(speakNextBday, 250);
     } else {
       // Fallback timer if speech synthesis is not supported
       setTimeout(() => {
@@ -709,6 +761,7 @@ class FestiveAudioEngine {
     this.stopAll();
     this.isSpeakingAnnouncement = true;
     this.initContext();
+    this.playTempleBell(); // Play divine bell chime
 
     const name = senderName.trim() || 'आपके शुभचिंतक';
     const fest = festivalName.trim() || 'पावन पर्व';
@@ -746,43 +799,67 @@ class FestiveAudioEngine {
       `${name} ने आपको ${fest} की पावन शुभकामना भेजी है!`,
       `आपको और आपके पूरे परिवार को ${fest} की प्यार भरी शुभकामनाएँ।`,
       deityBlessing,
-      `आप भी अपना नाम और फोटो लगाकर अपने परिवार और दोस्तों को ज़रूर शेयर करें।`,
-      `इस पावन संदेश को ग्यारह लोगों को शेयर करें ताकि सभी लोगों तक यह शुभ संदेश पहुँचे।`,
+      `आप भी अपना नाम और फोटो लगाकर अपने परिवार और दोस्तों को यह सुंदर संदेश ज़रूर भेजें।`,
       `एक बार फिर आपको ${fest} की बहुत-बहुत शुभकामनाएँ!`
     ];
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch {}
 
-      let delay = 400; // Slight delay for temple bell chime to start
-      phrases.forEach((phrase, idx) => {
-        setTimeout(() => {
-          if (this.isMuted) return;
-          const utterance = new SpeechSynthesisUtterance(phrase);
-          utterance.lang = 'hi-IN'; // Force Hindi Devanagari Voice
-          utterance.rate = 0.88; // Madhur, gentle devotional speaking speed
-          utterance.pitch = 1.0; // Warm natural pitch
-          utterance.volume = 1.0;
+      let phraseIdx = 0;
+      const speakNext = () => {
+        if (!this.isSpeakingAnnouncement || this.isMuted) return;
+        if (phraseIdx >= phrases.length) {
+          this.isSpeakingAnnouncement = false;
+          if (onComplete) onComplete();
+          return;
+        }
 
-          // Prefer Hindi voice (hi-IN)
-          const voices = window.speechSynthesis.getVoices();
-          const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN')) || voices[0];
-          if (hindiVoice) utterance.voice = hindiVoice;
+        const text = phrases[phraseIdx];
+        phraseIdx++;
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'hi-IN'; // Force Hindi Devanagari Voice
+        u.rate = 0.90; // Gentle devotional speaking speed
+        u.pitch = 1.05; // Warm natural pitch
+        u.volume = 1.0;
 
-          window.speechSynthesis.speak(utterance);
+        const voice = this.getPreferredHindiVoice();
+        if (voice) u.voice = voice;
 
-          // Stop cleanly after the last phrase finishes
-          if (idx === phrases.length - 1) {
-            utterance.onend = () => {
-              this.stopAll();
-              if (onComplete) onComplete();
-            };
+        u.onend = () => {
+          if (this.isSpeakingAnnouncement && !this.isMuted) {
+            setTimeout(speakNext, 180);
           }
-        }, delay);
+        };
 
-        // Adjust phrase delay based on character count
-        delay += Math.max(2200, phrase.length * 90);
-      });
+        u.onerror = (e) => {
+          if (e.error === 'canceled' || e.error === 'interrupted') return;
+          console.warn('Voice announcement phrase error:', e.error);
+          if (this.isSpeakingAnnouncement && !this.isMuted) {
+            setTimeout(speakNext, 180);
+          }
+        };
+
+        this.currentUtterance = u;
+        (window as unknown as { __shubhakamna_voice_u: SpeechSynthesisUtterance }).__shubhakamna_voice_u = u;
+
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          window.speechSynthesis.speak(u);
+        } catch (err) {
+          console.warn('speechSynthesis.speak error:', err);
+        }
+      };
+
+      // Slight 300ms pause for the bell chime
+      setTimeout(speakNext, 300);
     } else {
       setTimeout(() => {
         this.stopAll();

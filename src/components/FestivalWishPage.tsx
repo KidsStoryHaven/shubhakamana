@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Festival } from '../data/festivals';
 import { FestiveCanvas } from './FestiveCanvas';
 import { festiveAudio } from '../utils/festiveAudio';
+import { kathaAudio } from '../utils/kathaAudioEngine';
 import { SurpriseUnbox } from './SurpriseUnbox';
 import { StickyViralBar } from './StickyViralBar';
 import { StatusShareModal } from './StatusShareModal';
@@ -392,14 +393,24 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     return '🪔 पावन घंटी व आरती की गूंज (Temple Bells)';
   };
 
-  const triggerFestivalSound = (sampleName?: string) => {
+  const triggerFestivalSound = (sampleName?: string, userExplicit: boolean = false) => {
+    // If Katha is playing, pause it so voice wish plays cleanly
+    kathaAudio.pause();
+
+    // If user clicked explicitly or sound was muted, unmute
+    if (userExplicit || isSoundMuted) {
+      setIsSoundMuted(false);
+      festiveAudio.setMuted(false);
+    }
+
     if (isBirthday) {
       festiveAudio.playPersonalizedBirthdaySong(sampleName || birthdayPerson);
     } else {
       festiveAudio.playPersonalizedFestivalWishAnnouncement(
         sampleName || senderName,
         festival.nameHi,
-        festival.id
+        festival.id,
+        userExplicit // forceRestart: true on explicit user interaction
       );
     }
   };
@@ -411,7 +422,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     } catch {
       // Ignored
     }
-    triggerFestivalSound();
+    triggerFestivalSound(undefined, true);
     updatePageSEO(getFestivalSEOMetadata(festival, senderName, code));
   };
 
@@ -419,11 +430,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     festiveAudio.setMuted(isSoundMuted);
   }, [isSoundMuted]);
 
-  // Automatically pause background dhun when Navratri Katha starts playing
+  // Automatically pause background dhun when Katha starts playing
   useEffect(() => {
     const handleKathaStart = () => {
-      setIsSoundMuted(true);
-      festiveAudio.setMuted(true);
       festiveAudio.stopAll();
     };
 
@@ -443,7 +452,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
     const autoPlayTimer = setTimeout(() => {
-      triggerFestivalSound();
+      triggerFestivalSound(undefined, false);
     }, 450);
 
     return () => clearTimeout(autoPlayTimer);
@@ -454,7 +463,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     setIsSoundMuted(nextMuted);
     festiveAudio.setMuted(nextMuted);
     if (!nextMuted) {
-      triggerFestivalSound();
+      triggerFestivalSound(undefined, true);
     }
   };
 
@@ -881,7 +890,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           <FestiveCanvas 
             type={festival.particlesType} 
             interactive={true} 
-            onTap={() => triggerFestivalSound()} 
+            onTap={() => triggerFestivalSound(undefined, true)} 
           />
 
           <div className="relative z-20 pointer-events-auto">
@@ -895,7 +904,7 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
             <div className="mb-2.5 flex flex-col items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => triggerFestivalSound()}
+                onClick={() => triggerFestivalSound(undefined, true)}
                 className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition transform active:scale-95 cursor-pointer border border-yellow-200 animate-pulse"
               >
                 <Volume2 className="w-4 h-4 text-stone-950 animate-bounce" />
