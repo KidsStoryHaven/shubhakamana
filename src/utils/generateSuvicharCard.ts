@@ -11,13 +11,15 @@ import {
 } from '../data/suvicharStylesData';
 import { resolveDirectImageUrl, getGoogleDriveFallbackUrls } from './googleDriveHelper';
 
+export type SuvicharAspectRatio = '1:1' | '9:16' | '4:5' | '16:9' | '3:4' | 'square' | 'story';
+
 export interface SuvicharCardOptions {
   suvichar: SuvicharItem;
   background: SuvicharBackground;
   customBackgroundUrl?: string | null;
   senderName: string;
   senderPhoto?: string | null;
-  aspectRatio: 'square' | 'story'; // 'square' (1:1 1080x1080) or 'story' (9:16 1080x1920)
+  aspectRatio: SuvicharAspectRatio; // 1:1, 9:16, 4:5, 16:9, 3:4
   language: 'hindi' | 'english' | 'marathi' | 'gujarati';
   showDayAndTime?: boolean;
   styleId?: string;
@@ -103,7 +105,7 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     aspectRatio, 
     language, 
     showDayAndTime = true,
-    styleId = 'gold_floral',
+    styleId = 'neon_galaxy_3d',
     headlineOverride,
     customBadge1,
     customBadge2,
@@ -112,44 +114,88 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
     targetElement
   } = options;
 
-  // 1. Direct 1-to-1 Pixel Perfect Capture from Live Screen Preview Element if available
+  // 1. Direct 1-to-1 Pixel Perfect Capture from Live Screen Preview Element (8K Ultra HD)
   if (targetElement) {
     try {
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default;
-      const capturedCanvas = await html2canvas(targetElement, {
-        scale: 4, // 4x Super Retina 8K Resolution
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        logging: false
+      // Ensure all custom fonts (Rozha One, Yatra One, Tiro Devanagari Hindi) are 100% loaded
+      if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      const htmlToImage = await import('html-to-image');
+      // Capture exact DOM with 4x pixelRatio for true 8K Ultra-HD crisp quality
+      // skipFonts: true and fontEmbedCSS: '' prevents SecurityError on cross-origin Google Fonts stylesheets
+      const blob = await htmlToImage.toBlob(targetElement, {
+        pixelRatio: 4,
+        quality: 0.98,
+        cacheBust: true,
+        skipFonts: true,
+        fontEmbedCSS: ''
       });
 
-      return new Promise<{ blob: Blob; fileName: string }>((resolve, reject) => {
-        capturedCanvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Canvas blob generation failed'));
-              return;
-            }
-            const safeName = (senderName || 'Suvichar').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
-            const fileName = `Shubh-Prabhat-Suvichar-${suvichar.number}-${safeName}-8K.jpg`;
-            resolve({ blob, fileName });
-          },
-          'image/jpeg',
-          0.98
-        );
-      });
-    } catch (domCaptureErr) {
-      console.warn('DOM html2canvas capture failed, using canvas fallback:', domCaptureErr);
+      if (blob) {
+        const safeName = (senderName || 'Suvichar').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
+        const fileName = `Shubh-Prabhat-Suvichar-${suvichar.number}-${safeName}-8K.jpg`;
+        return { blob, fileName };
+      }
+    } catch (htiErr) {
+      console.warn('html-to-image capture fallback to html2canvas:', htiErr);
+      try {
+        const html2canvasModule = await import('html2canvas');
+        const html2canvas = html2canvasModule.default;
+        const capturedCanvas = await html2canvas(targetElement, {
+          scale: 4, // 8K Ultra-HD
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,
+          logging: false,
+          imageTimeout: 12000
+        });
+
+        return await new Promise<{ blob: Blob; fileName: string }>((resolve, reject) => {
+          capturedCanvas.toBlob(
+            (b) => {
+              if (!b) {
+                reject(new Error('Canvas blob generation failed'));
+                return;
+              }
+              const safeName = (senderName || 'Suvichar').replace(/[^a-zA-Z0-9_\u0900-\u097F]/g, '-');
+              const fileName = `Shubh-Prabhat-Suvichar-${suvichar.number}-${safeName}-8K.jpg`;
+              resolve({ blob: b, fileName });
+            },
+            'image/jpeg',
+            0.98
+          );
+        });
+      } catch (h2cErr) {
+        console.warn('html2canvas capture also failed, using canvas fallback:', h2cErr);
+      }
     }
   }
 
   const style = getSuvicharStyleById(styleId);
-  const isStory = aspectRatio === 'story';
-  const logicalWidth = 1080;
-  const logicalHeight = isStory ? 1920 : 1080;
-  const scaleFactor = 2; // 2x Super Retina 4K/8K (2160 x 3840 for Story, 2160 x 2160 for Square)
+  let logicalWidth = 1080;
+  let logicalHeight = 1920;
+
+  if (aspectRatio === '1:1' || aspectRatio === 'square') {
+    logicalWidth = 1080;
+    logicalHeight = 1080;
+  } else if (aspectRatio === '9:16' || aspectRatio === 'story') {
+    logicalWidth = 1080;
+    logicalHeight = 1920;
+  } else if (aspectRatio === '4:5') {
+    logicalWidth = 1080;
+    logicalHeight = 1350;
+  } else if (aspectRatio === '16:9') {
+    logicalWidth = 1920;
+    logicalHeight = 1080;
+  } else if (aspectRatio === '3:4') {
+    logicalWidth = 1080;
+    logicalHeight = 1440;
+  }
+
+  const isStory = logicalHeight >= 1400;
+  const scaleFactor = 2; // 2x Super Retina 4K/8K
   const width = logicalWidth;
   const height = logicalHeight;
 
@@ -226,20 +272,81 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   ctx.roundRect(borderMargin + 10, borderMargin + 10, width - (borderMargin + 10) * 2, height - (borderMargin + 10) * 2, [cornerRadius - 8]);
   ctx.stroke();
 
-  // Draw 🐦 Bird on top right
-  ctx.font = `${isStory ? 48 : 38}px sans-serif`;
+  // Draw cliparts (Bird 🐦🌿 + Heart 💖 + Sparkle ✨) together in ONE corner (Top Right)
+  ctx.font = `${isStory ? 40 : 30}px sans-serif`;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'top';
-  ctx.fillText('🐦🌿', width - 40, borderMargin + 25);
-
-  // Draw 💖 Hearts on left
-  ctx.textAlign = 'left';
-  ctx.fillText('💖', borderMargin + 25, height * 0.35);
+  ctx.fillText('🐦🌿 💖 ✨', width - 40, borderMargin + 25);
 
   ctx.restore();
 
-  // 3. Card Top Branding removed for clean reference style
-  let headerBottomY = isStory ? 70 : 50;
+  // 3. Card Top: Always render 3D Gold Headline & Day/Time Badge (Matching Live Preview)
+  const headlineToDraw = headlineOverride?.trim() || style.defaultHeadline || 'सुविचार';
+  const hSize = isStory ? 72 : 54;
+  let currentY = borderMargin + (isStory ? 45 : 30);
+
+  // Top Filigree with Golden Heart
+  ctx.save();
+  ctx.font = `${isStory ? 24 : 18}px sans-serif`;
+  ctx.fillStyle = '#fde047';
+  ctx.textAlign = 'center';
+  ctx.fillText('⚜️ 💛 ⚜️', width / 2, currentY);
+  ctx.restore();
+  currentY += isStory ? 35 : 25;
+
+  // 3D Gold Embossed Headline Title
+  ctx.save();
+  ctx.font = `900 ${hSize}px ${style.canvasFontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  // Multi-layer 3D gold extrusion shadows
+  const goldShadows = [
+    { color: '#451a03', y: 8, x: 0 },
+    { color: '#78350f', y: 6, x: 0 },
+    { color: '#b45309', y: 5, x: 0 },
+    { color: '#d97706', y: 4, x: 0 },
+    { color: '#f59e0b', y: 3, x: 0 },
+    { color: '#fde047', y: 1, x: 0 }
+  ];
+  goldShadows.forEach(s => {
+    ctx.fillStyle = s.color;
+    ctx.fillText(headlineToDraw, width / 2 + s.x, currentY + s.y);
+  });
+  ctx.fillStyle = '#fffbeb';
+  ctx.fillText(headlineToDraw, width / 2, currentY);
+  ctx.restore();
+  currentY += hSize + (isStory ? 16 : 10);
+
+  // Live Day & Time Badge
+  if (showDayAndTime) {
+    const dtInfo = getDayAndTimeFormatted(language);
+    const dtText = `🕒 ${dtInfo.badgeText}`;
+    ctx.save();
+    const dtFontSize = isStory ? 20 : 15;
+    ctx.font = `bold ${dtFontSize}px ${style.canvasFontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const dtW = ctx.measureText(dtText).width + (isStory ? 36 : 24);
+    const dtH = isStory ? 34 : 26;
+    const dtX = (width - dtW) / 2;
+
+    ctx.fillStyle = style.isDarkTheme ? 'rgba(0, 0, 0, 0.88)' : 'rgba(255, 255, 255, 0.92)';
+    ctx.beginPath();
+    ctx.roundRect(dtX, currentY, dtW, dtH, [dtH / 2]);
+    ctx.fill();
+
+    ctx.strokeStyle = style.isDarkTheme ? '#f59e0b' : '#d97706';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = style.isDarkTheme ? '#fde047' : '#b45309';
+    ctx.fillText(dtText, width / 2, currentY + dtH / 2);
+    ctx.restore();
+    currentY += dtH + (isStory ? 25 : 16);
+  }
+
+  const headerBottomY = currentY;
 
   // 4. PARSE SUVICHAR & PREPARE TEXT
   let rawText = suvichar.hindiText;
@@ -250,114 +357,139 @@ export async function generateSuvicharCardBlob(options: SuvicharCardOptions): Pr
   const parsed = parseSuvicharContent(rawText, customBadge1, customBadge2);
   const badge1Text = customBadge1 || parsed.badge1;
   const badge2Text = customBadge2 || parsed.badge2;
-  const headlineText = headlineOverride ? headlineOverride.trim() : '';
 
   // 5. CALCULATE BOTTOM ELEMENTS DIMENSIONS & POSITIONS
   const hasUserPhoto = !!(userImg && ((userImg.width > 0) || (userImg.naturalWidth > 0) || userImg.complete));
-  const basePhotoR = isStory ? 95 : 70;
+  const basePhotoR = isStory ? 90 : 68;
   const photoR = hasUserPhoto ? Math.round(basePhotoR * photoScale) : 0;
-  const plateH = isStory ? 68 : 52;
-  const plateW = isStory ? 580 : 460;
+  const plateH = isStory ? 64 : 48;
+  const plateW = isStory ? 560 : 440;
   const plateX = (width - plateW) / 2;
 
-  const footerTextH = isStory ? 28 : 22;
-  const footerTextY = height - (isStory ? 34 : 26);
+  const footerTextH = isStory ? 26 : 20;
+  const footerTextY = height - borderMargin - (isStory ? 28 : 20);
 
-  const bottomLinkH = isStory ? 44 : 36;
-  const bottomLinkY = footerTextY - bottomLinkH - (isStory ? 18 : 12);
+  const bottomLinkH = isStory ? 40 : 32;
+  const bottomLinkY = footerTextY - bottomLinkH - (isStory ? 14 : 10);
 
-  const plateY = bottomLinkY - plateH - (isStory ? 16 : 10);
+  const plateY = bottomLinkY - plateH - (isStory ? 14 : 8);
   const photoX = width / 2;
-  const photoY = hasUserPhoto ? plateY - 14 - photoR : 0;
+  const photoY = hasUserPhoto ? plateY - 12 - photoR : 0;
 
   // Virtue Tag Position directly above user photo
-  const tagY = hasUserPhoto ? (photoY - photoR - (isStory ? 26 : 18)) : (plateY - (isStory ? 26 : 18));
-  const contentBottomBoundary = tagY - (isStory ? 36 : 24);
+  const tagY = hasUserPhoto ? (photoY - photoR - (isStory ? 24 : 16)) : (plateY - (isStory ? 24 : 16));
+  const contentBottomBoundary = tagY - (isStory ? 28 : 18);
 
-  // 6. MIDDLE CONTENT AREA (Headline + Quote + Ornament)
-  const availableContentH = Math.max(220, contentBottomBoundary - headerBottomY);
-  let middleY = headerBottomY;
+  // 6. MIDDLE CONTENT AREA (Balanced vertical distribution - ZERO dead gaps)
+  const availableContentH = Math.max(260, contentBottomBoundary - headerBottomY);
+  const cleanThought = rawText
+    .replace(/["“”'‘’]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  // Headline if specified
-  if (headlineText && headlineText.length > 0) {
-    const hSize = isStory ? 56 : 42;
-    ctx.save();
-    ctx.font = `900 ${hSize}px ${style.canvasFontFamily}`;
-    ctx.fillStyle = style.highlightColor || (style.isDarkTheme ? '#fde047' : '#b45309');
-    ctx.textAlign = 'center';
-    ctx.shadowColor = style.isDarkTheme ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.2)';
-    ctx.shadowBlur = 10;
-    ctx.fillText(headlineText, width / 2, middleY + hSize * 0.8);
-    ctx.restore();
-    middleY += hSize * 1.2;
-  }
+  // Smart Balanced Devanagari Line Splitting
+  const words = cleanThought.split(' ');
+  const targetWordsPerLine = Math.max(3, Math.ceil(words.length / (words.length > 14 ? 3 : 2)));
+  const calculatedLines: string[] = [];
+  let curLineWords: string[] = [];
 
-  // 📖 MAIN BOLD QUOTE WITH CURLY QUOTES “ ... ”
-  const formattedQuote = `“${rawText.trim()}”`;
-  const maxQuoteW = width - (isStory ? 140 : 110);
-
-  let quoteFontSize = Math.round((isStory ? 54 : 38) * fontSizeMultiplier);
-  if (formattedQuote.length > 130) {
-    quoteFontSize = Math.round((isStory ? 44 : 30) * fontSizeMultiplier);
-  } else if (formattedQuote.length > 80) {
-    quoteFontSize = Math.round((isStory ? 48 : 34) * fontSizeMultiplier);
-  }
-
-  const minQuoteSize = Math.round((isStory ? 34 : 24) * Math.min(1.3, fontSizeMultiplier));
-  let quoteLines: string[] = [];
-  let quoteLineH = Math.round(quoteFontSize * 1.55);
-
-  while (quoteFontSize >= minQuoteSize) {
-    ctx.font = `bold ${quoteFontSize}px ${style.canvasFontFamily}`;
-    quoteLines = wrapTextToLines(ctx, formattedQuote, maxQuoteW);
-    const totalLinesHeight = quoteLines.length * quoteLineH;
-    if (totalLinesHeight <= availableContentH - (isStory ? 60 : 40)) {
-      break;
+  for (let i = 0; i < words.length; i++) {
+    curLineWords.push(words[i]);
+    const isPunct = /[।!?,\n]$/.test(words[i]);
+    if (curLineWords.length >= targetWordsPerLine || (isPunct && curLineWords.length >= 2)) {
+      calculatedLines.push(curLineWords.join(' '));
+      curLineWords = [];
     }
+  }
+  if (curLineWords.length > 0) {
+    if (calculatedLines.length > 0 && curLineWords.length <= 2) {
+      calculatedLines[calculatedLines.length - 1] += ' ' + curLineWords.join(' ');
+    } else {
+      calculatedLines.push(curLineWords.join(' '));
+    }
+  }
+
+  const quoteLines = calculatedLines.length > 0 ? calculatedLines : [cleanThought];
+
+  // Dynamically calculate font size and line height to fill the available space naturally
+  let quoteFontSize = isStory ? 52 : 38;
+  if (quoteLines.length <= 2) {
+    quoteFontSize = isStory ? 64 : 46;
+  } else if (quoteLines.length >= 4) {
+    quoteFontSize = isStory ? 44 : 32;
+  }
+  quoteFontSize = Math.round(quoteFontSize * fontSizeMultiplier);
+
+  let quoteLineH = Math.round(quoteFontSize * 1.55);
+  while (quoteLines.length * quoteLineH > availableContentH - (isStory ? 60 : 40) && quoteFontSize > 22) {
     quoteFontSize -= 2;
     quoteLineH = Math.round(quoteFontSize * 1.55);
   }
 
-  const quoteTotalBlockH = quoteLines.length * quoteLineH;
-  let quoteStartY = middleY + Math.max(0, (availableContentH - quoteTotalBlockH) / 2) + Math.round(quoteLineH * 0.4);
+  const totalLinesH = quoteLines.length * quoteLineH;
+  let quoteStartY = headerBottomY + Math.max(10, (availableContentH - totalLinesH) / 2) + Math.round(quoteLineH * 0.4);
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  quoteLines.forEach((line) => {
+  quoteLines.forEach((line, idx) => {
     ctx.save();
-    ctx.font = `bold ${quoteFontSize}px ${style.canvasFontFamily}`;
-    
-    // Drop shadow
-    if (style.isDarkTheme) {
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-      ctx.shadowBlur = 16;
-      ctx.shadowOffsetY = 4;
-      ctx.fillStyle = style.textColor;
-    } else {
-      ctx.shadowColor = 'rgba(255, 255, 255, 0.98)';
-      ctx.shadowBlur = 12;
-      ctx.shadowOffsetY = 2;
-      ctx.fillStyle = style.textColor;
-    }
+    ctx.font = `900 ${quoteFontSize}px ${style.canvasFontFamily}`;
 
-    // Outer subtle contrast stroke
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = style.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.92)';
-    ctx.strokeText(line, width / 2, quoteStartY);
-    ctx.fillText(line, width / 2, quoteStartY);
+    const isPink = idx % 3 === 1;
+    const isWhite = idx % 3 === 2;
+
+    if (style.cardTheme === 'royal_emerald_plates' || style.isDarkTheme) {
+      if (isPink) {
+        // 3D Rose/Magenta Highlight
+        ctx.fillStyle = '#db2777';
+        ctx.fillText(line, width / 2, quoteStartY + 3);
+        ctx.fillStyle = '#be185d';
+        ctx.fillText(line, width / 2, quoteStartY + 2);
+        ctx.fillStyle = '#f472b6';
+        ctx.fillText(line, width / 2, quoteStartY);
+      } else if (isWhite) {
+        // 3D Crisp White
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 4;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(line, width / 2, quoteStartY);
+      } else {
+        // 3D 24K Gold Extrusion
+        const goldSh = [
+          { color: '#451a03', y: 5 },
+          { color: '#78350f', y: 4 },
+          { color: '#b45309', y: 3 },
+          { color: '#d97706', y: 2 },
+          { color: '#f59e0b', y: 1 }
+        ];
+        goldSh.forEach(gs => {
+          ctx.fillStyle = gs.color;
+          ctx.fillText(line, width / 2, quoteStartY + gs.y);
+        });
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText(line, width / 2, quoteStartY);
+      }
+    } else {
+      ctx.fillStyle = style.textColor;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 8;
+      ctx.fillText(line, width / 2, quoteStartY);
+    }
     ctx.restore();
 
     quoteStartY += quoteLineH;
   });
   ctx.restore();
 
-  // Decorative Ornament below text
+  // Decorative Golden Heart Flourish directly below quote
   ctx.save();
-  ctx.font = `${isStory ? 32 : 24}px sans-serif`;
+  ctx.font = `${isStory ? 26 : 20}px sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(style.ornament || '🌸 💖 🌸', width / 2, quoteStartY + (isStory ? 16 : 8));
+  ctx.fillStyle = '#fde047';
+  ctx.fillText('⚜️ 💛 ⚜️', width / 2, quoteStartY + (isStory ? 14 : 8));
   ctx.restore();
 
   // 7. 🏷️ VIRTUE BADGE PILL (e.g. ✨ सत्य वचन • सकारात्मक विचार ✨)

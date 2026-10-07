@@ -36,9 +36,10 @@ import {
   getSuvicharStyleById, 
   parseSuvicharContent 
 } from '../data/suvicharStylesData';
-import { generateSuvicharCardBlob } from '../utils/generateSuvicharCard';
+import { generateSuvicharCardBlob, SuvicharAspectRatio } from '../utils/generateSuvicharCard';
 import { awardUserPoints } from '../data/userStore';
 import { ThreeDSharePreviewCard } from './ThreeDSharePreviewCard';
+import { TemplateEngine, TemplateEngineId, THREE_D_TEMPLATES } from './TemplateEngine';
 
 interface ShubhPrabhatPageProps {
   onBackToPortal: () => void;
@@ -59,13 +60,16 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
   const [senderPhoto, setSenderPhoto] = useState<string | null>(() => {
     return localStorage.getItem('shubhakamna_my_photo') || null;
   });
-  const [aspectRatio, setAspectRatio] = useState<'story' | 'square'>('story');
+  const [aspectRatio, setAspectRatio] = useState<SuvicharAspectRatio>('9:16');
   const [selectedLang, setSelectedLang] = useState<'hindi' | 'english' | 'marathi' | 'gujarati'>('hindi');
   const [showDayAndTime, setShowDayAndTime] = useState<boolean>(true);
 
-  // 🎨 8 WhatsApp Status Font & Card Styles
-  const [selectedStyleId, setSelectedStyleId] = useState<string>('gold_floral');
-  const [headlineWord, setHeadlineWord] = useState<string>('');
+  // 🎨 3D Template Engine State
+  const [selected3DTemplate, setSelected3DTemplate] = useState<TemplateEngineId>('royal_gold');
+
+  // 🎨 Curated WhatsApp & Insta Suvichar Font Styles (3, 5, 6, 7)
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('neon_galaxy_3d');
+  const [headlineWord, setHeadlineWord] = useState<string>('सुविचार');
   const [customBadge1, setCustomBadge1] = useState<string>('');
   const [customBadge2, setCustomBadge2] = useState<string>('');
   const [fontScale, setFontScale] = useState<number>(1.5);
@@ -73,8 +77,22 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
 
   const activeStyle = useMemo(() => getSuvicharStyleById(selectedStyleId), [selectedStyleId]);
 
+  // Handle 3D Template Selection (Curated 3D Styles)
+  const handleSelect3DTemplate = (templateId: TemplateEngineId) => {
+    setSelected3DTemplate(templateId);
+    if (templateId === 'royal_gold' || templateId === 'cyber_neon') {
+      setSelectedStyleId('neon_galaxy_3d');
+    } else if (templateId === 'marble_temple') {
+      setSelectedStyleId('saffron_blessing_3d');
+    } else if (templateId === 'rainbow_candy' || templateId === 'crystal_glass') {
+      setSelectedStyleId('crystal_glass_3d');
+    } else if (templateId === 'vintage_parchment') {
+      setSelectedStyleId('vintage_parchment_3d');
+    }
+  };
+
   // Background category filter
-  const [bgCategoryFilter, setBgCategoryFilter] = useState<'all' | 'sunrise' | 'temple' | 'nature' | 'gradient'>('all');
+  const [bgCategoryFilter, setBgCategoryFilter] = useState<'all' | 'sunrise' | 'temple' | 'royal' | 'nature' | 'gradient'>('all');
 
   // List search & category filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,8 +103,8 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
   const [isSharing, setIsSharing] = useState(false);
   const [downloadSuccessNotice, setDownloadSuccessNotice] = useState<boolean>(false);
 
-  // Collapsible Font & Background Customizer Options (Minimized by default)
-  const [showCustomizerOptions, setShowCustomizerOptions] = useState<boolean>(false);
+  // Collapsible Font & Background Customizer Options (Open by default)
+  const [showCustomizerOptions, setShowCustomizerOptions] = useState<boolean>(true);
 
   // Live Day & Time String (auto-updates every minute)
   const [currentDayTime, setCurrentDayTime] = useState(() => getDayAndTimeFormatted(selectedLang));
@@ -243,52 +261,80 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
     }
   };
 
-  // Universal WhatsApp & Native Share (Image + Short Page Link ONLY, no extra message text)
+  // Universal WhatsApp & Native Share (Auto-downloads preview image + Shares with clean short page URL)
   const handleWhatsAppShare = async (itemToShare: SuvicharItem = selectedSuvichar) => {
     try {
       setIsSharing(true);
       const shareUrl = getShortUrl();
 
-      // Check if Web Share API with files is supported (works on Android / iOS Chrome / Safari)
-      if (typeof navigator !== 'undefined' && navigator.canShare) {
-        try {
-          const { blob, fileName } = await generateSuvicharCardBlob({
-            suvichar: itemToShare,
-            background: selectedBackground,
-            customBackgroundUrl: customBgUrl,
-            senderName,
-            senderPhoto,
-            aspectRatio,
-            language: selectedLang,
-            showDayAndTime,
-            styleId: selectedStyleId,
-            headlineOverride: headlineWord,
-            customBadge1: customBadge1.trim() || undefined,
-            customBadge2: customBadge2.trim() || undefined,
-            fontSizeMultiplier: fontScale,
-            photoScale: photoSizeOption,
-            targetElement: previewCardRef.current
-          });
+      // 1. Generate HD Card Image Blob
+      const { blob, fileName } = await generateSuvicharCardBlob({
+        suvichar: itemToShare,
+        background: selectedBackground,
+        customBackgroundUrl: customBgUrl,
+        senderName,
+        senderPhoto,
+        aspectRatio,
+        language: selectedLang,
+        showDayAndTime,
+        styleId: selectedStyleId,
+        headlineOverride: headlineWord,
+        customBadge1: customBadge1.trim() || undefined,
+        customBadge2: customBadge2.trim() || undefined,
+        fontSizeMultiplier: fontScale,
+        photoScale: photoSizeOption,
+        targetElement: previewCardRef.current
+      });
 
-          const file = new File([blob], fileName, { type: 'image/jpeg' });
-          if (navigator.canShare({ files: [file] })) {
-            // Share image along with ONLY the short page link
-            await navigator.share({
-              files: [file],
-              text: shareUrl
-            });
-            awardUserPoints('whatsapp_share', 'Shubh Prabhat Suvichar');
+      // 2. ALWAYS Auto-Download Image to Device (Gallery/Downloads)
+      try {
+        const fileUrl = URL.createObjectURL(blob);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = fileUrl;
+        downloadAnchor.download = fileName;
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        setTimeout(() => URL.revokeObjectURL(fileUrl), 4000);
+      } catch (dlErr) {
+        console.warn('Auto-download failed:', dlErr);
+      }
+
+      // 3. Check if Web Share API with files is supported (Android / iOS Chrome / Safari)
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: '🌅 शुभ प्रभात सुविचार',
+            text: `🌅 शुभ प्रभात!\n${shareUrl}`,
+            files: [file]
+          });
+          awardUserPoints('whatsapp_share', 'Shubh Prabhat Suvichar');
+          setDownloadSuccessNotice(true);
+          setTimeout(() => setDownloadSuccessNotice(false), 7000);
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            // User just dismissed the native share sheet
+            setDownloadSuccessNotice(true);
+            setTimeout(() => setDownloadSuccessNotice(false), 7000);
             return;
           }
-        } catch (shareErr) {
-          console.warn('Native file share failed or was cancelled, falling back to WhatsApp link:', shareErr);
+          console.warn('Native file share failed, falling back to WhatsApp link:', shareErr);
         }
       }
 
-      // Fallback: Direct WhatsApp Web / App share link (strictly page link only)
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareUrl)}`;
+      // 4. Fallback: Copy clean short URL & Open WhatsApp Web / App
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+      } catch {}
+
+      const waText = `🌅 शुभ प्रभात! आज का पावन सुविचार कार्ड देखें:\n${shareUrl}`;
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
       window.open(waUrl, '_blank');
       awardUserPoints('whatsapp_share', 'Shubh Prabhat Suvichar');
+      setDownloadSuccessNotice(true);
+      setTimeout(() => setDownloadSuccessNotice(false), 7000);
     } catch (err) {
       console.error('WhatsApp share error:', err);
     } finally {
@@ -445,30 +491,68 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
               </h2>
             </div>
 
-            {/* Aspect Ratio Switcher (9:16 WhatsApp Status vs 1:1 Square) */}
-            <div className="flex items-center gap-1.5 bg-black/60 p-1 rounded-xl border border-stone-800">
-              <button
-                onClick={() => setAspectRatio('story')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                  aspectRatio === 'story'
-                    ? 'bg-amber-500 text-stone-950 shadow-md'
-                    : 'text-stone-400 hover:text-white'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>स्टेटस (9:16)</span>
-              </button>
-              <button
-                onClick={() => setAspectRatio('square')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                  aspectRatio === 'square'
-                    ? 'bg-amber-500 text-stone-950 shadow-md'
-                    : 'text-stone-400 hover:text-white'
-                }`}
-              >
-                <Square className="w-3.5 h-3.5" />
-                <span>चौकोर (1:1)</span>
-              </button>
+            {/* 9:16 Full Screen WhatsApp Status & Story Badge */}
+            <div className="flex items-center gap-1.5 bg-amber-500/20 px-3.5 py-1.5 rounded-xl border border-amber-400/50 text-amber-300 text-xs font-black shadow-md">
+              <Smartphone className="w-4 h-4 text-amber-400" />
+              <span>📱 9:16 स्टेटस व स्टोरी (8K Ultra HD)</span>
+            </div>
+          </div>
+
+          {/* 🌟 6 SPECIAL 3D MASTER VISUAL TEMPLATES SELECTOR 🌟 */}
+          <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-stone-900 via-black to-stone-900 border border-amber-500/40 text-left space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="text-xs sm:text-sm font-extrabold text-amber-300">
+                  ६ स्पेशल 3D विज़ुअल टेम्पलेट्स (Choose 3D Master Style):
+                </span>
+              </div>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                {THREE_D_TEMPLATES.find(t => t.id === selected3DTemplate)?.badge || '✨ 3D टेम्पलेट'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+              {THREE_D_TEMPLATES.map((tmpl) => {
+                const isSelected = tmpl.id === selected3DTemplate;
+                return (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => handleSelect3DTemplate(tmpl.id)}
+                    className={`p-2.5 rounded-2xl text-left transition flex flex-col justify-between border cursor-pointer relative overflow-hidden ${
+                      isSelected
+                        ? 'bg-gradient-to-b from-amber-950/90 to-black border-amber-400 shadow-lg shadow-amber-500/25 ring-2 ring-amber-400 scale-[1.02]'
+                        : 'bg-stone-900/90 hover:bg-stone-850 border-stone-800 hover:border-amber-500/40 text-stone-300'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[10px] font-black shadow-md">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-lg">{tmpl.icon}</span>
+                        <span className="text-[11px] font-black text-white leading-tight">
+                          {tmpl.hindiName}
+                        </span>
+                      </div>
+                      <p className="text-[9.5px] text-stone-400 leading-tight line-clamp-2">
+                        {tmpl.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-1.5 pt-1 border-t border-stone-800/80 flex items-center justify-between text-[8.5px]">
+                      <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">
+                        {tmpl.badge}
+                      </span>
+                      <span className="text-xs">{tmpl.emojis.bottomRibbon?.split(' ')[0] || '✨'}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -478,77 +562,147 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
             <div className="lg:col-span-6 flex flex-col items-center">
               <div 
                 ref={previewCardRef}
-                className={`relative w-full max-w-[340px] sm:max-w-[390px] rounded-3xl overflow-hidden border-2 border-amber-400/90 shadow-2xl flex flex-col justify-between text-center select-none transition-all ${
-                  aspectRatio === 'story' 
-                    ? 'aspect-[9/16] p-4 sm:p-5' 
-                    : 'min-h-[460px] sm:min-h-[500px] p-4 sm:p-5'
-                }`}
+                className="relative rounded-3xl overflow-hidden border-2 border-amber-400/90 shadow-2xl flex flex-col justify-between text-center select-none transition-all aspect-[9/16] w-full max-w-[340px] sm:max-w-[380px] p-3.5 sm:p-4 pb-2.5 sm:pb-3 mx-auto"
                 style={{
                   backgroundImage: customBgUrl
                     ? `url(${customBgUrl})`
                     : selectedBackground.type === 'image' && selectedBackground.id !== 'default_plain'
                       ? `url(${selectedBackground.url})`
-                      : activeStyle.cardTheme === 'royal_dark' || activeStyle.cardTheme === 'cosmic_gold' || activeStyle.cardTheme === 'sunrise_wood'
-                        ? `radial-gradient(circle at center, ${activeStyle.bgGrad[0]}, ${activeStyle.bgGrad[1]}, ${activeStyle.bgGrad[2]})`
-                        : `linear-gradient(135deg, ${activeStyle.bgGrad[0]}, ${activeStyle.bgGrad[1]}, ${activeStyle.bgGrad[2]})`,
+                      : activeStyle.cardTheme === 'royal_emerald_plates'
+                        ? 'radial-gradient(circle at center, #065f46 0%, #042f2e 50%, #021a19 100%)'
+                        : activeStyle.cardTheme === 'marble_temple_gold'
+                          ? 'radial-gradient(circle at center, #ffffff 0%, #faf5ea 50%, #fef3c7 100%)'
+                          : activeStyle.cardTheme === 'neon_galaxy_3d'
+                            ? 'radial-gradient(circle at center, #1e0b36 0%, #09090b 60%, #030008 100%)'
+                            : activeStyle.cardTheme === 'rainbow_candy_sunshine'
+                              ? 'linear-gradient(180deg, #dbeafe 0%, #fef3c7 40%, #fce7f3 75%, #e0e7ff 100%)'
+                              : activeStyle.cardTheme === 'royal_dark' || activeStyle.cardTheme === 'cosmic_gold' || activeStyle.cardTheme === 'sunrise_wood'
+                                ? `radial-gradient(circle at center, ${activeStyle.bgGrad[0]}, ${activeStyle.bgGrad[1]}, ${activeStyle.bgGrad[2]})`
+                                : `linear-gradient(135deg, ${activeStyle.bgGrad[0]}, ${activeStyle.bgGrad[1]}, ${activeStyle.bgGrad[2]})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundColor: activeStyle.isDarkTheme ? '#0c0a09' : '#ffffff'
                 }}
               >
-                {/* Dark Vignette Overlay for 100% Readability */}
+                {/* Vignette Overlay for Crisp Readability */}
                 <div 
                   className="absolute inset-0 pointer-events-none"
                   style={{
-                    background: activeStyle.isDarkTheme
-                      ? 'linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.65), rgba(0,0,0,0.5))'
-                      : 'linear-gradient(to top, rgba(255,255,255,0.92), rgba(255,255,255,0.7), rgba(255,255,255,0.8))'
+                    background: activeStyle.cardTheme === 'marble_temple_gold'
+                      ? 'linear-gradient(to top, rgba(255,255,255,0.92), rgba(255,255,255,0.5), rgba(255,255,255,0.75))'
+                      : activeStyle.cardTheme === 'rainbow_candy_sunshine'
+                        ? 'linear-gradient(to top, rgba(255,255,255,0.85), rgba(255,255,255,0.3), rgba(255,255,255,0.65))'
+                        : activeStyle.isDarkTheme
+                          ? 'linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.65), rgba(0,0,0,0.45))'
+                          : 'linear-gradient(to top, rgba(255,255,255,0.92), rgba(255,255,255,0.7), rgba(255,255,255,0.8))'
                   }}
                 />
 
-                {/* Decorative border rail */}
+                {/* Decorative Luxury Border Frame */}
                 <div 
-                  className="absolute inset-2 border rounded-2xl pointer-events-none" 
-                  style={{ borderColor: activeStyle.isDarkTheme ? 'rgba(251, 191, 36, 0.4)' : 'rgba(217, 119, 6, 0.35)' }}
+                  className="absolute inset-2 border-2 rounded-2xl pointer-events-none" 
+                  style={{ 
+                    borderColor: activeStyle.cardTheme === 'marble_temple_gold' 
+                      ? '#d97706' 
+                      : activeStyle.cardTheme === 'neon_galaxy_3d'
+                        ? '#db2777'
+                        : activeStyle.cardTheme === 'rainbow_candy_sunshine'
+                          ? '#fb7185'
+                          : activeStyle.isDarkTheme ? 'rgba(251, 191, 36, 0.55)' : 'rgba(217, 119, 6, 0.45)' 
+                  }}
                 />
 
-                {/* 🐦 Top Right Bird & Golden Branch Decoration (Like Reference Image) */}
-                <div className="absolute top-3 right-3 z-20 text-3xl sm:text-4xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] select-none pointer-events-none animate-bounce-slow">
-                  🐦🌿
-                </div>
+                {/* 🌟 ALL CLIPARTS & HEARTS CONSOLIDATED INTO ONE TOP-RIGHT CORNER 🌟 */}
+                
+                {/* 1. Royal Dark / Vintage / Saffron (Styles 5 & 7): Bird + Heart + Sparkle all together in ONE corner */}
+                {(activeStyle.cardTheme === 'royal_emerald_plates' || activeStyle.cardTheme === 'royal_dark') && (
+                  <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] select-none pointer-events-none">
+                    <span className="text-2xl sm:text-3xl animate-bounce-slow">🐦🌿</span>
+                    <span className="text-xl sm:text-2xl">💖</span>
+                    <span className="text-xs sm:text-sm text-yellow-300">✨</span>
+                  </div>
+                )}
 
-                {/* 💖 Left Side Glossy 3D Hearts Decoration */}
-                <div className="absolute top-1/3 left-2.5 z-20 text-2xl sm:text-3xl filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] select-none pointer-events-none space-y-1">
-                  <div>💖</div>
-                  <div className="text-xs sm:text-sm pl-1">✨</div>
-                </div>
+                {/* 2. Marble Temple: Lotus + Diya in ONE corner */}
+                {activeStyle.cardTheme === 'marble_temple_gold' && (
+                  <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] select-none pointer-events-none">
+                    <span className="text-xl">🪷</span>
+                    <span className="text-2xl animate-pulse">🪔</span>
+                    <span className="text-xs text-yellow-300">✨</span>
+                  </div>
+                )}
 
-                {/* Card Top: MASSIVE 3D EMBOSSED CALLIGRAPHIC TITLE (Like reference styles 1-8) */}
+                {/* 3. Neon Galaxy 3D (Styles 3 & 6): Neon Heart + Galaxy Stars in ONE corner */}
+                {activeStyle.cardTheme === 'neon_galaxy_3d' && (
+                  <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 filter drop-shadow-[0_0_8px_#ec4899] select-none pointer-events-none">
+                    <span className="text-lg text-pink-300 animate-pulse">💖</span>
+                    <span className="text-lg text-cyan-300">🌌</span>
+                    <span className="text-base text-yellow-300">⭐️</span>
+                    <span className="text-xs text-pink-300">✨</span>
+                  </div>
+                )}
+
+                {/* 4. Rainbow / Sunshine Theme in ONE corner */}
+                {activeStyle.cardTheme === 'rainbow_candy_sunshine' && (
+                  <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)] select-none pointer-events-none">
+                    <span className="text-2xl animate-bounce-slow">🌞</span>
+                    <span className="text-lg">💖</span>
+                    <span className="text-lg">🌸</span>
+                  </div>
+                )}
+
+                {/* Card Top: 3D EMBOSSED CALLIGRAPHIC TITLE / PLAQUE */}
                 <div className="relative z-10 space-y-1.5 shrink-0 pt-2">
-                  {/* MASSIVE 3D EMBOSSED TITLE (आयुष्यांत / शुभ प्रभात) */}
-
-                  {/* MASSIVE 3D EMBOSSED TITLE (आयुष्यांत / शुभ प्रभात) */}
                   <div className="relative py-1 flex items-center justify-center">
-                    <span 
-                      className="text-4xl sm:text-6xl font-black tracking-wide drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)]"
-                      style={{
-                        fontFamily: activeStyle.fontFamily,
-                        background: activeStyle.headlineTheme === 'magenta_3d' 
-                          ? 'linear-gradient(180deg, #ffffff 0%, #f472b6 40%, #db2777 80%, #9d174d 100%)'
-                          : activeStyle.headlineTheme === 'candy_rose'
-                            ? 'linear-gradient(180deg, #fff1f2 0%, #fb7185 40%, #e11d48 80%, #9f1239 100%)'
-                            : 'linear-gradient(180deg, #ffffff 0%, #fde047 35%, #f59e0b 75%, #d97706 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.6))',
-                        WebkitTextStroke: '2px #78350f'
-                      }}
-                    >
-                      {headlineWord?.trim() || activeStyle.defaultHeadline || 'शुभ प्रभात'}
-                    </span>
-                    {/* Floating decorative elements around title */}
-                    <span className="absolute -top-1 right-12 sm:right-16 text-xl sm:text-2xl animate-pulse">💛</span>
-                    <span className="absolute -bottom-2 left-12 sm:left-16 text-lg sm:text-xl">🕊️</span>
+                    {activeStyle.cardTheme === 'marble_temple_gold' ? (
+                      /* Marble Jharokha 3D Gold Plaque (Image 2) */
+                      <div className="px-6 py-1.5 rounded-2xl bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100 border-2 border-amber-500 shadow-[0_4px_12px_rgba(180,83,9,0.3),inset_0_2px_4px_rgba(255,255,255,0.8)]">
+                        <span 
+                          className="text-3xl sm:text-5xl font-black tracking-widest"
+                          style={{
+                            fontFamily: activeStyle.fontFamily,
+                            background: 'linear-gradient(180deg, #78350f 0%, #b45309 40%, #d97706 70%, #92400e 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                          }}
+                        >
+                          {headlineWord?.trim() || activeStyle.defaultHeadline || 'सुविचार'}
+                        </span>
+                      </div>
+                    ) : activeStyle.cardTheme === 'neon_galaxy_3d' ? (
+                      /* Cosmic Neon Chalk Plaque (Image 3) */
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-mono tracking-widest text-pink-300/90 filter drop-shadow-[0_0_6px_#f472b6]">
+                          ✦ {headlineWord?.trim() || activeStyle.defaultHeadline || 'HINDI SUVICHAR'} ✦
+                        </span>
+                        <div className="h-0.5 w-24 mx-auto bg-gradient-to-r from-transparent via-pink-400 to-transparent" />
+                      </div>
+                    ) : activeStyle.cardTheme === 'rainbow_candy_sunshine' ? (
+                      /* 3D Rainbow Sunshine Heading (Image 4) */
+                      <span 
+                        className="text-4xl sm:text-6xl font-black tracking-wide"
+                        style={{
+                          fontFamily: activeStyle.fontFamily,
+                          color: '#ffffff',
+                          textShadow: '0 1px 0 #f472b6, 0 2px 0 #ec4899, 0 3px 0 #db2777, 0 4px 0 #be185d, 0 5px 0 #831843, 0 8px 16px rgba(0,0,0,0.95)'
+                        }}
+                      >
+                        {headlineWord?.trim() || activeStyle.defaultHeadline || 'सुविचार'}
+                      </span>
+                    ) : (
+                      /* Giant 24K 3D Gold Embossed Title */
+                      <span 
+                        className="text-4xl sm:text-6xl font-black tracking-wide"
+                        style={{
+                          fontFamily: activeStyle.fontFamily,
+                          color: '#fef08a',
+                          textShadow: '0 1px 0 #fde047, 0 2px 0 #f59e0b, 0 3px 0 #d97706, 0 4px 0 #b45309, 0 5px 0 #78350f, 0 6px 0 #451a03, 0 8px 18px rgba(0,0,0,0.95)'
+                        }}
+                      >
+                        {headlineWord?.trim() || activeStyle.defaultHeadline || 'सुविचार'}
+                      </span>
+                    )}
                   </div>
 
                   {/* 🕒 Small Day & Time Badge on Card */}
@@ -567,7 +721,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   )}
                 </div>
 
-                {/* Card Center: BADE BADE TEXT (Full Space Utilization, No Awkward Dabbas) */}
+                {/* Card Center: BADE BADE 3D TEXT & COLORFUL BADGES */}
                 {(() => {
                   const activeText = getSuvicharText(selectedSuvichar);
                   const parsed = parseSuvicharContent(activeText, customBadge1, customBadge2);
@@ -576,62 +730,215 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   const hWord = headlineWord ? headlineWord.trim() : '';
 
                   return (
-                    <div className="relative z-10 flex-1 flex flex-col justify-center items-center py-2 px-1 space-y-2.5 my-auto">
-                      
-                      {/* Optional Headline Word if chosen by user (Clean styled text, zero background container) */}
-                      {hWord ? (
-                        <div className="text-center py-0.5">
-                          <span 
-                            className="inline-block text-2xl sm:text-3xl font-black tracking-wide"
-                            style={{
-                              fontFamily: activeStyle.fontFamily,
-                              color: activeStyle.highlightColor || (activeStyle.isDarkTheme ? '#fde047' : '#b45309'),
-                              textShadow: activeStyle.isDarkTheme 
-                                ? '0 2px 10px rgba(0,0,0,0.9), 0 0 16px rgba(251,191,36,0.45)' 
-                                : '0 1px 4px rgba(0,0,0,0.2)'
-                            }}
-                          >
-                            {hWord}
-                          </span>
-                        </div>
-                      ) : null}
+                    <div className="relative z-10 flex-1 flex flex-col justify-center items-center py-1.5 px-1 space-y-2 my-auto">
+                      {/* 🌟 DYNAMIC MULTI-LINE 3D COLORFUL TEXT RENDERING (AUTO-ADJUSTED, CRISP 3D) 🌟 */}
+                      {(() => {
+                        const rawClean = activeText
+                          .replace(/["“”'‘’]/g, '')
+                          .replace(/\s+/g, ' ')
+                          .trim();
 
-                      {/* 📖 MAIN BOLD SUVICHAR QUOTE — 1.5X BADE BADE TEXT FILLING THE CARD! */}
-                      <div className="w-full px-2 py-1 text-center">
-                        <p 
-                          className={`font-black tracking-wide leading-snug sm:leading-relaxed ${
-                            fontScale >= 1.5
-                              ? activeText.length > 120 
-                                ? 'text-lg sm:text-xl md:text-2xl' 
-                                : activeText.length > 70 
-                                  ? 'text-xl sm:text-2xl md:text-3xl' 
-                                  : 'text-2xl sm:text-3xl md:text-4xl'
-                              : fontScale >= 1.25
-                                ? activeText.length > 120 
-                                  ? 'text-base sm:text-lg md:text-xl' 
-                                  : activeText.length > 70 
-                                    ? 'text-lg sm:text-xl md:text-2xl' 
-                                    : 'text-xl sm:text-2xl md:text-3xl'
-                                : activeText.length > 120 
-                                  ? 'text-sm sm:text-base' 
-                                  : activeText.length > 70 
-                                    ? 'text-base sm:text-lg' 
-                                    : 'text-lg sm:text-xl'
-                          }`}
-                          style={{ 
-                            color: activeStyle.textColor, 
-                            fontFamily: activeStyle.fontFamily,
-                            textShadow: activeStyle.isDarkTheme 
-                              ? '0 4px 16px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.9)' 
-                              : '0 2px 10px rgba(255,255,255,0.98), 0 1px 3px rgba(0,0,0,0.35)'
-                          }}
-                        >
-                          “{activeText}”
-                        </p>
-                      </div>
+                        if (!rawClean) return null;
 
-                      {/* Ornament */}
-                      <div className="text-sm opacity-90">
+                        const words = rawClean.split(' ');
+                        const lines: string[] = [];
+                        const targetWordsPerLine = Math.max(3, Math.ceil(words.length / (words.length > 14 ? 3 : 2)));
+                        let currentLine: string[] = [];
+
+                        for (let i = 0; i < words.length; i++) {
+                          currentLine.push(words[i]);
+                          const isPunctuationEnd = /[।!?,\n]$/.test(words[i]);
+
+                          if (currentLine.length >= targetWordsPerLine || (isPunctuationEnd && currentLine.length >= 2)) {
+                            lines.push(currentLine.join(' '));
+                            currentLine = [];
+                          }
+                        }
+                        if (currentLine.length > 0) {
+                          if (lines.length > 0 && currentLine.length <= 2) {
+                            lines[lines.length - 1] += ' ' + currentLine.join(' ');
+                          } else {
+                            lines.push(currentLine.join(' '));
+                          }
+                        }
+
+                        const finalLines = lines.length > 0 ? lines : [rawClean];
+
+                        // Neon glow styles (Image 3 style)
+                        const neonStyles = [
+                          { color: '#ffffff', shadow: '0 0 10px #f472b6, 0 0 22px #ec4899, 0 0 35px #be185d, 0 2px 4px #000' },
+                          { color: '#f0fdfa', shadow: '0 0 10px #38bdf8, 0 0 20px #06b6d4, 0 0 30px #0891b2, 0 2px 4px #000' },
+                          { color: '#fefce8', shadow: '0 0 10px #fde047, 0 0 20px #f59e0b, 0 0 30px #d97706, 0 2px 4px #000' },
+                          { color: '#fdf2f8', shadow: '0 0 10px #fb7185, 0 0 20px #e11d48, 0 0 30px #9f1239, 0 2px 4px #000' }
+                        ];
+
+                        // Smart auto font size calibrated strictly for 9:16 card width (340-380px)
+                        const charCount = rawClean.length;
+                        let baseFontSize = 21;
+                        if (charCount <= 40) {
+                          baseFontSize = 23;
+                        } else if (charCount <= 75) {
+                          baseFontSize = 20.5;
+                        } else if (charCount <= 120) {
+                          baseFontSize = 17.5;
+                        } else {
+                          baseFontSize = 15;
+                        }
+                        const finalFontSizePx = Math.round(baseFontSize * (fontScale ? fontScale / 1.3 : 1.15));
+
+                        if (activeStyle.cardTheme === 'rainbow_candy_sunshine') {
+                          const rainbowColors = [
+                            {
+                              color: '#fef08a',
+                              shadow: '0 1px 0 #fde047, 0 2px 0 #eab308, 0 3px 0 #ca8a04, 0 4px 0 #a16207, 0 5px 0 #713f12, 0 8px 16px rgba(0,0,0,0.95)'
+                            },
+                            {
+                              color: '#ffffff',
+                              shadow: '0 1px 0 #f472b6, 0 2px 0 #ec4899, 0 3px 0 #db2777, 0 4px 0 #be185d, 0 5px 0 #831843, 0 8px 16px rgba(0,0,0,0.95)'
+                            },
+                            {
+                              color: '#67e8f9',
+                              shadow: '0 1px 0 #22d3ee, 0 2px 0 #06b6d4, 0 3px 0 #0891b2, 0 4px 0 #0e7490, 0 5px 0 #155e75, 0 8px 16px rgba(0,0,0,0.95)'
+                            },
+                            {
+                              color: '#86efac',
+                              shadow: '0 1px 0 #4ade80, 0 2px 0 #22c55e, 0 3px 0 #16a34a, 0 4px 0 #15803d, 0 5px 0 #14532d, 0 8px 16px rgba(0,0,0,0.95)'
+                            }
+                          ];
+
+                          return (
+                            <div className="w-full space-y-2 py-1 text-center bg-transparent">
+                              {finalLines.map((ln, idx) => {
+                                const cStyle = rainbowColors[idx % rainbowColors.length];
+                                return (
+                                  <p
+                                    key={idx}
+                                    className="font-black tracking-wide"
+                                    style={{
+                                      fontSize: `${finalFontSizePx}px`,
+                                      lineHeight: 1.45,
+                                      fontFamily: "'Rozha One', 'Yatra One', 'Tiro Devanagari Hindi', serif",
+                                      color: cStyle.color,
+                                      textShadow: cStyle.shadow
+                                    }}
+                                  >
+                                    {ln}
+                                  </p>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+
+                        if (activeStyle.cardTheme === 'neon_galaxy_3d') {
+                          return (
+                            <div className="w-full space-y-2 py-1 text-center bg-transparent">
+                              {finalLines.map((ln, idx) => {
+                                const nStyle = neonStyles[idx % neonStyles.length];
+                                return (
+                                  <p
+                                    key={idx}
+                                    className="font-black tracking-wide"
+                                    style={{
+                                      fontSize: `${finalFontSizePx}px`,
+                                      lineHeight: 1.45,
+                                      fontFamily: "'Rozha One', 'Yatra One', 'Tiro Devanagari Hindi', sans-serif",
+                                      color: nStyle.color,
+                                      textShadow: nStyle.shadow
+                                    }}
+                                  >
+                                    {ln}
+                                  </p>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+
+                        if (activeStyle.cardTheme === 'marble_temple_gold') {
+                          return (
+                            <div className="w-full space-y-2 py-1 text-center bg-transparent">
+                              {finalLines.map((ln, idx) => (
+                                <p
+                                  key={idx}
+                                  className="font-black tracking-wide"
+                                  style={{
+                                    fontSize: `${finalFontSizePx}px`,
+                                    lineHeight: 1.45,
+                                    fontFamily: "'Rozha One', 'Yatra One', 'Tiro Devanagari Hindi', serif",
+                                    color: idx % 2 === 0 ? '#451a03' : '#78350f',
+                                    textShadow: '0 1px 0 #fef08a, 0 2px 0 #fde047, 0 3px 0 #ca8a04, 0 5px 10px rgba(0,0,0,0.2)'
+                                  }}
+                                >
+                                  {ln}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+
+                        if (activeStyle.cardTheme === 'royal_emerald_plates') {
+                          // Clean, pure 3D Gold & Rose multi-layer typography for user's actual suvichar
+                          return (
+                            <div className="w-full space-y-2 py-1 text-center bg-transparent">
+                              {finalLines.map((ln, idx) => {
+                                const isPink = idx % 3 === 1;
+                                const isWhite = idx % 3 === 2;
+                                return (
+                                  <p
+                                    key={idx}
+                                    className="font-black tracking-wide"
+                                    style={{
+                                      fontSize: `${finalFontSizePx}px`,
+                                      lineHeight: 1.45,
+                                      fontFamily: "'Rozha One', 'Yatra One', 'Tiro Devanagari Hindi', serif",
+                                      color: isPink ? '#f472b6' : isWhite ? '#ffffff' : '#fef08a',
+                                      textShadow: isPink
+                                        ? '0 1px 0 #db2777, 0 2px 0 #be185d, 0 3px 0 #9d174d, 0 4px 0 #500724, 0 8px 16px rgba(0,0,0,0.95)'
+                                        : isWhite
+                                          ? '0 1px 0 #000000, 0 2px 4px rgba(0,0,0,0.95), 0 4px 10px rgba(0,0,0,0.85)'
+                                          : '0 1px 0 #fde047, 0 2px 0 #f59e0b, 0 3px 0 #d97706, 0 4px 0 #b45309, 0 5px 0 #78350f, 0 6px 0 #451a03, 0 8px 18px rgba(0,0,0,0.95)'
+                                    }}
+                                  >
+                                    {ln}
+                                  </p>
+                                );
+                              })}
+
+                              {/* Bottom Center Gold Flourish */}
+                              <div className="pt-1 text-amber-400 text-sm filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] select-none">
+                                ⚜️ 💛 ⚜️
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Default 3D High Contrast
+                        return (
+                          <div className="w-full space-y-2 py-1 text-center bg-transparent">
+                            {finalLines.map((ln, idx) => (
+                              <p
+                                key={idx}
+                                className="font-black tracking-wide"
+                                style={{
+                                  fontSize: `${finalFontSizePx}px`,
+                                  lineHeight: 1.45,
+                                  fontFamily: activeStyle.fontFamily,
+                                  color: activeStyle.textColor,
+                                  textShadow: activeStyle.isDarkTheme
+                                    ? '0 4px 16px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.9)'
+                                    : '0 2px 10px rgba(255,255,255,0.98), 0 1px 3px rgba(0,0,0,0.35)'
+                                }}
+                              >
+                                {ln}
+                              </p>
+                            ))}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Bottom Ornament / Emoji Bar (e.g. 😄 🙏 🌞 ✨ 🌸 🦋) */}
+                      <div className="text-base sm:text-lg opacity-95 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
                         {activeStyle.ornament}
                       </div>
 
@@ -639,7 +946,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   );
                 })()}
 
-                {/* Card Bottom: VIRTUE TAGS ABOVE PHOTO, ROUND USER PHOTO, SENDER PLATE */}
+                {/* Card Bottom: VIRTUE TAGS, ROUND USER PHOTO, SENDER PLATE & WEBSITE NAME (Never Cut Off) */}
                 {(() => {
                   const activeText = getSuvicharText(selectedSuvichar);
                   const parsed = parseSuvicharContent(activeText, customBadge1, customBadge2);
@@ -647,11 +954,11 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   const b2 = customBadge2 || parsed.badge2;
 
                   return (
-                    <div className="relative z-10 flex flex-col items-center gap-1.5 pt-1 shrink-0">
+                    <div className="relative z-10 flex flex-col items-center gap-1 sm:gap-1.5 pt-0.5 pb-1 shrink-0 w-full">
                       
-                      {/* 🏷️ सत्यवचन व सकारात्मकता: User photo ke round ke theek upar, chote text me */}
+                      {/* 🏷️ Virtue Badge Pill */}
                       <div 
-                        className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[10px] sm:text-[11px] font-bold shadow-sm backdrop-blur-md"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[9px] sm:text-[9.5px] font-bold shadow-sm backdrop-blur-md"
                         style={{
                           backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.9)',
                           borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706',
@@ -664,22 +971,19 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                       {/* 👑 Dynamic Round User Photo */}
                       {senderPhoto ? (
                         <div 
-                          className={`relative rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl border-2 border-yellow-300 ring-4 ring-amber-500/50 transition-all duration-300 ${
-                            photoSizeOption <= 0.85
-                              ? 'w-16 h-16 sm:w-18 sm:h-18'
-                              : photoSizeOption <= 1.0
-                                ? 'w-20 h-20 sm:w-22 sm:h-22'
-                                : photoSizeOption <= 1.3
-                                  ? 'w-24 h-24 sm:w-28 sm:h-28'
-                                  : 'w-28 h-28 sm:w-34 sm:h-34'
-                          }`}
+                          className="relative rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-xl border-2 border-yellow-300 ring-2 ring-amber-500/50 transition-all duration-300 shrink-0"
+                          style={{
+                            width: photoSizeOption <= 0.85 ? '44px' : photoSizeOption <= 1.0 ? '52px' : photoSizeOption <= 1.25 ? '62px' : '72px',
+                            height: photoSizeOption <= 0.85 ? '44px' : photoSizeOption <= 1.0 ? '52px' : photoSizeOption <= 1.25 ? '62px' : '72px'
+                          }}
                         >
                           <img
                             src={senderPhoto}
                             alt={senderName}
+                            crossOrigin="anonymous"
                             className="w-full h-full rounded-full object-cover border-2 border-stone-950"
                           />
-                          <span className="absolute -bottom-1 -right-1 bg-amber-500 text-stone-950 text-[11px] font-black w-6 h-6 rounded-full border-2 border-yellow-100 shadow-md flex items-center justify-center">
+                          <span className="absolute -bottom-0.5 -right-0.5 bg-amber-500 text-stone-950 text-[9px] font-black w-4 h-4 rounded-full border border-yellow-100 shadow-md flex items-center justify-center">
                             ★
                           </span>
                         </div>
@@ -687,46 +991,39 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
 
                       {/* Sender Name Plate */}
                       <div 
-                        className="px-3.5 py-1 rounded-xl backdrop-blur-md shadow-md min-w-[190px] border"
+                        className="rounded-xl backdrop-blur-md shadow-md border px-3 py-1 min-w-[150px] max-w-[85%] text-center"
                         style={{
                           backgroundColor: activeStyle.isDarkTheme ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
                           borderColor: activeStyle.isDarkTheme ? '#f59e0b' : '#d97706'
                         }}
                       >
                         <p 
-                          className="text-[9px] font-bold uppercase tracking-wider"
+                          className="text-[8px] font-bold uppercase tracking-wider"
                           style={{ color: activeStyle.isDarkTheme ? '#fde68a' : '#92400e' }}
                         >
                           ✨ सप्रेम शुभकामना प्रेषक ✨
                         </p>
                         <p 
-                          className="text-xs sm:text-sm font-black font-serif"
+                          className="font-black font-serif text-xs sm:text-sm truncate"
                           style={{ color: activeStyle.isDarkTheme ? '#ffffff' : '#1c1917' }}
                         >
                           {senderName || 'आपका शुभचिंतक'}
                         </p>
                       </div>
 
-                      {/* 🌐 3D Embossed Website CTA Button on Card (Zero Cut-Off!) */}
+                      {/* 🌐 Website & Brand Name on Card (Auto-Adjusted, Zero Cut-Off Guarantee) */}
                       <div 
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border-2 text-[10.5px] sm:text-xs font-black shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] tracking-wide transform hover:scale-105 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border shadow-md font-black tracking-wide text-[9.5px] sm:text-[10px] max-w-[90%]"
                         style={{
                           background: activeStyle.isDarkTheme 
-                            ? 'linear-gradient(180deg, #292524 0%, #1c1917 100%)' 
+                            ? 'linear-gradient(180deg, #1c1917 0%, #0c0a09 100%)' 
                             : 'linear-gradient(180deg, #ffffff 0%, #fef3c7 100%)',
                           borderColor: '#f59e0b',
                           color: activeStyle.isDarkTheme ? '#fef08a' : '#92400e'
                         }}
                       >
-                        <span>✨ अपना नाम लिखकर स्टेटस बनाएँ ➔ shubhakamna.in</span>
+                        <span className="truncate">🌐 shubhakamna.in • दैनिक सुविचार</span>
                       </div>
-
-                      <p 
-                        className="text-[9.5px] font-semibold tracking-tight"
-                        style={{ color: activeStyle.isDarkTheme ? '#cbd5e1' : '#475569' }}
-                      >
-                        🌅 दैनिक १००+ शुभ प्रभात सुविचार • मुफ़्त कार्ड जनरेटर
-                      </p>
                     </div>
                   );
                 })()}
@@ -858,7 +1155,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 >
                   <span className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>🎨 फ़ॉन्ट, बैकग्राउंड व डिज़ाइन्स बदलें (८ स्पेशल प्रभात स्टाइल)</span>
+                    <span>🎨 फ़ॉन्ट स्टाइल बदलें (स्टाइल ३, ५, ६, ७)</span>
                   </span>
                   <span className="text-[11px] bg-amber-500 text-stone-950 px-2.5 py-0.5 rounded-full font-black shadow">
                     {showCustomizerOptions ? '▲ छिपाएँ' : '▼ खोलें'}
@@ -868,12 +1165,12 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
 
               {showCustomizerOptions && (
                 <div className="space-y-4 pt-1 animate-fadeIn">
-                  {/* 🎨 3. 8 SPECIAL SUVICHAR CARD & FONT STYLES (MATCHING USER REFERENCE IMAGE) */}
+                  {/* 🎨 3. CURATED SUVICHAR CARD & FONT STYLES (3, 5, 6, 7) */}
                   <div className="space-y-2 p-3.5 rounded-2xl bg-black/60 border border-amber-500/40">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>३. फ़ॉन्ट व स्टेटस स्टाइल चुनें (८ स्पेशल प्रभात डिज़ाइन्स):</span>
+                    <span>३. फ़ॉन्ट व स्टेटस स्टाइल चुनें (स्टाइल ३, ५, ६, ७):</span>
                   </label>
                   <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
                     {activeStyle.hindiName}
@@ -881,7 +1178,7 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                 </div>
 
                 <p className="text-[11px] text-stone-400">
-                  नीचे दिए गए ८ डिज़ाइनों में से अपनी पसंद चुनें, जिसमें बड़े-बड़े 3D अक्षर और रंगीन बैच हैं:
+                  पसंदीदा 3D फ़ॉन्ट स्टाइल चुनें (नंबर ३, ५, ६, ७):
                 </p>
 
                 {/* 8 Styles Gallery Grid */}
@@ -1057,6 +1354,74 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+              {/* 3. 3D Soft & Royal Gradients Selector (Directly Open & Accessible) */}
+              <div className="space-y-2.5 p-3.5 rounded-2xl bg-black/60 border border-amber-500/40">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>३. 3D सॉफ्ट व रॉयल ग्रेडिएंट चुनें (Select 3D Gradient):</span>
+                  </label>
+                  <button
+                    onClick={() => customBgInputRef.current?.click()}
+                    className="text-[11px] text-amber-400 hover:text-amber-300 underline font-bold cursor-pointer flex items-center gap-1 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                    <span>+ अपनी गैलरी से फ़ोटो</span>
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-stone-400">
+                  हल्के, रॉयल व 3D ग्रेडिएंट्स (जिससे टेक्स्ट एकदम साफ़ और चमकदार 3D दिखे):
+                </p>
+
+                {customBgUrl && (
+                  <div className="flex items-center justify-between bg-amber-950/40 border border-amber-500/30 rounded-xl p-2 text-xs">
+                    <span className="text-amber-300 flex items-center gap-1.5 font-bold">
+                      <span>🖼️</span>
+                      <span>आपकी कस्टम बैकग्राउंड फ़ोटो एक्टिव है!</span>
+                    </span>
+                    <button
+                      onClick={() => setCustomBgUrl(null)}
+                      className="text-red-400 hover:text-red-300 underline text-[11px] font-bold"
+                    >
+                      हटाएँ ✕
+                    </button>
+                  </div>
+                )}
+
+                {/* Horizontal Scrollable 3D Gradients Grid */}
+                <div className="flex items-center gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-stone-800">
+                  {SUVICHAR_BACKGROUNDS.map((bg) => {
+                    const isSel = !customBgUrl && selectedBackground.id === bg.id;
+                    return (
+                      <button
+                        key={bg.id}
+                        onClick={() => {
+                          setCustomBgUrl(null);
+                          setSelectedBackground(bg);
+                        }}
+                        className={`shrink-0 w-28 h-16 rounded-2xl overflow-hidden border-2 transition cursor-pointer relative shadow-md group ${
+                          isSel ? 'border-amber-400 ring-2 ring-amber-400 scale-105 shadow-amber-500/30' : 'border-stone-800 opacity-80 hover:opacity-100 hover:border-amber-500/40'
+                        }`}
+                        title={bg.name}
+                      >
+                        <div className="w-full h-full" style={{ background: bg.cssGradient }} />
+                        <span className="absolute bottom-0 inset-x-0 bg-black/85 text-[8.5px] font-black text-amber-300 truncate px-1 py-0.5 text-center">
+                          {bg.name}
+                        </span>
+                        {isSel && (
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[10px] font-black shadow">
+                            ✓
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* 4. Language Selector for Suvichar */}
               <div className="space-y-1.5">
@@ -1112,91 +1477,6 @@ export const ShubhPrabhatPage: React.FC<ShubhPrabhatPageProps> = ({ onBackToPort
                   {showDayAndTime ? '✓ चालू है' : 'बंद'}
                 </button>
               </div>
-
-              {/* 5. Unlimited Backgrounds Selector */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                    <span>५. बैकग्राउंड चुनें (Unlimited Backgrounds):</span>
-                  </label>
-                  <button
-                    onClick={() => customBgInputRef.current?.click()}
-                    className="text-[11px] text-amber-400 hover:text-amber-300 underline font-bold cursor-pointer flex items-center gap-1"
-                  >
-                    <Upload className="w-3 h-3" />
-                    <span>+ अपनी गैलरी से फ़ोटो लगाएँ</span>
-                  </button>
-                </div>
-
-                {/* Background Categories Filter */}
-                <div className="flex items-center gap-1 text-[11px] overflow-x-auto pb-1 scrollbar-none">
-                  {[
-                    { id: 'all' as const, label: 'सभी' },
-                    { id: 'sunrise' as const, label: '🌅 सूर्योदय' },
-                    { id: 'temple' as const, label: '🪔 मंदिर व देव' },
-                    { id: 'nature' as const, label: '🌿 प्रकृति' },
-                    { id: 'gradient' as const, label: '🎨 ग्रेडिएंट्स' }
-                  ].map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => setBgCategoryFilter(c.id)}
-                      className={`shrink-0 px-2.5 py-1 rounded-lg transition cursor-pointer border ${
-                        bgCategoryFilter === c.id
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 font-bold'
-                          : 'text-stone-400 hover:text-white border-transparent'
-                      }`}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-
-                {customBgUrl && (
-                  <div className="flex items-center justify-between bg-amber-950/40 border border-amber-500/30 rounded-xl p-2 text-xs">
-                    <span className="text-amber-300 flex items-center gap-1 font-bold">
-                      <span>🖼️</span>
-                      <span>आपकी कस्टम बैकग्राउंड फ़ोटो एक्टिव है</span>
-                    </span>
-                    <button
-                      onClick={() => setCustomBgUrl(null)}
-                      className="text-red-400 hover:text-red-300 underline text-[11px]"
-                    >
-                      हटाएँ
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-800">
-                  {filteredBackgrounds.map((bg) => {
-                    const isSel = !customBgUrl && selectedBackground.id === bg.id;
-                    return (
-                      <button
-                        key={bg.id}
-                        onClick={() => {
-                          setCustomBgUrl(null);
-                          setSelectedBackground(bg);
-                        }}
-                        className={`shrink-0 w-20 h-14 rounded-xl overflow-hidden border-2 transition cursor-pointer relative ${
-                          isSel ? 'border-amber-400 ring-2 ring-amber-400 scale-105 shadow-md' : 'border-stone-800 opacity-70 hover:opacity-100'
-                        }`}
-                        title={bg.name}
-                      >
-                        {bg.type === 'image' ? (
-                          <img src={bg.url} alt={bg.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full" style={{ background: bg.cssGradient }} />
-                        )}
-                        <span className="absolute bottom-0 inset-x-0 bg-black/80 text-[8px] font-bold text-amber-200 truncate px-1 py-0.5">
-                          {bg.name}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
 
               {/* ✨ 3D WhatsApp & Social Media Embed Preview Card (Placed Above Action Buttons) */}
               <ThreeDSharePreviewCard

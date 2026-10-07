@@ -20,166 +20,114 @@ export interface SuvicharItem {
 export interface SuvicharBackground {
   id: string;
   name: string;
-  category: 'sunrise' | 'temple' | 'nature' | 'gradient';
+  category: 'gradient';
   url: string;
   type: 'image' | 'gradient';
-  cssGradient?: string;
+  cssGradient: string;
   textColor?: string;
+  isDark?: boolean;
 }
 
 export const SUVICHAR_BACKGROUNDS: SuvicharBackground[] = [
-  // 1. Sunrise & Dawn
+  // 1. Royal Teal Emerald Vignette (Matching Reference Photo)
   {
-    id: 'sunrise_gold',
-    name: '🌅 स्वर्णिम सूर्योदय',
-    category: 'sunrise',
-    url: 'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'himalaya_dawn',
-    name: '🏔️ शांत हिमालय भोर',
-    category: 'sunrise',
-    url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'ocean_sunrise',
-    name: '🌊 सागर तट सूर्योदय',
-    category: 'sunrise',
-    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'golden_field',
-    name: '🌾 सुनहरी भोर व खेत',
-    category: 'sunrise',
-    url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'forest_sunbeams',
-    name: '🌲 वन में सूर्य किरणें',
-    category: 'sunrise',
-    url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-
-  // 2. Temple, Diya & Devotional
-  {
-    id: 'temple_diya',
-    name: '🪔 पावन मंगल दीप',
-    category: 'temple',
-    url: 'https://images.unsplash.com/photo-1609137144822-263a5639b71e?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'sacred_river',
-    name: '🌊 पावन गंगा घाट व भोर',
-    category: 'temple',
-    url: 'https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'temple_bells',
-    name: '🔔 पावन मंदिर व घंटियाँ',
-    category: 'temple',
-    url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'lotus_lake',
-    name: '🪷 शांत सरोवर व कमल',
-    category: 'temple',
-    url: 'https://images.unsplash.com/photo-1508873696983-2df5293cb395?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'marigold_pooja',
-    name: '🌼 पावन गेंदा व पुष्प',
-    category: 'temple',
-    url: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-
-  // 3. Nature & Serenity
-  {
-    id: 'morning_tea',
-    name: '☕ प्रातःकालीन ताजगी',
-    category: 'nature',
-    url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'mountain_mist',
-    name: '🏔️ शांत पर्वत व कोहरा',
-    category: 'nature',
-    url: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'blooming_garden',
-    name: '🌸 महकती सुबह व बगिया',
-    category: 'nature',
-    url: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-  {
-    id: 'peaceful_lake',
-    name: '🛶 शांत झील व नाव',
-    category: 'nature',
-    url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
-    type: 'image'
-  },
-
-  // 4. Spiritual Gradients
-  {
-    id: 'royal_gold_grad',
-    name: '🎨 दिव्य स्वर्णिम प्रभात',
+    id: 'royal_teal_vignette',
+    name: '👑 रॉयल टील व एमराल्ड (फोटो जैसा)',
     category: 'gradient',
     url: '',
     type: 'gradient',
-    cssGradient: 'linear-gradient(135deg, #451a03 0%, #78350f 40%, #1e1b4b 100%)'
+    cssGradient: 'radial-gradient(circle at 50% 35%, #0f514d 0%, #083c39 45%, #032422 80%, #011413 100%)',
+    isDark: true
   },
+  // 2. Soft Golden Sunrise (हल्का स्वर्णिम प्रभात)
   {
-    id: 'ruby_dawn_grad',
-    name: '🌹 सिंदूरी सूर्योदय',
+    id: 'soft_gold_dawn',
+    name: '🌅 हल्का स्वर्णिम प्रभात (Soft Gold)',
     category: 'gradient',
     url: '',
     type: 'gradient',
-    cssGradient: 'linear-gradient(135deg, #4c0519 0%, #881337 50%, #1c1917 100%)'
+    cssGradient: 'radial-gradient(circle at 50% 30%, #fef08a 0%, #fde047 35%, #fbbf24 65%, #d97706 100%)',
+    isDark: false
   },
+  // 3. Deep Sapphire Night (रॉयल नीलमणि)
   {
-    id: 'emerald_peace_grad',
-    name: '🍃 शांत प्रकृति प्रभात',
+    id: 'royal_sapphire_grad',
+    name: '🌌 रॉयल नीलमणि व स्वर्ण',
     category: 'gradient',
     url: '',
     type: 'gradient',
-    cssGradient: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #0f172a 100%)'
+    cssGradient: 'radial-gradient(circle at 50% 35%, #1e3a8a 0%, #172554 50%, #030712 100%)',
+    isDark: true
   },
+  // 4. Ruby Velvet Vignette (शाही सिंदूरी)
   {
-    id: 'celestial_indigo_grad',
-    name: '🌌 ब्रह्ममुहूर्त शांति',
+    id: 'ruby_velvet_grad',
+    name: '🌹 शाही सिंदूरी रूबी',
     category: 'gradient',
     url: '',
     type: 'gradient',
-    cssGradient: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #030712 100%)'
+    cssGradient: 'radial-gradient(circle at 50% 35%, #881337 0%, #4c0519 55%, #1c1917 100%)',
+    isDark: true
   },
+  // 5. Sacred Sandalwood & Marble (हल्का चंदन व मार्बल)
+  {
+    id: 'sacred_sandalwood_grad',
+    name: '🏛️ पावन चंदन व संगमरमर (Light)',
+    category: 'gradient',
+    url: '',
+    type: 'gradient',
+    cssGradient: 'radial-gradient(circle at 50% 40%, #ffffff 0%, #faf5ea 45%, #fef3c7 85%, #fde68a 100%)',
+    isDark: false
+  },
+  // 6. Cyber Neon Glow (साइबर नियॉन)
+  {
+    id: 'cyber_neon_grad',
+    name: '✨ साइबर नियॉन ऑरोरा',
+    category: 'gradient',
+    url: '',
+    type: 'gradient',
+    cssGradient: 'radial-gradient(circle at 50% 35%, #1e0b36 0%, #09090b 60%, #030008 100%)',
+    isDark: true
+  },
+  // 7. Soft Sky Pastel Rainbow (हल्का इंद्रधनुषी आकाश)
+  {
+    id: 'soft_pastel_dawn',
+    name: '🌞 हल्का इंद्रधनुषी स्काई (Soft Sky)',
+    category: 'gradient',
+    url: '',
+    type: 'gradient',
+    cssGradient: 'linear-gradient(180deg, #e0f2fe 0%, #fef3c7 40%, #fce7f3 75%, #ede9fe 100%)',
+    isDark: false
+  },
+  // 8. Sacred Saffron Blessing (पावन भगवा तेज)
   {
     id: 'saffron_blessing_grad',
     name: '🪔 पावन भगवा तेज',
     category: 'gradient',
     url: '',
     type: 'gradient',
-    cssGradient: 'linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #431407 100%)'
+    cssGradient: 'radial-gradient(circle at 50% 35%, #9a3412 0%, #7c2d12 45%, #290a03 100%)',
+    isDark: true
   },
+  // 9. Vintage Copper Parchment (विंटेज ताम्रपत्र)
   {
-    id: 'midnight_gold_grad',
-    name: '✨ स्वर्णिम कांति',
+    id: 'vintage_parchment_grad',
+    name: '📜 राजसी विंटेज ताम्रपत्र',
     category: 'gradient',
     url: '',
     type: 'gradient',
-    cssGradient: 'linear-gradient(135deg, #09090b 0%, #292524 50%, #451a03 100%)'
+    cssGradient: 'radial-gradient(circle at 50% 35%, #451a03 0%, #291003 60%, #150601 100%)',
+    isDark: true
+  },
+  // 10. Mint Emerald Peace (हल्का हरा व ताजगी)
+  {
+    id: 'mint_emerald_grad',
+    name: '🍃 शांत मिंट व एमराल्ड (Soft Mint)',
+    category: 'gradient',
+    url: '',
+    type: 'gradient',
+    cssGradient: 'radial-gradient(circle at 50% 40%, #ecfdf5 0%, #a7f3d0 45%, #34d399 85%, #059669 100%)',
+    isDark: false
   }
 ];
 
