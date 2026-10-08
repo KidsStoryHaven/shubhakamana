@@ -450,12 +450,12 @@ export const FestiveCanvas: React.FC<FestiveCanvasProps> = ({ type, interactive 
       createStandardBurst(width * 0.5, height * 0.35, 45);
     }
 
-    // Interactive Click / Tap Handling
+    // Interactive Click / Tap Handling (Only for visual particle burst)
     const handleCanvasClick = (e: MouseEvent | TouchEvent) => {
       if (!interactive) return;
       const rect = canvas.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+      const clientX = 'touches' in e && e.touches && e.touches[0] ? e.touches[0].clientX : (e as MouseEvent).clientX ?? 0;
+      const clientY = 'touches' in e && e.touches && e.touches[0] ? e.touches[0].clientY : (e as MouseEvent).clientY ?? 0;
       const x = clientX - rect.left;
       const y = clientY - rect.top;
 
@@ -466,22 +466,26 @@ export const FestiveCanvas: React.FC<FestiveCanvasProps> = ({ type, interactive 
       }
     };
 
-    canvas.addEventListener('click', handleCanvasClick);
-    canvas.addEventListener('touchstart', handleCanvasClick, { passive: true });
+    if (interactive) {
+      canvas.addEventListener('click', handleCanvasClick);
+      canvas.addEventListener('touchstart', handleCanvasClick, { passive: true });
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
-      canvas.removeEventListener('click', handleCanvasClick);
-      canvas.removeEventListener('touchstart', handleCanvasClick);
+      if (interactive) {
+        canvas.removeEventListener('click', handleCanvasClick);
+        canvas.removeEventListener('touchstart', handleCanvasClick);
+      }
     };
   }, [type, interactive, onTap]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 pointer-events-auto z-10 w-full h-full"
-      style={{ touchAction: 'manipulation' }}
+      className={`absolute inset-0 z-10 w-full h-full ${interactive ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      style={{ touchAction: interactive ? 'manipulation' : 'none' }}
     />
   );
 };

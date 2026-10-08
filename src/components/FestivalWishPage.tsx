@@ -154,14 +154,21 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   });
 
   const [isPlayingBirthdaySong, setIsPlayingBirthdaySong] = useState(false);
+  const [isVoiceWishPlaying, setIsVoiceWishPlaying] = useState(false);
   const [candlesLit, setCandlesLit] = useState(true);
 
-  // Subscribe to song playback changes
+  // Subscribe to song & voice announcement playback status changes
   useEffect(() => {
-    const unsub = festiveAudio.onBirthdaySongStatusChange((playing) => {
+    const unsubSong = festiveAudio.onBirthdaySongStatusChange((playing) => {
       setIsPlayingBirthdaySong(playing);
     });
-    return unsub;
+    const unsubVoice = festiveAudio.onAnnouncementStatusChange((playing) => {
+      setIsVoiceWishPlaying(playing);
+    });
+    return () => {
+      unsubSong();
+      unsubVoice();
+    };
   }, []);
 
   const [userPhoto, setUserPhoto] = useState<string | null>(() => {
@@ -408,24 +415,31 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   };
 
   const triggerFestivalSound = (sampleName?: string, userExplicit: boolean = true) => {
-    // If Katha is playing, pause it so voice wish plays cleanly
-    kathaAudio.pause();
-
-    // If user clicked explicitly or sound was muted, unmute
+    // If sound was muted, unmute
     if (userExplicit || isSoundMuted) {
       setIsSoundMuted(false);
       festiveAudio.setMuted(false);
     }
 
     if (isBirthday) {
-      festiveAudio.playPersonalizedBirthdaySong(sampleName || birthdayPerson);
+      if (isPlayingBirthdaySong) {
+        festiveAudio.stopBirthdaySong();
+      } else {
+        kathaAudio.pause();
+        festiveAudio.playPersonalizedBirthdaySong(sampleName || birthdayPerson);
+      }
     } else {
-      festiveAudio.playPersonalizedFestivalWishAnnouncement(
-        sampleName || senderName,
-        festival.nameHi,
-        festival.id,
-        userExplicit // forceRestart: true on explicit user interaction
-      );
+      if (isVoiceWishPlaying || festiveAudio.isAnnouncementPlaying()) {
+        festiveAudio.stopVoiceAnnouncement();
+      } else {
+        kathaAudio.pause();
+        festiveAudio.playPersonalizedFestivalWishAnnouncement(
+          sampleName || senderName,
+          festival.nameHi,
+          festival.id,
+          true
+        );
+      }
     }
   };
 
@@ -436,7 +450,6 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     } catch {
       // Ignored
     }
-    triggerFestivalSound(undefined, true);
     updatePageSEO(getFestivalSEOMetadata(festival, senderName, code));
   };
 
@@ -599,7 +612,6 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   };
 
   const handleWhatsAppShare = async () => {
-    triggerFestivalSound();
     const url = getShareUrl();
     const displayName = isDefaultSenderName(senderName) ? 'शुभचिंतक' : senderName;
     const text = isBirthday
@@ -632,7 +644,6 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   // Direct WhatsApp Status Share with 8K Ultra-HD Photo Card
   const handleWhatsAppStatusShare = async () => {
     setIsGenerating8K(true);
-    triggerFestivalSound();
 
     // Award loyalty reward points for status
     const res = awardUserPoints('status_share', festival.nameHi);
@@ -729,7 +740,6 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
   // 1-Click Generate and Download Combined 8K Photo Card
   const handleDownloadPhotoCard = async () => {
     setIsDownloadingCard(true);
-    triggerFestivalSound();
 
     try {
       const blob = await generateStatusCardBlob({
@@ -905,7 +915,6 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
           <FestiveCanvas 
             type={festival.particlesType} 
             interactive={true} 
-            onTap={() => triggerFestivalSound(undefined, true)} 
           />
 
           <div className="relative z-20 pointer-events-auto">

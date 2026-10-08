@@ -78,11 +78,20 @@ class FestiveAudioEngine {
   }
 
   private songStatusListeners: Set<(isPlaying: boolean) => void> = new Set();
+  private announcementStatusListeners: Set<(isPlaying: boolean) => void> = new Set();
 
   public onBirthdaySongStatusChange(cb: (isPlaying: boolean) => void): () => void {
     this.songStatusListeners.add(cb);
     return () => {
       this.songStatusListeners.delete(cb);
+    };
+  }
+
+  public onAnnouncementStatusChange(cb: (isPlaying: boolean) => void): () => void {
+    this.announcementStatusListeners.add(cb);
+    cb(this.isSpeakingAnnouncement);
+    return () => {
+      this.announcementStatusListeners.delete(cb);
     };
   }
 
@@ -95,17 +104,34 @@ class FestiveAudioEngine {
     });
   }
 
+  private notifyAnnouncementStatus(isPlaying: boolean) {
+    this.isSpeakingAnnouncement = isPlaying;
+    this.announcementStatusListeners.forEach(cb => {
+      try {
+        cb(isPlaying);
+      } catch {}
+    });
+  }
+
   public isSongPlaying(): boolean {
     return this.isPlayingBirthdaySong;
+  }
+
+  public isAnnouncementPlaying(): boolean {
+    return this.isSpeakingAnnouncement;
   }
 
   public stopBirthdaySong(): void {
     this.stopAll();
   }
 
+  public stopVoiceAnnouncement(): void {
+    this.stopAll();
+  }
+
   public stopAll() {
     this.notifySongStatus(false);
-    this.isSpeakingAnnouncement = false;
+    this.notifyAnnouncementStatus(false);
     universalSpeech.stopAll();
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
@@ -763,7 +789,7 @@ class FestiveAudioEngine {
     }
 
     this.stopAll();
-    this.isSpeakingAnnouncement = true;
+    this.notifyAnnouncementStatus(true);
     this.initContext();
     this.playTempleBell(); // Play divine bell chime
 
@@ -811,7 +837,7 @@ class FestiveAudioEngine {
     const speakNext = () => {
       if (!this.isSpeakingAnnouncement || this.isMuted) return;
       if (phraseIdx >= phrases.length) {
-        this.isSpeakingAnnouncement = false;
+        this.notifyAnnouncementStatus(false);
         if (onComplete) onComplete();
         return;
       }
