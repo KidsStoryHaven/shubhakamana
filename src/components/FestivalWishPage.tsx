@@ -479,6 +479,61 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [festival.id]);
 
+  // 🔊 Auto-play festival wish voice as soon as the page opens (User request)
+  useEffect(() => {
+    let unmounted = false;
+    let autoPlayTriggered = false;
+
+    const playVoiceNow = () => {
+      if (unmounted || autoPlayTriggered) return;
+      autoPlayTriggered = true;
+      setIsSoundMuted(false);
+      festiveAudio.setMuted(false);
+
+      if (isBirthday) {
+        kathaAudio.pause();
+        festiveAudio.playPersonalizedBirthdaySong(birthdayPerson);
+      } else {
+        kathaAudio.pause();
+        festiveAudio.playPersonalizedFestivalWishAnnouncement(
+          senderName,
+          festival.nameHi,
+          festival.id,
+          true
+        );
+      }
+    };
+
+    // 1. Immediate attempt after opening page / component mount
+    const timer = setTimeout(() => {
+      playVoiceNow();
+    }, 350);
+
+    // 2. Global user-gesture fallback if browser policy deferred non-gesture playback
+    const unlockEvents: Array<keyof WindowEventMap> = ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'];
+    const handleGesture = () => {
+      playVoiceNow();
+      cleanupGestureListeners();
+    };
+
+    const cleanupGestureListeners = () => {
+      unlockEvents.forEach((evt) => {
+        window.removeEventListener(evt, handleGesture);
+      });
+    };
+
+    unlockEvents.forEach((evt) => {
+      window.addEventListener(evt, handleGesture, { passive: true, once: true });
+    });
+
+    return () => {
+      unmounted = true;
+      clearTimeout(timer);
+      cleanupGestureListeners();
+      festiveAudio.stopAll();
+    };
+  }, [festival.id, senderName, birthdayPerson, isBirthday]);
+
   const handleSoundToggle = () => {
     const nextMuted = !isSoundMuted;
     setIsSoundMuted(nextMuted);
@@ -929,11 +984,33 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               <button
                 type="button"
                 onClick={() => triggerFestivalSound(undefined, true)}
-                className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition transform active:scale-95 cursor-pointer border border-yellow-200 animate-pulse"
+                className={`w-full py-2.5 px-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-between shadow-xl transition transform active:scale-95 cursor-pointer border ${
+                  (isBirthday ? isPlayingBirthdaySong : isVoiceWishPlaying)
+                    ? 'bg-gradient-to-r from-emerald-500 via-amber-400 to-yellow-400 text-stone-950 border-emerald-300 shadow-emerald-500/20'
+                    : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 border-yellow-200 shadow-amber-500/30 animate-pulse'
+                }`}
               >
-                <Volume2 className="w-4 h-4 text-stone-950 animate-bounce" />
-                <span>🔊 सुनिए: {senderName} का पावन वॉइस संदेश (Voice Wish) ✨</span>
+                <div className="flex items-center gap-2 text-left truncate">
+                  <Volume2 className={`w-4 h-4 shrink-0 text-stone-950 ${(isBirthday ? isPlayingBirthdaySong : isVoiceWishPlaying) ? 'animate-pulse' : 'animate-bounce'}`} />
+                  <span className="truncate">
+                    {(isBirthday ? isPlayingBirthdaySong : isVoiceWishPlaying)
+                      ? `🔊 ${isBirthday ? birthdayPerson : senderName} का वॉइस संदेश चल रहा है 🎶`
+                      : `🔊 सुनिए: ${senderName} का पावन वॉइस संदेश (Voice Wish) ✨`}
+                  </span>
+                </div>
+                <span className="shrink-0 text-[11px] bg-stone-950/80 text-yellow-300 px-2.5 py-1 rounded-xl font-bold ml-1">
+                  {(isBirthday ? isPlayingBirthdaySong : isVoiceWishPlaying) ? 'रोकें ⏸️' : 'सुनें ▶️'}
+                </span>
               </button>
+              {(isBirthday ? isPlayingBirthdaySong : isVoiceWishPlaying) && (
+                <div className="flex items-center justify-center gap-1.5 py-0.5">
+                  <span className="w-1.5 h-3.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-1.5 h-5 bg-yellow-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-1.5 h-6 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  <span className="w-1.5 h-4 bg-amber-300 rounded-full animate-bounce" style={{ animationDelay: '450ms' }}></span>
+                  <span className="w-1.5 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '600ms' }}></span>
+                </div>
+              )}
             </div>
 
             {/* 1. SUBHKAMNYE (GREETINGS, ARTWORK & WISHES - AT THE VERY TOP) */}
@@ -1736,7 +1813,10 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
         senderName={senderName}
         festivalName={festival.nameHi}
         isOpen={isSurpriseOpen}
-        onOpen={() => setIsSurpriseOpen(false)}
+        onOpen={() => {
+          setIsSurpriseOpen(false);
+          triggerFestivalSound(undefined, true);
+        }}
       />
 
       {/* Sticky Bottom Viral Loop Action Bar */}

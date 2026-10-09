@@ -633,6 +633,7 @@ async function startServer() {
       }
 
       const isShubhPrabhat = urlObj.pathname.includes('shubh-prabhat') || festId.includes('prabhat') || w.includes('prabhat');
+      const isVideoStatus = urlObj.pathname.includes('video-status') || urlObj.pathname.includes('ai-video') || festId.includes('video');
       const isBirthday = festId.includes('birthday') || urlObj.pathname.includes('birthday') || w.includes('birthday');
 
       let title = '✨ Shubhakamna.in - 3D पावन शुभकामना पोर्टल';
@@ -647,6 +648,14 @@ async function startServer() {
         description = `👉 तुरंत टच करके सुनें ${celebrant} के नाम का स्पेशल बर्थडे गाना व 3D कार्ड ➔ www.shubhakamna.in`;
         if (!customImg) {
           ogImage = 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&h=630&q=85';
+        }
+      } else if (isVideoStatus) {
+        title = sender 
+          ? `🌺 ${sender} ने आपके लिए 3D AI माँ दुर्गा वीडियो स्टेटस भेजा है! ✨`
+          : '🎬 9:16 AI वीडियो स्टेटस • ५० माँ दुर्गा 3D वीडियो | Shubhakamna.in';
+        description = '👉 अपने नाम व फोटो का 3D AI नवरात्रि वीडियो स्टेटस बनाएँ और WhatsApp पर शेयर करें ➔';
+        if (!customImg) {
+          ogImage = 'https://lh3.googleusercontent.com/d/1HE5DaiYEcjYhw2V8qw6bmBhTkkYZvgN8';
         }
       } else if (isShubhPrabhat) {
         title = sender 
