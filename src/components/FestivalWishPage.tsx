@@ -894,18 +894,8 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
       {/* 🎧 Upper Sticky / Floating Festival Katha Mini Player Shortcut */}
       <StickyKathaMiniPlayer festivalId={festival.id} festivalTitle={festival.nameHi} />
 
-      {/* AdSense Top Slot (728x90 / Responsive) */}
-      <div className="max-w-3xl mx-auto px-4 pt-3">
-        <div className="bg-stone-900/60 border border-stone-800 rounded-lg p-2 text-center text-stone-500 text-[10px] tracking-widest uppercase">
-          <div className="flex items-center justify-between text-[9px] text-stone-500 mb-1 px-1">
-            <span>विज्ञापन • ADVERTISEMENT</span>
-            <span>Google AdSense Safe</span>
-          </div>
-          <div className="h-14 sm:h-20 bg-stone-950/70 border border-dashed border-stone-800 rounded flex items-center justify-center text-stone-400 text-xs sm:text-sm">
-            <span>✨ यहाँ आपका Google AdSense बैनर विज्ञापन प्रदर्शित होगा ✨</span>
-          </div>
-        </div>
-      </div>
+      {/* Top Banner Slot (Monetag / Adsterra / Custom) */}
+      <AdBanner slotId="header" className="max-w-3xl mx-auto px-4 pt-2" />
 
       {/* Shared Recipient Greeting Banner */}
       {initialSenderName && !isDefaultSenderName(initialSenderName) && (
@@ -1074,6 +1064,11 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                   </div>
                 </div>
 
+                {/* 🎂 1. Adsterra Ad - Photo ke baad */}
+                <div className="my-3 flex justify-center w-full overflow-hidden">
+                  <AdBanner slotId="in_content" className="my-1 max-w-full" />
+                </div>
+
                 {/* Birthday Interactive Cake & Candle Blowing */}
                 <div className="my-3 p-3 rounded-2xl bg-black/60 border border-pink-500/30 backdrop-blur-md shadow-xl text-center space-y-1.5">
                   <div className="flex items-center justify-center gap-4 text-xl sm:text-2xl animate-pulse">
@@ -1163,6 +1158,11 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                     onRefreshFolder={festGdriveUrl ? refreshGDrivePhotos : undefined}
                     isRefreshingFolder={isRefreshingGDrive}
                   />
+                </div>
+
+                {/* 📸 1. Adsterra Ad - Festival Photo ke baad */}
+                <div className="my-3 flex justify-center w-full overflow-hidden">
+                  <AdBanner slotId="in_content" className="my-1 max-w-full" />
                 </div>
 
                 {/* Poetic Wish Message */}
@@ -1403,6 +1403,11 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
                   </form>
                 )}
               </div>
+            </div>
+
+            {/* ✍️ 2. Adsterra Ad - User Name ke baad */}
+            <div className="my-4 flex justify-center w-full overflow-hidden">
+              <AdBanner slotId="below_generator" className="my-1 max-w-full" />
             </div>
 
             {/* Hidden Input for Custom Festival Background Upload */}
@@ -1672,14 +1677,16 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               </button>
             </div>
 
+            {/* 🚀 3. Adsterra Ad - Share Buttons ke baad */}
+            <div className="mt-4 flex justify-center w-full overflow-hidden">
+              <AdBanner slotId="native_widget" className="my-1 max-w-full" />
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* Dynamic Ad Banner Slot (AdSense / Custom) */}
-      <AdBanner slotId="below_generator" />
-
-      {/* Rich SEO Content Section (Guarantees Google Rank #1 and AdSense Approval) */}
+      {/* Rich SEO Content Section (High CPM & Google Rank #1) */}
       <div className="max-w-3xl mx-auto px-4 space-y-6">
         
         {/* Shubh Muhurat Card */}
@@ -1805,6 +1812,9 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
               ))}
           </div>
         </div>
+
+        {/* Adsterra Bottom Classic Banner */}
+        <AdBanner slotId="banner_468" />
 
       </div>
 

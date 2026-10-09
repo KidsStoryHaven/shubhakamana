@@ -11,8 +11,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onGoHome, 
   useEffect(() => {
     updatePageSEO({
       title: 'Privacy Policy | Shubhakamna.in - Transparent Data & Cookie Policy',
-      description: 'Read the official Privacy Policy for Shubhakamna.in. Learn how we handle visitor information, cookies, Google AdSense, analytics, and user privacy rights.',
-      keywords: 'privacy policy, shubhakamna privacy, data policy, cookie policy, google adsense privacy',
+      description: 'Read the official Privacy Policy for Shubhakamna.in. Learn how we handle visitor information, cookies, Monetag, Adsterra advertising, analytics, and user privacy rights.',
+      keywords: 'privacy policy, shubhakamna privacy, data policy, cookie policy, adsterra monetag advertising policy',
       canonicalUrl: 'https://shubhakamna.in/privacy-policy/',
       ogType: 'article',
       robots: 'noindex, nofollow, noarchive'
@@ -134,33 +134,24 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onGoHome, 
           </p>
         </section>
 
-        {/* 5. Google DoubleClick DART Cookie & Third-Party Advertising */}
+        {/* 5. Monetag & Adsterra Third-Party Advertising */}
         <section className="space-y-3 bg-amber-950/20 border border-amber-500/30 rounded-2xl p-6 sm:p-7">
           <h2 className="text-lg sm:text-xl font-bold text-amber-300 font-serif">
-            5. Third-Party Advertising & Google AdSense
+            5. Third-Party Advertising (Monetag & Adsterra)
           </h2>
           <p className="text-stone-300">
-            Advertisements may be displayed on our website through third-party advertising partners, including <strong>Google AdSense</strong>.
+            Advertisements on our website are served through certified third-party ad networks, primarily <strong>Monetag</strong> and <strong>Adsterra</strong>.
           </p>
           <p className="text-stone-300">
-            Google is one of the third-party vendors on our site. It also uses cookies, known as <strong>DART cookies</strong>, to serve ads to our site visitors based upon their visit to www.shubhakamna.in and other sites on the internet.
+            These advertising networks may use cookies, device identifiers, and similar technologies to measure ad effectiveness and provide relevant non-intrusive advertising experiences.
           </p>
           <div className="bg-stone-900/90 border border-stone-700/80 rounded-xl p-4 mt-3 space-y-2 text-xs sm:text-sm text-stone-300">
-            <p className="font-semibold text-amber-200">User Ad Choices & Opt-Out:</p>
+            <p className="font-semibold text-amber-200">Advertising Privacy & Policy Inquiries:</p>
             <p>
-              Visitors may choose to decline the use of DART cookies by visiting the Google Ad and Content Network Privacy Policy at:
+              For more details on Monetag and Adsterra advertising privacy guidelines, visitors can consult the respective network documentation and privacy terms.
             </p>
-            <a 
-              href="https://policies.google.com/technologies/ads" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-amber-400 hover:text-amber-300 underline font-mono inline-flex items-center gap-1"
-            >
-              <span>https://policies.google.com/technologies/ads</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
             <p className="pt-1 text-stone-400">
-              You can also manage personalized advertising preferences via the Digital Advertising Alliance consumer choice page at <a href="https://optout.aboutads.info/" target="_blank" rel="noopener noreferrer" className="text-amber-300 underline">aboutads.info</a>.
+              You can also manage online advertising cookies and preferences via the Digital Advertising Alliance consumer choice page at <a href="https://optout.aboutads.info/" target="_blank" rel="noopener noreferrer" className="text-amber-300 underline">aboutads.info</a>.
             </p>
           </div>
         </section>

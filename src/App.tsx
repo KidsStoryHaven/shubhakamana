@@ -14,6 +14,7 @@ import { parseWishUrl } from './utils/shortUrl';
 import { updatePageSEO, getFestivalSEOMetadata, resetPortalSEO } from './utils/seoManager';
 import { SiteFooter } from './components/SiteFooter';
 import { StickyWhatsAppChannel } from './components/StickyWhatsAppChannel';
+import { DesktopAdGutters } from './components/DesktopAdGutters';
 import { WishCategory, getCategoryBySlug, getAllCategories } from './data/wishesData';
 
 // Code-split secondary pages & modals for maximum initial load performance
@@ -154,23 +155,26 @@ export default function App() {
     };
   }, []);
 
-  // Dynamically inject Google AdSense Auto Ads / Global Header Script into <head>
+  // Dynamically inject Monetag, Adsterra, and Custom Header Scripts into <head>
   useEffect(() => {
     const applyHeaderScript = () => {
       const settings = getStoredAdSettings();
-      const existingScript = document.getElementById('shubhakamna-ad-header-script');
-      if (existingScript) {
-        existingScript.remove();
-      }
 
-      if (settings.adsEnabled && settings.headerScript?.trim()) {
+      // Helper to clear dynamically added ad scripts by selector
+      const clearScripts = (attrName: string) => {
+        document.querySelectorAll(`script[data-ad-type="${attrName}"]`).forEach(el => el.remove());
+      };
+
+      // Helper to inject raw script string safely
+      const injectRawScript = (rawCode: string, adType: string) => {
+        if (!rawCode || !rawCode.trim()) return;
         const tempContainer = document.createElement('div');
-        tempContainer.innerHTML = settings.headerScript.trim();
+        tempContainer.innerHTML = rawCode.trim();
         const scriptTags = tempContainer.querySelectorAll('script');
-        
+
         scriptTags.forEach((s) => {
           const newScript = document.createElement('script');
-          newScript.id = 'shubhakamna-ad-header-script';
+          newScript.setAttribute('data-ad-type', adType);
           Array.from(s.attributes).forEach((attr) => {
             newScript.setAttribute(attr.name, attr.value);
           });
@@ -179,6 +183,45 @@ export default function App() {
           }
           document.head.appendChild(newScript);
         });
+      };
+
+      // 1. Monetag Scripts
+      clearScripts('monetag');
+      if (settings.adsEnabled && settings.monetag?.enabled) {
+        if (settings.monetag.tagUrl?.trim()) {
+          const existingStatic = document.querySelector(`script[src*="5gvci.com"]`);
+          if (!existingStatic) {
+            const mScript = document.createElement('script');
+            mScript.src = settings.monetag.tagUrl.trim();
+            mScript.setAttribute('data-cfasync', 'false');
+            mScript.setAttribute('data-ad-type', 'monetag');
+            mScript.async = true;
+            document.head.appendChild(mScript);
+          }
+        }
+        if (settings.monetag.inPagePushScript?.trim()) {
+          injectRawScript(settings.monetag.inPagePushScript, 'monetag');
+        }
+      } else {
+        // If Monetag is paused/disabled, remove any static tags as well
+        document.querySelectorAll('script[src*="5gvci.com"], script[src*="n6wxm.com"]').forEach(el => el.remove());
+      }
+
+      // 2. Adsterra Scripts (Popunder & Native / Social Bar)
+      clearScripts('adsterra');
+      if (settings.adsEnabled && settings.adsterra?.enabled) {
+        if (settings.adsterra.popunderEnabled && settings.adsterra.popunderScript?.trim()) {
+          injectRawScript(settings.adsterra.popunderScript, 'adsterra');
+        }
+        if (settings.adsterra.nativeEnabled && settings.adsterra.nativeSocialBarScript?.trim()) {
+          injectRawScript(settings.adsterra.nativeSocialBarScript, 'adsterra');
+        }
+      }
+
+      // 3. Custom Header Script
+      clearScripts('custom_head');
+      if (settings.adsEnabled && settings.headerScript?.trim()) {
+        injectRawScript(settings.headerScript, 'custom_head');
       }
     };
 
@@ -551,10 +594,8 @@ export default function App() {
   if (selectedFestival) {
     return (
       <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-600 selection:text-white">
-        {/* Top Header Ad Banner */}
-        <div className="max-w-4xl mx-auto w-full px-4 pt-2">
-          <AdBanner slotId="header" />
-        </div>
+        {/* Large Desktop Gutters (160x600 & 160x300 Side Ads) */}
+        <DesktopAdGutters />
 
         <Suspense fallback={<div className="min-h-[300px] flex items-center justify-center text-stone-400">Loading Wish...</div>}>
           <FestivalWishPage
@@ -613,11 +654,6 @@ export default function App() {
         onNavigateToPath={handleNavigateToPath}
       />
 
-      {/* Top Header Ad Banner */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2">
-        <AdBanner slotId="header" />
-      </div>
-
       {/* Main Festive Portal */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6">
         {/* Popular SEO Wishing Hubs (Pillars for Google Crawlers & Users) */}
@@ -661,9 +697,6 @@ export default function App() {
           onNavigateToPath={handleNavigateToPath}
         />
       </main>
-
-      {/* Sticky Bottom Mobile/Desktop Ad Banner */}
-      <AdBanner slotId="sticky_bottom" />
 
       {/* Sticky WhatsApp Channel Button */}
       <StickyWhatsAppChannel channelUrl="https://whatsapp.com/channel/0029VbCzmQCHrDZfjZlBGR3U" />

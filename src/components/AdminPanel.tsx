@@ -22,7 +22,9 @@ import {
   saveStoredAdSettings, 
   AdSettings, 
   AdSlotId, 
-  DEFAULT_AD_SETTINGS 
+  DEFAULT_AD_SETTINGS,
+  DeviceTarget,
+  resetAdSettingsToDefaults
 } from '../data/adStore';
 import { Festival, CategoryInfo, FestivalCategory } from '../data/festivals';
 import { DivineDeitySlide } from '../data/divineGodsData';
@@ -75,7 +77,10 @@ import {
   VolumeX,
   Radio,
   ThumbsUp,
-  Share2
+  Share2,
+  Smartphone,
+  Monitor,
+  RotateCcw
 } from 'lucide-react';
 import { updatePageSEO } from '../utils/seoManager';
 import { 
@@ -184,7 +189,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [originalSlugForEdit, setOriginalSlugForEdit] = useState<string | null>(null);
   const [isAddingWishCategory, setIsAddingWishCategory] = useState(false);
 
-  // Ad Settings State (Google AdSense, Ad Networks, Custom Banners)
+  // Ad Settings State (Monetag & Adsterra Ad Networks, Custom Banners)
   const [adSettings, setAdSettings] = useState<AdSettings>(() => getStoredAdSettings());
   const [activePreviewSlot, setActivePreviewSlot] = useState<AdSlotId | null>(null);
 
@@ -394,12 +399,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // ==========================================
-  // AD MANAGEMENT HANDLERS (Google AdSense & Ad Networks)
+  // AD MANAGEMENT HANDLERS (Monetag, Adsterra & Banners)
   // ==========================================
   const handleSaveAdSettings = (newSettings?: AdSettings) => {
     const toSave = newSettings || adSettings;
     saveStoredAdSettings(toSave);
-    showToast('विज्ञापन कोड व सेटिंग्स सफलतापूर्वक सहेज ली गईं! 🎉');
+    showToast('Monetag, Adsterra व बैनर सेटिंग्स सफलतापूर्वक सहेज ली गईं! 🎉');
   };
 
   const handleToggleMasterAds = () => {
@@ -410,54 +415,186 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast(nextState ? '🟢 सभी विज्ञापन चालू कर दिए गए!' : '⏸️ सभी विज्ञापन रोक (Pause) दिए गए!');
   };
 
-  const handleUpdateAdSlot = (slotId: AdSlotId, updates: Partial<typeof adSettings.slots[AdSlotId]>) => {
-    setAdSettings(prev => ({
-      ...prev,
-      slots: {
-        ...prev.slots,
-        [slotId]: {
-          ...prev.slots[slotId],
-          ...updates
-        }
+  const handleToggleMonetag = () => {
+    const nextState = !adSettings.monetag?.enabled;
+    const updated: AdSettings = {
+      ...adSettings,
+      monetag: {
+        ...adSettings.monetag,
+        enabled: nextState
       }
-    }));
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast(nextState ? '🟢 Monetag विज्ञापन चालू कर दिया गया!' : '⏸️ Monetag विज्ञापन बंद कर दिया गया!');
+  };
+
+  const handleToggleAdsterra = () => {
+    const nextState = !adSettings.adsterra?.enabled;
+    const updated: AdSettings = {
+      ...adSettings,
+      adsterra: {
+        ...adSettings.adsterra,
+        enabled: nextState
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast(nextState ? '🟢 Adsterra विज्ञापन चालू कर दिया गया!' : '⏸️ Adsterra विज्ञापन बंद कर दिया गया!');
+  };
+
+  const handleToggleAdsterraPopunder = () => {
+    const nextState = !adSettings.adsterra?.popunderEnabled;
+    const updated: AdSettings = {
+      ...adSettings,
+      adsterra: {
+        ...adSettings.adsterra,
+        popunderEnabled: nextState
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast(nextState ? '🟢 Adsterra Popunder चालू कर दिया गया!' : '⏸️ Adsterra Popunder बंद कर दिया गया!');
+  };
+
+  const handleToggleAdsterraNative = () => {
+    const nextState = !adSettings.adsterra?.nativeEnabled;
+    const updated: AdSettings = {
+      ...adSettings,
+      adsterra: {
+        ...adSettings.adsterra,
+        nativeEnabled: nextState
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast(nextState ? '🟢 Adsterra Native विजेट चालू कर दिया गया!' : '⏸️ Adsterra Native विजेट बंद कर दिया गया!');
+  };
+
+  const handleUpdateAdSlot = (slotId: AdSlotId, updates: Partial<typeof adSettings.slots[AdSlotId]>) => {
+    setAdSettings(prev => {
+      const updated: AdSettings = {
+        ...prev,
+        slots: {
+          ...prev.slots,
+          [slotId]: {
+            ...prev.slots[slotId],
+            ...updates
+          }
+        }
+      };
+      saveStoredAdSettings(updated);
+      return updated;
+    });
   };
 
   const handleInsertSampleSlot = (slotId: AdSlotId) => {
-    const sampleAdCode = `<ins class="adsbygoogle"
-     style="display:block"
-     data-ad-client="ca-pub-1234567890123456"
-     data-ad-slot="9876543210"
-     data-ad-format="auto"
-     data-full-width-responsive="true"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>`;
-    handleUpdateAdSlot(slotId, { code: sampleAdCode, enabled: true });
-    showToast(`'${adSettings.slots[slotId].name}' में सैंपल AdSense कोड भर दिया गया!`);
+    const defaultSlot = DEFAULT_AD_SETTINGS.slots[slotId];
+    if (defaultSlot) {
+      handleUpdateAdSlot(slotId, { code: defaultSlot.code, enabled: true });
+      showToast(`'${defaultSlot.name}' में मूल Adsterra कोड भर दिया गया!`);
+    }
   };
 
   const handleClearSlotCode = (slotId: AdSlotId) => {
     handleUpdateAdSlot(slotId, { code: '', enabled: false });
-    showToast(`'${adSettings.slots[slotId].name}' का कोड हटा दिया गया!`);
+    showToast(`'${adSettings.slots[slotId]?.name || slotId}' का कोड हटा दिया गया!`);
   };
 
-  const handleInsertSampleHeaderScript = () => {
-    const sampleScript = `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>`;
-    setAdSettings(prev => ({ ...prev, headerScript: sampleScript }));
-    showToast('सैंपल AdSense Auto-Ads स्क्रिप्ट कोड भर दिया गया!');
+  const handleInsertSampleMonetagTag = () => {
+    const defaultTag = DEFAULT_AD_SETTINGS.monetag.tagUrl;
+    const updated: AdSettings = {
+      ...adSettings,
+      monetag: {
+        ...adSettings.monetag,
+        tagUrl: defaultTag,
+        enabled: true
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast('Monetag मुख्य टैग यूआरएल भर दिया गया!');
+  };
+
+  const handleInsertSampleMonetagVignette = () => {
+    const defaultVignette = DEFAULT_AD_SETTINGS.monetag.inPagePushScript;
+    const updated: AdSettings = {
+      ...adSettings,
+      monetag: {
+        ...adSettings.monetag,
+        inPagePushScript: defaultVignette,
+        enabled: true
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast('Monetag विग्नेट कोड भर दिया गया!');
+  };
+
+  const handleInsertSampleAdsterraPopunder = () => {
+    const defaultPopunder = DEFAULT_AD_SETTINGS.adsterra.popunderScript;
+    const updated: AdSettings = {
+      ...adSettings,
+      adsterra: {
+        ...adSettings.adsterra,
+        popunderScript: defaultPopunder,
+        popunderEnabled: true
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast('Adsterra Popunder कोड भर दिया गया!');
+  };
+
+  const handleInsertSampleAdsterraNative = () => {
+    const defaultNative = DEFAULT_AD_SETTINGS.adsterra.nativeSocialBarScript;
+    const updated: AdSettings = {
+      ...adSettings,
+      adsterra: {
+        ...adSettings.adsterra,
+        nativeSocialBarScript: defaultNative,
+        nativeEnabled: true
+      }
+    };
+    setAdSettings(updated);
+    saveStoredAdSettings(updated);
+    showToast('Adsterra Native कोड भर दिया गया!');
+  };
+
+  const handleResetAllToDefaults = () => {
+    if (window.confirm('क्या आप सभी विज्ञापनों को मूल Adsterra और Monetag कोड्स पर रीसेट करना चाहते हैं?')) {
+      const reset = resetAdSettingsToDefaults();
+      setAdSettings(reset);
+      showToast('सभी विज्ञापन कोड्स मूल Adsterra व Monetag सेटिंग्स पर रीसेट कर दिए गए! 🚀');
+    }
   };
 
   const handleClearAllAds = () => {
     if (window.confirm('क्या आप सचमुच सभी विज्ञापन कोड हटाना चाहते हैं?')) {
       const resetAds: AdSettings = {
         adsEnabled: false,
+        monetag: {
+          enabled: false,
+          tagUrl: '',
+          inPagePushScript: ''
+        },
+        adsterra: {
+          enabled: false,
+          popunderEnabled: false,
+          popunderScript: '',
+          nativeEnabled: false,
+          nativeSocialBarScript: ''
+        },
         headerScript: '',
         slots: {
           header: { ...adSettings.slots.header, code: '', enabled: false },
           in_content: { ...adSettings.slots.in_content, code: '', enabled: false },
           below_generator: { ...adSettings.slots.below_generator, code: '', enabled: false },
-          sticky_bottom: { ...adSettings.slots.sticky_bottom, code: '', enabled: false }
+          sticky_bottom: { ...adSettings.slots.sticky_bottom, code: '', enabled: false },
+          desktop_skyscraper: { ...adSettings.slots.desktop_skyscraper, code: '', enabled: false },
+          desktop_side: { ...adSettings.slots.desktop_side, code: '', enabled: false },
+          banner_468: { ...adSettings.slots.banner_468, code: '', enabled: false },
+          native_widget: { ...adSettings.slots.native_widget, code: '', enabled: false }
         }
       };
       setAdSettings(resetAds);
@@ -1206,7 +1343,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <span>📢</span>
-          <span>विज्ञापन प्रबंधक (Google AdSense & Banners)</span>
+          <span>विज्ञापन प्रबंधक (Monetag & Adsterra)</span>
           {adSettings.adsEnabled && (
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           )}
@@ -2824,7 +2961,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         )}
 
         {/* ========================================================= */}
-        {/* TAB 4: AD MANAGEMENT (Google AdSense & Ad Networks)       */}
+        {/* TAB 4: AD MANAGEMENT (Monetag & Adsterra Ad Networks)     */}
         {/* ========================================================= */}
         {activeTab === 'ads' && (
           <div className="space-y-6 max-w-5xl">
@@ -2836,10 +2973,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-white font-serif">
-                    📢 विज्ञापन प्रबंधन (Google AdSense & Ad Networks)
+                    📢 विज्ञापन प्रबंधन (Monetag & Adsterra Ad Manager)
                   </h3>
                   <p className="text-xs text-stone-300">
-                    Google AdSense, Adsterra, Media.net या किसी भी विज्ञापन नेटवर्क के कोड यहाँ जोड़ें, जब चाहें रोकें या हटाएँ।
+                    यहाँ से आप Monetag और Adsterra के विज्ञापन कोड लगा सकते हैं और जब चाहें उन्हें 1-क्लिक में चालू या बंद (ON/OFF) कर सकते हैं।
                   </p>
                 </div>
               </div>
@@ -2866,7 +3003,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
                 <p className="text-xs text-stone-300 max-w-xl">
                   {adSettings.adsEnabled 
-                    ? 'आपकी वेबसाइट पर सभी सक्षम विज्ञापन स्लॉट्स लाइव दिखाए जा रहे हैं।' 
+                    ? 'आपकी वेबसाइट पर सभी सक्षम विज्ञापन (Monetag / Adsterra / Banners) लाइव दिखाए जा रहे हैं।' 
                     : 'वेबसाइट पर सभी विज्ञापन अभी बंद हैं। यूज़र्स को एक भी विज्ञापन नहीं दिखेगा।'}
                 </p>
               </div>
@@ -2896,63 +3033,362 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
 
-            {/* 1. Global Head Script (Google AdSense Auto-Ads / Verification) */}
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/80 p-5 sm:p-6 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-800">
-                <div className="flex items-center gap-2">
-                  <Code className="w-5 h-5 text-amber-400" />
-                  <h4 className="text-sm font-bold text-amber-300 font-serif">
-                    1. Google AdSense ग्लोबल स्क्रिप्ट / Auto-Ads / Verification Code
-                  </h4>
+            {/* 1. MONETAG AD NETWORK SECTION */}
+            <div className={`rounded-3xl border-2 p-5 sm:p-6 space-y-4 transition-all shadow-xl ${
+              adSettings.monetag?.enabled
+                ? 'border-indigo-500/40 bg-indigo-950/20 shadow-indigo-500/10'
+                : 'border-stone-800 bg-stone-900/80'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-400 text-white flex items-center justify-center font-bold text-base shadow-md">
+                    M
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-base font-bold text-white font-serif">
+                        1. Monetag विज्ञापन (Monetag Ads)
+                      </h4>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        adSettings.monetag?.enabled
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-stone-800 text-stone-400 border border-stone-700'
+                      }`}>
+                        {adSettings.monetag?.enabled ? '🟢 चालू (ON)' : '⏸️ बंद (OFF)'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-300">
+                      Vignette, In-Page Push, Push Notifications एवं MultiTag विज्ञापन।
+                    </p>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={handleInsertSampleHeaderScript}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                    onClick={handleToggleMonetag}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                      adSettings.monetag?.enabled
+                        ? 'bg-emerald-500 text-stone-950 hover:bg-emerald-400'
+                        : 'bg-stone-800 text-stone-300 hover:bg-stone-700 border border-stone-600'
+                    }`}
                   >
-                    <span>📋 सैंपल कोड भरें</span>
+                    {adSettings.monetag?.enabled ? (
+                      <>
+                        <ToggleRight className="w-4 h-4" />
+                        <span>Monetag चालू है</span>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="w-4 h-4" />
+                        <span>Monetag बंद है</span>
+                      </>
+                    )}
                   </button>
-                  {adSettings.headerScript && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdSettings(prev => ({ ...prev, headerScript: '' }));
-                        showToast('ग्लोबल स्क्रिप्ट हटा दी गई!');
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>हटाएँ</span>
-                    </button>
-                  )}
                 </div>
               </div>
 
-              <p className="text-xs text-stone-300">
-                Google AdSense में वेबसाइट जोड़ने पर मिलने वाला मुख्य पब्लिशर स्क्रिप्ट कोड (उदा. <code className="text-amber-300 font-mono text-[11px]">&lt;script async src="https://pagead2.googlesyndication.com/..."&gt;&lt;/script&gt;</code>) यहाँ पेस्ट करें। यह आपकी पूरी वेबसाइट के <code className="text-amber-300 font-mono text-[11px]">&lt;head&gt;</code> में जुड़ जाएगा।
-              </p>
+              {/* Monetag Meta Tag Verification Status */}
+              <div className="p-3 rounded-2xl bg-stone-950 border border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Monetag डोमेन सत्यापन मेटा टैग स्थापित है:</span>
+                </div>
+                <code className="text-stone-300 font-mono text-[11px] bg-stone-900 px-2 py-1 rounded border border-stone-800">
+                  &lt;meta name="monetag" content="2c5b45c7a16166627f05509fd326a81e" /&gt;
+                </code>
+              </div>
 
-              <textarea
-                value={adSettings.headerScript}
-                onChange={(e) => setAdSettings({ ...adSettings, headerScript: e.target.value })}
-                placeholder={`<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>`}
-                rows={4}
-                className="w-full p-3 rounded-2xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/40"
-              />
+              {/* Monetag Tag URL */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <label className="text-stone-300 font-semibold flex items-center gap-1.5">
+                    <span>Monetag मुख्य Tag Script URL:</span>
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-mono">Head Script</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleInsertSampleMonetagTag}
+                    className="text-indigo-400 hover:text-indigo-300 underline text-[11px] font-semibold cursor-pointer"
+                  >
+                    मूल टैग रीसेट करें (https://5gvci.com...)
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={adSettings.monetag?.tagUrl || ''}
+                  onChange={(e) => setAdSettings({
+                    ...adSettings,
+                    monetag: {
+                      ...adSettings.monetag,
+                      tagUrl: e.target.value
+                    }
+                  })}
+                  placeholder="https://5gvci.com/act/files/tag.min.js?z=11988485"
+                  className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+
+              {/* Additional Monetag In-Page Push / Zone Script */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <label className="text-stone-300 font-semibold flex items-center gap-1.5">
+                    <span>Monetag विग्नेट व इन-पेज पुश स्क्रिप्ट (Vignette Zone 11988535):</span>
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-mono">High CPM</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleInsertSampleMonetagVignette}
+                      className="text-indigo-400 hover:text-indigo-300 underline text-[11px] font-semibold cursor-pointer"
+                    >
+                      मूल Vignette कोड भरें
+                    </button>
+                    {adSettings.monetag?.inPagePushScript && (
+                      <button
+                        type="button"
+                        onClick={() => setAdSettings({
+                          ...adSettings,
+                          monetag: {
+                            ...adSettings.monetag,
+                            inPagePushScript: ''
+                          }
+                        })}
+                        className="text-red-400 hover:text-red-300 text-[11px] underline cursor-pointer"
+                      >
+                        कोड हटाएं
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <textarea
+                  value={adSettings.monetag?.inPagePushScript || ''}
+                  onChange={(e) => setAdSettings({
+                    ...adSettings,
+                    monetag: {
+                      ...adSettings.monetag,
+                      inPagePushScript: e.target.value
+                    }
+                  })}
+                  placeholder={`<script>(function(s){s.dataset.zone='11988535',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>`}
+                  rows={3}
+                  className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-indigo-400"
+                />
+              </div>
             </div>
 
-            {/* 2. Banner Slots Management */}
+            {/* 2. ADSTERRA AD NETWORK SECTION */}
+            <div className={`rounded-3xl border-2 p-5 sm:p-6 space-y-5 transition-all shadow-xl ${
+              adSettings.adsterra?.enabled
+                ? 'border-rose-500/40 bg-rose-950/20 shadow-rose-500/10'
+                : 'border-stone-800 bg-stone-900/80'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-400 text-white flex items-center justify-center font-bold text-base shadow-md">
+                    A
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-base font-bold text-white font-serif">
+                        2. Adsterra विज्ञापन (Adsterra Ads - Popunder & Native)
+                      </h4>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        adSettings.adsterra?.enabled
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-stone-800 text-stone-400 border border-stone-700'
+                      }`}>
+                        {adSettings.adsterra?.enabled ? '🟢 Adsterra चालू है' : '⏸️ Adsterra बंद है'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-300">
+                      Popunder, Native Banners एवं Social Bar - मोबाइल व PC के लिए अलग-अलग कंट्रोल।
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleAdsterra}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                      adSettings.adsterra?.enabled
+                        ? 'bg-emerald-500 text-stone-950 hover:bg-emerald-400'
+                        : 'bg-stone-800 text-stone-300 hover:bg-stone-700 border border-stone-600'
+                    }`}
+                  >
+                    {adSettings.adsterra?.enabled ? (
+                      <>
+                        <ToggleRight className="w-4 h-4" />
+                        <span>Adsterra मास्टर स्विच चालू</span>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="w-4 h-4" />
+                        <span>Adsterra मास्टर स्विच बंद</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 2A. Adsterra Popunder Script Card */}
+              <div className="p-4 rounded-2xl bg-stone-950 border border-stone-800/90 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white font-serif">
+                      2A. Adsterra Popunder स्क्रिप्ट (pl31735163)
+                    </span>
+                    <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-mono font-bold">
+                      Highest CPM
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleInsertSampleAdsterraPopunder}
+                      className="text-rose-400 hover:text-rose-300 underline text-[11px] font-semibold cursor-pointer"
+                    >
+                      मूल Popunder कोड भरें
+                    </button>
+                    {adSettings.adsterra?.popunderScript && (
+                      <button
+                        type="button"
+                        onClick={() => setAdSettings({
+                          ...adSettings,
+                          adsterra: { ...adSettings.adsterra, popunderScript: '' }
+                        })}
+                        className="text-red-400 hover:text-red-300 text-[11px] underline cursor-pointer"
+                      >
+                        कोड हटाएं
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleToggleAdsterraPopunder}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                        adSettings.adsterra?.popunderEnabled
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-stone-800 text-stone-400 border border-stone-700'
+                      }`}
+                    >
+                      {adSettings.adsterra?.popunderEnabled ? '🟢 Popunder चालू' : '⏸️ बंद'}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-stone-400">
+                  बैकग्राउंड में खुलता है। कार्ड बनाने वाले मोबाइल या PC यूज़र को बिना डिस्टर्ब किए सबसे अधिक रेवेन्यू देता है।
+                </p>
+                <textarea
+                  value={adSettings.adsterra?.popunderScript || ''}
+                  onChange={(e) => setAdSettings({
+                    ...adSettings,
+                    adsterra: {
+                      ...adSettings.adsterra,
+                      popunderScript: e.target.value
+                    }
+                  })}
+                  placeholder={`<script src="https://pl31735163.profitableratecpmnetwork.com/2d/e3/4f/2de34fcc8f2bca313b407b570e087f42.js"></script>`}
+                  rows={2}
+                  className="w-full p-2.5 rounded-xl bg-black border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-rose-400"
+                />
+              </div>
+
+              {/* 2B. Adsterra Native Social Bar Widget Card */}
+              <div className="p-4 rounded-2xl bg-stone-950 border border-stone-800/90 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white font-serif">
+                      2B. Adsterra नेटिव विजेट कंटेनर (pl31735164)
+                    </span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">
+                      Native Container
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleInsertSampleAdsterraNative}
+                      className="text-amber-400 hover:text-amber-300 underline text-[11px] font-semibold cursor-pointer"
+                    >
+                      मूल Native कोड भरें
+                    </button>
+                    {adSettings.adsterra?.nativeSocialBarScript && (
+                      <button
+                        type="button"
+                        onClick={() => setAdSettings({
+                          ...adSettings,
+                          adsterra: { ...adSettings.adsterra, nativeSocialBarScript: '' }
+                        })}
+                        className="text-red-400 hover:text-red-300 text-[11px] underline cursor-pointer"
+                      >
+                        कोड हटाएं
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleToggleAdsterraNative}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                        adSettings.adsterra?.nativeEnabled
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-stone-800 text-stone-400 border border-stone-700'
+                      }`}
+                    >
+                      {adSettings.adsterra?.nativeEnabled ? '🟢 Native चालू' : '⏸️ बंद'}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-stone-400">
+                  रेस्पॉन्सिव नेटिव कंटेनर जो मोबाइल व PC दोनों पर बिना रुकावट प्राकृतिक रूप से दिखता है।
+                </p>
+                <textarea
+                  value={adSettings.adsterra?.nativeSocialBarScript || ''}
+                  onChange={(e) => setAdSettings({
+                    ...adSettings,
+                    adsterra: {
+                      ...adSettings.adsterra,
+                      nativeSocialBarScript: e.target.value
+                    }
+                  })}
+                  placeholder={`<script async="async" data-cfasync="false" src="https://pl31735164.profitableratecpmnetwork.com/c4f15575f9df841804b1e0e3a8015e25/invoke.js"></script>\n<div id="container-c4f15575f9df841804b1e0e3a8015e25"></div>`}
+                  rows={2}
+                  className="w-full p-2.5 rounded-xl bg-black border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-amber-400"
+                />
+              </div>
+            </div>
+
+            {/* 3. Banner Slots Management (Device-Targeted Adsterra / Monetag Banners) */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h4 className="text-sm font-bold text-white font-serif flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-amber-400" />
-                    <span>2. विशेष बैनर विज्ञापन स्लॉट्स (Banner Ad Slots)</span>
+                    <span>3. विशेष Adsterra बैनर स्लॉट्स (Device Targeted Banners)</span>
                   </h4>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    प्रत्येक स्थान के लिए अलग कोड डालें या जब चाहें उस विशेष स्लॉट को बंद या चालू करें:
+                    प्रत्येक विज्ञापन को अलग से चालू/बंद करें और चुनें कि वह केवल मोबाइल पर दिखे, केवल PC पर दिखे या दोनों पर:
                   </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleResetAllToDefaults}
+                    className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-stone-700"
+                    title="मूल Adsterra व Monetag कोड्स लोड करें"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>मूल Adsterra कोड्स रीसेट</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearAllAds}
+                    className="px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-red-800/40"
+                    title="सभी विज्ञापन साफ़ करें"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>सभी कोड हटाएं</span>
+                  </button>
                 </div>
               </div>
 
@@ -2972,17 +3408,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       }`}
                     >
                       {/* Slot Header */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-bold text-white font-serif">
-                                {slot.name}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-mono">
-                              अनुशंसित साइज़: {slot.recommendedSize}
+                          <div className="space-y-1">
+                            <span className="text-sm font-bold text-white font-serif block">
+                              {slot.name}
                             </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-mono">
+                                साइज़: {slot.recommendedSize}
+                              </span>
+                              {slot.deviceTarget === 'mobile_only' && (
+                                <span className="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                  <Smartphone className="w-3 h-3" /> केवल मोबाइल
+                                </span>
+                              )}
+                              {slot.deviceTarget === 'desktop_only' && (
+                                <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                  <Monitor className="w-3 h-3" /> केवल PC / कंप्यूटर
+                                </span>
+                              )}
+                              {slot.deviceTarget === 'all' && (
+                                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                  <Smartphone className="w-3 h-3" />
+                                  <Monitor className="w-3 h-3" /> मोबाइल + PC दोनों
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           {/* Enable/Disable Toggle */}
@@ -2998,30 +3450,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             {slot.enabled ? (
                               <>
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>सक्रिय</span>
+                                <span>चालू (Active)</span>
                               </>
                             ) : (
-                              <span>निष्क्रिय (Off)</span>
+                              <span>बंद (Off)</span>
                             )}
                           </button>
                         </div>
 
-                        <p className="text-[11px] text-stone-300">
+                        <p className="text-[11px] text-stone-300 leading-relaxed">
                           {slot.description}
                         </p>
+
+                        {/* Device Target Selector */}
+                        <div className="flex items-center gap-2 pt-1 text-xs">
+                          <label className="text-stone-400 text-[11px] font-semibold">
+                            डिवाइस लक्ष्य (Device):
+                          </label>
+                          <select
+                            value={slot.deviceTarget}
+                            onChange={(e) => handleUpdateAdSlot(slotId, { deviceTarget: e.target.value as DeviceTarget })}
+                            className="bg-stone-950 border border-stone-800 rounded-lg px-2 py-1 text-[11px] text-stone-200 focus:outline-none focus:border-amber-400"
+                          >
+                            <option value="all">📱💻 मोबाइल + PC दोनों (All Devices)</option>
+                            <option value="mobile_only">📱 केवल मोबाइल (Mobile Only)</option>
+                            <option value="desktop_only">💻 केवल PC / कंप्यूटर (Desktop Only)</option>
+                          </select>
+                        </div>
                       </div>
 
                       {/* Code Textarea */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-stone-400 font-semibold">विज्ञापन कोड (HTML / JS):</span>
+                          <span className="text-stone-400 font-semibold">Adsterra विज्ञापन कोड:</span>
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => handleInsertSampleSlot(slotId)}
                               className="text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
                             >
-                              सैंपल AdSense कोड
+                              मूल Adsterra कोड भरें
                             </button>
                             {hasCode && (
                               <>
@@ -3041,8 +3509,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <textarea
                           value={slot.code}
                           onChange={(e) => handleUpdateAdSlot(slotId, { code: e.target.value })}
-                          placeholder={`यहाँ AdSense / Adsterra बैनर कोड पेस्ट करें...
-उदा: <ins class="adsbygoogle" ...></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>`}
+                          placeholder={`यहाँ Adsterra स्क्रिप्ट पेस्ट करें...
+उदा: <script ... atOptions = { 'key' : '...' }; ...></script>`}
                           rows={4}
                           className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-[11px] focus:outline-none focus:border-amber-400"
                         />
@@ -3053,7 +3521,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <span className={`text-[10px] font-semibold flex items-center gap-1 ${
                           hasCode ? 'text-emerald-400' : 'text-stone-500'
                         }`}>
-                          {hasCode ? '✓ कोड मौजूद है' : '○ कोई कोड नहीं डाला गया'}
+                          {hasCode ? '✓ कोड सक्रिय व तैयार' : '○ कोई कोड नहीं डाला गया'}
                         </span>
 
                         <button
@@ -3078,7 +3546,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             </div>
                           ) : (
                             <p className="text-[11px] text-stone-500 italic py-2">
-                              पूर्वावलोकन देखने के लिए कृपया ऊपर कोई कोड पेस्ट करें या "सैंपल AdSense कोड" पर क्लिक करें।
+                              पूर्वावलोकन देखने के लिए कृपया ऊपर कोई कोड पेस्ट करें या "मूल Adsterra कोड भरें" पर क्लिक करें।
                             </p>
                           )}
                         </div>
@@ -3087,6 +3555,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   );
                 })}
               </div>
+            </div>
+
+            {/* 4. Global Custom Head Script (Optional) */}
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-stone-800">
+                <div className="flex items-center gap-2">
+                  <Code className="w-4 h-4 text-amber-400" />
+                  <h4 className="text-xs font-bold text-amber-300 font-serif">
+                    4. अतिरिक्त ग्लोबल स्क्रिप्ट (Optional Custom Head Script)
+                  </h4>
+                </div>
+                {adSettings.headerScript && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdSettings(prev => ({ ...prev, headerScript: '' }));
+                      showToast('ग्लोबल स्क्रिप्ट हटा दी गई!');
+                    }}
+                    className="text-red-400 hover:text-red-300 text-xs underline cursor-pointer"
+                  >
+                    हटाएँ
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-stone-400">
+                यदि किसी अन्य विज्ञापन नेटवर्क या ट्रैकिंग के लिए कोई अतिरिक्त ग्लोबल कोड डालना हो तो यहाँ डाल सकते हैं।
+              </p>
+              <textarea
+                value={adSettings.headerScript}
+                onChange={(e) => setAdSettings({ ...adSettings, headerScript: e.target.value })}
+                placeholder="<script>...</script>"
+                rows={2}
+                className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 font-mono text-xs focus:outline-none focus:border-amber-400"
+              />
             </div>
 
             {/* Bottom Actions Bar */}
@@ -3116,7 +3618,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </button>
               </div>
             </div>
-
           </div>
         )}
 

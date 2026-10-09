@@ -6,7 +6,6 @@ import { PanchangWidget } from './PanchangWidget';
 import { FestivalCountdownTimer } from './FestivalCountdownTimer';
 import { DailyMantraWidget } from './DailyMantraWidget';
 import { YouTubeStatsBar } from './YouTubeStatsBar';
-import { AdBanner } from './AdBanner';
 import { 
   Sparkles, 
   Calendar, 
@@ -227,9 +226,6 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
         </div>
       </div>
 
-      {/* In-Content Ad Banner (Google AdSense / Custom) */}
-      <AdBanner slotId="in_content" />
-
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Category Pills */}
@@ -396,17 +392,6 @@ export const FestivalsPortal: React.FC<FestivalsPortalProps> = ({
           </a>
         </div>
       </section>
-
-      {/* AdSense In-Portal Banner */}
-      <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-3 text-center text-stone-500 text-xs">
-        <div className="flex items-center justify-between text-[10px] text-stone-500 mb-1.5 px-1">
-          <span>विज्ञापन • ADVERTISEMENT</span>
-          <span>Google AdSense Display Unit (728x90)</span>
-        </div>
-        <div className="h-16 bg-stone-950/70 border border-dashed border-stone-800 rounded-xl flex items-center justify-center text-stone-400 text-xs sm:text-sm">
-          <span>यहाँ आपका Google AdSense बैनर विज्ञापन प्रदर्शित होगा (High RPM Spot)</span>
-        </div>
-      </div>
     </div>
   );
 };
