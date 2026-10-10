@@ -9,7 +9,7 @@ import { FestivalsPortal } from './components/FestivalsPortal';
 import { AdBanner } from './components/AdBanner';
 import { Festival, FestivalCategory, CategoryInfo } from './data/festivals';
 import { getStoredFestivals, getStoredCategories, initGlobalSiteDataSync } from './data/festivalStore';
-import { getStoredAdSettings } from './data/adStore';
+import { getStoredAdSettings, purgeAllAdDomElements } from './data/adStore';
 import { parseWishUrl } from './utils/shortUrl';
 import { updatePageSEO, getFestivalSEOMetadata, resetPortalSEO } from './utils/seoManager';
 import { SiteFooter } from './components/SiteFooter';
@@ -156,9 +156,29 @@ export default function App() {
   }, []);
 
   // Dynamically inject Monetag, Adsterra, and Custom Header Scripts into <head>
+  // Strictly enforces:
+  // 1. Admin page: Zero ads (purges all scripts & iframes)
+  // 2. Home page (Portal): Zero ads (as requested by user)
+  // 3. Master toggle off: Zero ads across entire website
+  // 4. Festival wish pages / SEO category pages: Loads configured Monetag & Adsterra scripts
   useEffect(() => {
+    const isHomeView = !selectedFestival && !selectedWishCategory && !staticPageRoute && !isAdminOpen;
+    const isDedicatedAdmin = isAdminOpen || (typeof window !== 'undefined' && window.location.pathname.toLowerCase().includes('admin'));
+
     const applyHeaderScript = () => {
+      // 1. If on Admin Panel or on Home Page, NEVER load any ad scripts; purge everything!
+      if (isDedicatedAdmin || isHomeView) {
+        purgeAllAdDomElements();
+        return;
+      }
+
       const settings = getStoredAdSettings();
+
+      // 2. If Master Ads toggle is OFF, purge everything
+      if (!settings.adsEnabled) {
+        purgeAllAdDomElements();
+        return;
+      }
 
       // Helper to clear dynamically added ad scripts by selector
       const clearScripts = (attrName: string) => {
@@ -185,9 +205,9 @@ export default function App() {
         });
       };
 
-      // 1. Monetag Scripts
+      // 1. Monetag Scripts (only on non-home, non-admin pages)
       clearScripts('monetag');
-      if (settings.adsEnabled && settings.monetag?.enabled) {
+      if (settings.monetag?.enabled) {
         if (settings.monetag.tagUrl?.trim()) {
           const existingStatic = document.querySelector(`script[src*="5gvci.com"]`);
           if (!existingStatic) {
@@ -203,13 +223,12 @@ export default function App() {
           injectRawScript(settings.monetag.inPagePushScript, 'monetag');
         }
       } else {
-        // If Monetag is paused/disabled, remove any static tags as well
         document.querySelectorAll('script[src*="5gvci.com"], script[src*="n6wxm.com"]').forEach(el => el.remove());
       }
 
       // 2. Adsterra Scripts (Popunder & Native / Social Bar)
       clearScripts('adsterra');
-      if (settings.adsEnabled && settings.adsterra?.enabled) {
+      if (settings.adsterra?.enabled) {
         if (settings.adsterra.popunderEnabled && settings.adsterra.popunderScript?.trim()) {
           injectRawScript(settings.adsterra.popunderScript, 'adsterra');
         }
@@ -220,7 +239,7 @@ export default function App() {
 
       // 3. Custom Header Script
       clearScripts('custom_head');
-      if (settings.adsEnabled && settings.headerScript?.trim()) {
+      if (settings.headerScript?.trim()) {
         injectRawScript(settings.headerScript, 'custom_head');
       }
     };
@@ -229,8 +248,11 @@ export default function App() {
     window.addEventListener('shubhakamna_ads_changed', applyHeaderScript);
     return () => {
       window.removeEventListener('shubhakamna_ads_changed', applyHeaderScript);
+      if (isDedicatedAdmin || isHomeView) {
+        purgeAllAdDomElements();
+      }
     };
-  }, []);
+  }, [selectedFestival, selectedWishCategory, staticPageRoute, isAdminOpen]);
 
   const [activeCategory, setActiveCategory] = useState<FestivalCategory | 'all'>('all');
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);

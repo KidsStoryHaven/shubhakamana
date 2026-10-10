@@ -334,6 +334,14 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
     try {
       const parsed = parseWishUrl(window.location.search);
       if (parsed.customImage && deitySlides && deitySlides.length > 0) {
+        // 1. Direct short numeric slide index (?s=1 or ?slide=2)
+        const numIdx = parseInt(parsed.customImage, 10);
+        if (!isNaN(numIdx) && numIdx >= 0 && numIdx < deitySlides.length) {
+          setActiveImageIndex(numIdx);
+          return;
+        }
+
+        // 2. Legacy full URL or partial Google Drive ID matching
         const foundIdx = deitySlides.findIndex(
           s => s.imageUrl === parsed.customImage || 
                s.imageUrl.includes(parsed.customImage!) || 
@@ -656,13 +664,15 @@ export const FestivalWishPage: React.FC<FestivalWishPageProps> = ({
 
   // Generate the clean, short viral share link
   const getShareUrl = () => {
-    const currentSlideImg = activeHeroImage || (deitySlides && deitySlides[activeImageIndex]?.imageUrl) || deitySlides[0]?.imageUrl || festival.heroImage;
+    // Only attach short slide index (?s=1) if user specifically switched away from the default slide (0)
+    // NEVER attach long Google Drive / Unsplash URLs so the shared link is ultra-short, clean, and viral!
+    const slideIdx = activeImageIndex > 0 ? activeImageIndex : undefined;
     return createShortWishUrl(
       senderName, 
       festival.id, 
       selectedLanguage, 
       isBirthday ? birthdayPerson : undefined,
-      currentSlideImg?.startsWith('http') ? currentSlideImg : undefined
+      slideIdx
     );
   };
 

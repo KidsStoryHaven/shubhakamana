@@ -100,10 +100,22 @@ export function createShortWishUrl(
   festivalId: string, 
   lang: string = 'hi',
   birthdayPerson?: string,
-  slideImageUrl?: string
+  slideIndexOrId?: string | number
 ): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://shubhakamna.in';
   const fest = festivalId || 'diwali';
+
+  // Format short slide param ONLY if index is > 0 and numeric.
+  // NEVER append huge full http image URLs to keep the share link ultra-short and aesthetic!
+  let slideParam = '';
+  if (typeof slideIndexOrId === 'number' && slideIndexOrId > 0) {
+    slideParam = `&s=${slideIndexOrId}`;
+  } else if (typeof slideIndexOrId === 'string' && slideIndexOrId.trim()) {
+    const parsedIdx = parseInt(slideIndexOrId, 10);
+    if (!isNaN(parsedIdx) && parsedIdx > 0) {
+      slideParam = `&s=${parsedIdx}`;
+    }
+  }
 
   // If this is a birthday wish and a birthday person name is provided
   if ((fest === 'birthday' || fest.includes('birthday')) && birthdayPerson?.trim()) {
@@ -116,8 +128,8 @@ export function createShortWishUrl(
     if (lang && lang !== 'hi') {
       url += `&lang=${lang}`;
     }
-    if (slideImageUrl && slideImageUrl.startsWith('http')) {
-      url += `&img=${encodeURIComponent(slideImageUrl)}`;
+    if (slideParam) {
+      url += slideParam;
     }
     return url;
   }
@@ -128,8 +140,8 @@ export function createShortWishUrl(
     if (lang && lang !== 'hi') {
       url = `${origin}/?w=${fest}_${lang}`;
     }
-    if (slideImageUrl && slideImageUrl.startsWith('http')) {
-      url += `&img=${encodeURIComponent(slideImageUrl)}`;
+    if (slideParam) {
+      url += slideParam;
     }
     return url;
   }
@@ -143,8 +155,8 @@ export function createShortWishUrl(
   }
 
   let url = `${origin}/?w=${shortParam}`;
-  if (slideImageUrl && slideImageUrl.startsWith('http')) {
-    url += `&img=${encodeURIComponent(slideImageUrl)}`;
+  if (slideParam) {
+    url += slideParam;
   }
 
   return url;
@@ -176,8 +188,8 @@ export function parseWishUrl(search: string = '', pathname: string = ''): Parsed
   ).replace(/_/g, ' ').trim();
   const birthdayPerson = rawBirthdayPerson || undefined;
 
-  // Custom slide image if provided in query
-  const customImg = params.get('img') || params.get('image') || undefined;
+  // Custom slide image index or legacy image URL if provided in query
+  const customImg = params.get('s') || params.get('slide') || params.get('img') || params.get('image') || undefined;
 
   // 0. Check clean pathname (e.g. /diwali, /holi, /new-year, /festival/diwali, /karwa_chauth)
   let cleanPath = (pathname || '').replace(/^\/+|\/+$/g, '').trim().toLowerCase();

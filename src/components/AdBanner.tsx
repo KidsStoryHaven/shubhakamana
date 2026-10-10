@@ -61,9 +61,20 @@ export const AdBanner: React.FC<AdBannerProps> = ({ slotId, className = '' }) =>
     scriptsToExecute.forEach((scriptEl) => {
       container.appendChild(scriptEl);
     });
+
+    return () => {
+      if (container) {
+        container.innerHTML = '';
+      }
+    };
   }, [isVisible, slot?.code]);
 
-  if (!isVisible) {
+  const isAdmin = typeof window !== 'undefined' && (
+    window.location.pathname.toLowerCase().includes('admin') ||
+    window.location.search.toLowerCase().includes('admin')
+  );
+
+  if (!isVisible || isAdmin) {
     return null;
   }
 

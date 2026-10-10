@@ -176,11 +176,44 @@ export function getStoredAdSettings(): AdSettings {
 }
 
 /**
+ * Instantly purges all ad scripts, iframes, containers, and overlays from the DOM
+ */
+export function purgeAllAdDomElements(): void {
+  if (typeof document === 'undefined') return;
+  try {
+    const selectors = [
+      'script[data-ad-type]',
+      'script[src*="5gvci.com"]',
+      'script[src*="n6wxm.com"]',
+      'script[src*="profitableratecpmnetwork.com"]',
+      'script[src*="highrevenueformat.com"]',
+      'iframe[src*="highrevenueformat.com"]',
+      'iframe[src*="profitableratecpmnetwork.com"]',
+      'iframe[src*="5gvci.com"]',
+      'iframe[src*="n6wxm.com"]',
+      'div[id^="container-c4f15575"]',
+      'div[id*="adsterra"]',
+      'div[class*="monetag"]'
+    ];
+    document.querySelectorAll(selectors.join(',')).forEach((el) => {
+      try {
+        el.remove();
+      } catch (_) {}
+    });
+  } catch (err) {
+    console.warn('Error purging ad DOM elements:', err);
+  }
+}
+
+/**
  * Save updated ad configuration and dispatch custom change event
  */
 export function saveStoredAdSettings(settings: AdSettings): void {
   try {
     localStorage.setItem(STORAGE_KEY_ADS, JSON.stringify(settings));
+    if (!settings.adsEnabled) {
+      purgeAllAdDomElements();
+    }
     window.dispatchEvent(new Event('shubhakamna_ads_changed'));
   } catch (e) {
     console.error('Failed to save ad settings:', e);

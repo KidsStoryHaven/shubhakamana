@@ -65,15 +65,26 @@ export const DesktopAdGutters: React.FC = () => {
     if (showLeft && leftRef.current && skyscraperSlot?.code) {
       executeAdCode(leftRef.current, skyscraperSlot.code);
     }
+    return () => {
+      if (leftRef.current) leftRef.current.innerHTML = '';
+    };
   }, [showLeft, skyscraperSlot?.code]);
 
   useEffect(() => {
     if (showRight && rightRef.current && sideSlot?.code) {
       executeAdCode(rightRef.current, sideSlot.code);
     }
+    return () => {
+      if (rightRef.current) rightRef.current.innerHTML = '';
+    };
   }, [showRight, sideSlot?.code]);
 
-  if (!showLeft && !showRight) {
+  const isAdmin = typeof window !== 'undefined' && (
+    window.location.pathname.toLowerCase().includes('admin') ||
+    window.location.search.toLowerCase().includes('admin')
+  );
+
+  if ((!showLeft && !showRight) || isAdmin) {
     return null;
   }
 

@@ -24,7 +24,8 @@ import {
   AdSlotId, 
   DEFAULT_AD_SETTINGS,
   DeviceTarget,
-  resetAdSettingsToDefaults
+  resetAdSettingsToDefaults,
+  purgeAllAdDomElements
 } from '../data/adStore';
 import { Festival, CategoryInfo, FestivalCategory } from '../data/festivals';
 import { DivineDeitySlide } from '../data/divineGodsData';
@@ -255,6 +256,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // Load data on mount & subscribe to changes
   useEffect(() => {
+    // Purge any lingering ad scripts, iframes, and popups immediately on entering Admin Panel
+    purgeAllAdDomElements();
     updatePageSEO({
       title: 'Admin Control Panel | Shubhakamna.in',
       description: 'Administration Panel',
